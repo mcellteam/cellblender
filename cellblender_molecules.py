@@ -461,6 +461,20 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     component_list = CollectionProperty(type=MCellMolComponentProperty, name="Component List")
     active_component_index = IntProperty(name="Active Component Index", default=0)
 
+    geom_type_enum = [
+        ('None',   "Coincident", ""),
+        ('2DAuto', "2D Auto", ""),
+        ('3DAuto', "3D Auto", ""),
+        ('XYZ',    "XYZ Specified", ""),
+        ('XYZA',   "XYZ,A Specified", ""),
+        ('XYZVA',  "XYZ,V,A Specified", "")]
+    geom_type = EnumProperty(
+        items=geom_type_enum, name="Geometry",
+        default='None',
+        description="Layout method for Complex Molecules." )
+
+    component_distance = FloatProperty ( name="CompDist", min=0.0, default=0.01, description="Distance of Components from Molecule" )
+
     shape_name = StringProperty(name="ShapeName", default="")
     material_name = StringProperty(name="MatName", default="")
 
@@ -1026,9 +1040,24 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
               comp_label += " ( " + ", ".join(comp_list) + " )"
 
             if not molecules.show_components:
-                row.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
+                #row.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
+                col = row.column()
+                col.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
+                col = row.column()
+                col.prop(self, "geom_type" );
+                if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
+                  col = row.column()
+                  col.prop(self, "component_distance")
             else:
-                row.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
+                #row.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
+                col = row.column()
+                col.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
+                col = row.column()
+                col.prop(self, "geom_type" );
+                if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
+                  col = row.column()
+                  col.prop(self, "component_distance")
+
 
                 row = box.row()
                 col = row.column()
@@ -1372,6 +1401,8 @@ class MCell_UL_check_molecule(bpy.types.UIList):
 class MCell_UL_check_component(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # print ("Draw with " + str(data) + " " + str(item) + " " + str(active_data) + " " + str(active_propname) + " " + str(index) )
+        # print ("  Type = " + data.geom_type )
+
         col = layout.column()
         col.label(text='Component / States:', icon='NONE')
         col = layout.column()
@@ -1379,30 +1410,243 @@ class MCell_UL_check_component(bpy.types.UIList):
         col = layout.column()
         col.prop(item, "states_string", text='', icon='NONE')
 
-        ps = context.scene.mcell.parameter_system
+        if data.geom_type == '2DAuto':
 
-        col = layout.column()
-        col.label(text='loc [x,y,z]', icon='NONE')
+            # Arrange the components evenly spaced on a circle in the x-y plane
+            ps = context.scene.mcell.parameter_system
+            mols = context.scene.mcell.molecules
+            this_mol = mols.molecule_list[mols.active_mol_index]
+            num_comps = len(this_mol.component_list)
+            comp_dist = this_mol.component_distance
+            angle = 2 * math.pi * index / num_comps;
+            x = comp_dist * math.cos(angle)
+            y = comp_dist * math.sin(angle)
+            if abs(x) < 1e-10:
+              x = 0
+            if abs(y) < 1e-10:
+              y = 0
+            col = layout.column()
+            col.label ( "x="+format(x,'.6g') )
+            col = layout.column()
+            col.label ( "y="+format(y,'.6g') )
 
-        col = layout.column()
-        item.loc_x.draw_prop_only ( col, ps )
-        col = layout.column()
-        item.loc_y.draw_prop_only ( col, ps )
-        col = layout.column()
-        item.loc_z.draw_prop_only ( col, ps )
+        elif data.geom_type == '3DAuto':
 
-        col = layout.column()
-        col.label(text='rot [x,y,z,ang]', icon='NONE')
+            # Arrange the components evenly spaced on a sphere
 
-        col = layout.column()
-        item.rot_x.draw_prop_only ( col, ps )
-        col = layout.column()
-        item.rot_y.draw_prop_only ( col, ps )
-        col = layout.column()
-        item.rot_z.draw_prop_only ( col, ps )
-        col = layout.column()
-        item.rot_ang.draw_prop_only ( col, ps )
+            ps = context.scene.mcell.parameter_system
+            mols = context.scene.mcell.molecules
+            this_mol = mols.molecule_list[mols.active_mol_index]
+            num_comps = len(this_mol.component_list)
+            comp_dist = this_mol.component_distance
 
+            if num_comps == 1:
+              # Put the component along the x axis
+              x = comp_dist
+              y = 0;
+              z = 0;
+
+            elif num_comps == 2:
+              # Put both components along the x axis
+              if index == 0:
+                x = comp_dist
+                y = 0;
+                z = 0;
+              else:
+                x = -comp_dist
+                y = 0;
+                z = 0;
+
+            elif num_comps == 3:
+              # Put all components on the equator
+              if index == 0:
+                x = comp_dist
+                y = 0;
+                z = 0;
+              elif index == 1:
+                x = math.cos(2*math.pi/3) * comp_dist
+                y = math.sin(2*math.pi/3) * comp_dist
+                z = 0
+              else:
+                x = math.cos(4*math.pi/3) * comp_dist
+                y = math.sin(4*math.pi/3) * comp_dist
+                z = 0
+
+            elif num_comps == 4:
+              # Put components on a tetrahedron (coordinates from Blender)
+              if index == 0:
+                x = 0
+                y = 0;
+                z = comp_dist;
+              elif index == 1:
+                x = 0
+                y = -0.942809 * comp_dist
+                z = -0.333333 * comp_dist
+              elif index == 2:
+                x = 0.816497 * comp_dist
+                y = 0.471405 * comp_dist
+                z = -0.333333 * comp_dist
+              else:
+                x = -0.816497 * comp_dist
+                y = 0.471405 * comp_dist
+                z = -0.333333 * comp_dist
+
+            elif num_comps == 6:
+              # Put all components at each end of the 3 axes
+              if index == 0:
+                x = comp_dist
+                y = 0
+                z = 0
+              elif index == 1:
+                x = -comp_dist
+                y = 0
+                z = 0
+              elif index == 2:
+                x = 0
+                y = comp_dist
+                z = 0
+              elif index == 3:
+                x = 0
+                y = -comp_dist
+                z = 0
+              elif index == 4:
+                x = 0
+                y = 0
+                z = comp_dist
+              else:
+                x = 0
+                y = 0
+                z = -comp_dist
+
+            elif num_comps == 8:
+              # Put all components at corners of a cube
+              diag = math.sqrt(3)/3
+              if index == 0:
+                x =  comp_dist * diag
+                y =  comp_dist * diag
+                z =  comp_dist * diag
+              elif index == 1:
+                x = -comp_dist * diag
+                y =  comp_dist * diag
+                z =  comp_dist * diag
+              elif index == 2:
+                x =  comp_dist * diag
+                y = -comp_dist * diag
+                z =  comp_dist * diag
+              elif index == 3:
+                x = -comp_dist * diag
+                y = -comp_dist * diag
+                z =  comp_dist * diag
+              elif index == 4:
+                x =  comp_dist * diag
+                y =  comp_dist * diag
+                z = -comp_dist * diag
+              elif index == 5:
+                x = -comp_dist * diag
+                y =  comp_dist * diag
+                z = -comp_dist * diag
+              elif index == 6:
+                x =  comp_dist * diag
+                y = -comp_dist * diag
+                z = -comp_dist * diag
+              else:
+                x = -comp_dist * diag
+                y = -comp_dist * diag
+                z = -comp_dist * diag
+
+            else:
+              # Get component locations from a Fibonacci Sphere
+              rnd = 1
+              offset = 2.0 / num_comps
+              increment = math.pi * (3.0 - math.sqrt(5.0))
+              i = index
+              y = ((i * offset) -1) + (offset / 2);
+              r = math.sqrt ( 1 - math.pow(y,2) );
+              phi = ( (i+rnd) % num_comps ) * increment;
+              x = math.cos(phi) * r;
+              z = math.sin(phi) * r;
+              x = x * comp_dist
+              y = y * comp_dist
+              z = z * comp_dist
+
+            # Move coordinate values close to zero ... to zero
+            if abs(x) < 1e-10:
+              x = 0
+            if abs(y) < 1e-10:
+              y = 0
+            if abs(z) < 1e-10:
+              z = 0
+
+            # Show the point
+            col = layout.column()
+            col.label ( "x="+format(x,'.6g') )
+            col = layout.column()
+            col.label ( "y="+format(y,'.6g') )
+            col = layout.column()
+            col.label ( "z="+format(z,'.6g') )
+
+        elif data.geom_type == 'XYZ':
+
+            # Arrange the components at the coordinates x, y, z
+
+            ps = context.scene.mcell.parameter_system
+
+            col = layout.column()
+            col.label(text='loc [x,y,z]', icon='NONE')
+
+            col = layout.column()
+            item.loc_x.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.loc_y.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.loc_z.draw_prop_only ( col, ps )
+
+        elif data.geom_type == 'XYZA':
+
+            # Arrange the components at the coordinates x, y, z with binding angle
+
+            ps = context.scene.mcell.parameter_system
+
+            col = layout.column()
+            col.label(text='x,y,z,ang', icon='NONE')
+
+            col = layout.column()
+            item.loc_x.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.loc_y.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.loc_z.draw_prop_only ( col, ps )
+
+            col = layout.column()
+            item.rot_ang.draw_prop_only ( col, ps )
+
+        elif data.geom_type == 'XYZVA':
+
+            # Arrange the components at the coordinates x, y, z with binding angle about a vector
+
+            ps = context.scene.mcell.parameter_system
+
+            col = layout.column()
+            col.label(text='loc [x,y,z]', icon='NONE')
+
+            col = layout.column()
+            item.loc_x.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.loc_y.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.loc_z.draw_prop_only ( col, ps )
+
+            col = layout.column()
+            col.label(text='rot [x,y,z,ang]', icon='NONE')
+
+            col = layout.column()
+            item.rot_x.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.rot_y.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.rot_z.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.rot_ang.draw_prop_only ( col, ps )
 
 
 class MCell_OT_molecule_show_all(bpy.types.Operator):
