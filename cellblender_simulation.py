@@ -2052,8 +2052,18 @@ def sim_runner_changed_callback ( self, context ):
     """ The run lists are somewhat incompatible between sim runners, so just clear them when switching. """
     # print ( "Sim Runner has been changed!!" )
     # mcell = context.scene.mcell
-    bpy.ops.mcell.clear_run_list()
-    bpy.ops.mcell.clear_simulation_queue()
+    # These sometimes create a Blender context exception.
+    # The try/catch just ensures that both have a chance.
+    try:
+      bpy.ops.mcell.clear_run_list()
+    except:
+      print ( "Warning from sim_runner_changed_callback: unable to clear run list" )
+      pass
+    try:
+      bpy.ops.mcell.clear_simulation_queue()
+    except:
+      print ( "Warning from sim_runner_changed_callback: unable to clear simulation queue" )
+      pass
 
 
 def check_start_seed(self, context):
