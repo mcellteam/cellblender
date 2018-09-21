@@ -268,9 +268,26 @@ class MCELL_OT_mol_comp_stick(bpy.types.Operator):
             meshes.remove ( meshes[shape_name] )
 
         shape_vertices = []
+        # Start with the origin molecule (for radial lines)
         shape_vertices.append ( mathutils.Vector((0.0, 0.0, 0.0)) )
+
+
         for index in range(num_comps):
-          loc = get_3D_auto_point ( num_comps, comp_dist, index )
+
+          loc = [0.0, 0.0, 0.0]
+          print ( "Mol geometry = " + this_mol.geom_type )
+
+          if this_mol.geom_type == '2DAuto':
+            loc = get_2D_auto_point ( num_comps, comp_dist, index )
+
+          elif this_mol.geom_type == '3DAuto':
+            loc = get_3D_auto_point ( num_comps, comp_dist, index )
+
+          elif this_mol.geom_type in ['XYZ','XYZA','XYZVA']:
+            loc[0] = this_mol.component_list[index].loc_x.get_value();
+            loc[1] = this_mol.component_list[index].loc_y.get_value();
+            loc[2] = this_mol.component_list[index].loc_z.get_value();
+
           x = loc[0]
           y = loc[1]
           z = loc[2]
@@ -1497,6 +1514,24 @@ class MCell_UL_check_molecule(bpy.types.UIList):
                 else:
                     col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
 
+
+
+
+def get_2D_auto_point ( num_components, component_radius, component_index ):
+  x = 0
+  y = 0
+  z = 0
+  angle = 2 * math.pi * component_index / num_components;
+  x = component_radius * math.cos(angle)
+  y = component_radius * math.sin(angle)
+  if abs(x) < 1e-10:
+    x = 0
+  if abs(y) < 1e-10:
+    y = 0
+  return [x, y, z]
+
+
+
 def get_3D_auto_point ( num_components, component_radius, component_index ):
   x = 0
   y = 0
@@ -1642,6 +1677,7 @@ def get_3D_auto_point ( num_components, component_radius, component_index ):
   return [x, y, z]
 
 
+
 class MCell_UL_check_component(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # print ("Draw with " + str(data) + " " + str(item) + " " + str(active_data) + " " + str(active_propname) + " " + str(index) )
@@ -1662,13 +1698,13 @@ class MCell_UL_check_component(bpy.types.UIList):
             this_mol = mols.molecule_list[mols.active_mol_index]
             num_comps = len(this_mol.component_list)
             comp_dist = this_mol.component_distance
-            angle = 2 * math.pi * index / num_comps;
-            x = comp_dist * math.cos(angle)
-            y = comp_dist * math.sin(angle)
-            if abs(x) < 1e-10:
-              x = 0
-            if abs(y) < 1e-10:
-              y = 0
+
+            loc = get_2D_auto_point ( num_comps, comp_dist, index )
+
+            x = loc[0]
+            y = loc[1]
+            z = loc[2]
+
             col = layout.column()
             col.label ( "x="+format(x,'.6g') )
             col = layout.column()
