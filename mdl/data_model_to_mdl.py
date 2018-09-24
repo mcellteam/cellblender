@@ -816,6 +816,8 @@ try:
         mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
         wd = output_data_dir
         p = subprocess.Popen(mdlr_args, cwd = wd)
+        p.wait()
+        print ( "\n\nAfter p.wait()\n\n" )
 
         # For now return no commands at all since the run has already taken place
         command_list = []
