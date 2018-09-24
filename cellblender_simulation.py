@@ -920,9 +920,11 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           print ( "\n\nConverting MDLR to MDL by running " + str(mdlr_args) + " from " + str(wd) )
                           #p = subprocess.Popen(mdlr_args, cwd = wd)
                           # The previous seemed to fail. Try this:
+                          print ( "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" )
                           with subprocess.Popen(mdlr_args, env=my_env, cwd=wd, stdout=subprocess.PIPE) as pre_proc:
                               pre_proc.wait()
-                              print ( "\n\nAfter with:\n" + str(pre_proc.stdout.read().decode('utf-8')) + "\n\n" )
+                              print ( "\n\nProcess Finished with:\n" + str(pre_proc.stdout.read().decode('utf-8')) + "\n\n" )
+                          print ( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" )
                           print ( "Done " + str(mdlr_args) + " from " + str(wd) )
 
                           # Passing mcellr_args as a list seemed to cause problems ... try as a string instead ...

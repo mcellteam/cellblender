@@ -917,9 +917,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self ):
         m = self
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2018_08_21_1200"
+        m_dict['data_model_version'] = "DM_2018_09_24_1620"
         m_dict['mol_name'] = m.name
         m_dict['description'] = m.description
+        m_dict['spatial_structure'] = m.geom_type
         comp_list = []
         for comp in self.component_list:
           comp_list.append ( { 'cname':comp.component_name,
@@ -1041,9 +1042,15 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                       comp['rot_ang'] = comp.pop('ang')
             dm['data_model_version'] = "DM_2018_08_21_1200"
 
+        if dm['data_model_version'] == "DM_2018_08_21_1200":
+            # Change on September 24th, 2018 to add the spatial_structure type indicator
+            # Use a default of "None" for older models that had no spatial structure
+            dm['spatial_structure'] = "None"
+            dm['data_model_version'] = "DM_2018_09_24_1620"
+
 
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2018_08_21_1200":
+        if dm['data_model_version'] != "DM_2018_09_24_1620":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
@@ -1052,7 +1059,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2018_08_21_1200":
+        if dm_dict['data_model_version'] != "DM_2018_09_24_1620":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
@@ -1061,6 +1068,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             for comp in dm_dict["bngl_component_list"]:
                 self.add_component ( context, comp['cname'], " ".join(comp['cstates']), comp['loc_x'], comp['loc_y'], comp['loc_z'], comp['rot_x'], comp['rot_y'], comp['rot_z'], comp['rot_ang'] )
         if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
+        if "spatial_structure" in dm_dict: self.geom_type = dm_dict["spatial_structure"]
         if "mol_type" in dm_dict: self.type = dm_dict["mol_type"]
         if "diffusion_constant" in dm_dict: self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
         if "target_only" in dm_dict: self.target_only = dm_dict["target_only"]
