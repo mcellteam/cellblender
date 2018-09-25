@@ -562,6 +562,72 @@ class MCellMolComponentProperty(bpy.types.PropertyGroup):
         print ( "Done removing all Component Properties." )
 
 
+class MCell_OT_molecule_recalc_comps(bpy.types.Operator):
+    bl_idname = "mcell.molecule_recalc_comps"
+    bl_label = "Recalculate"
+    bl_description = "Recalculate Component Geometry"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.mcell.molecules
+        print ( "Recalculating Component Geometry" )
+        for m in ms.molecule_list:
+          if (m.geom_type == '2DAuto') or (m.geom_type == '3DAuto'):
+            print ( "Updating molecule " + str(m) )
+            num_comps = len(m.component_list)
+            comp_dist = m.component_distance
+            index = 0
+            for comp in m.component_list:
+              loc = []
+              if m.geom_type == '2DAuto':
+                loc = get_2D_auto_point ( num_comps, comp_dist, index )
+              if m.geom_type == '3DAuto':
+                loc = get_3D_auto_point ( num_comps, comp_dist, index )
+              print ( "Move Mol Component \"" + comp.component_name + "\" to:" + str(loc) )
+              comp.loc_x.set_expr ( str(loc[0]) )
+              comp.loc_y.set_expr ( str(loc[1]) )
+              comp.loc_z.set_expr ( str(loc[2]) )
+              index += 1
+        return {'FINISHED'}
+
+
+### Using a mode change callback is one way to swap in the fields (currently disabled)
+def mol_geom_type_changed_callback ( self, context ):
+    print ( "Geometry Type has been changed!!" )
+    print ( "self = " + str(self) )
+
+    # ps = context.scene.mcell.parameter_system
+
+    if self.geom_type == '2DAuto':
+
+        # Arrange the components evenly spaced on a circle in the x-y plane
+        this_mol = self
+        num_comps = len(this_mol.component_list)
+        comp_dist = this_mol.component_distance
+        index = 0
+        for comp in this_mol.component_list:
+          loc = get_2D_auto_point ( num_comps, comp_dist, index )
+          print ( "Move 2D Mol Component \"" + comp.component_name + "\" to:" + str(loc) )
+          # These created an error: AttributeError: bpy_struct: attribute "loc_x" from "MCellMolComponentProperty" is read-only
+          #comp.loc_x = loc[0]
+          #comp.loc_y = loc[1]
+          #comp.loc_z = loc[2]
+          index += 1
+
+    elif self.geom_type == '3DAuto':
+
+        # Arrange the components evenly spaced on a sphere
+        this_mol = self
+        num_comps = len(this_mol.component_list)
+        comp_dist = this_mol.component_distance
+        for index in range(num_comps):
+          loc = get_3D_auto_point ( num_comps, comp_dist, index )
+          # print ( "Move 3D Mol Component \"" + comp.component_name + "\" to:" + str(loc) )
+
+    # item.loc_x = x
+
+
+
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
@@ -585,6 +651,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         items=geom_type_enum, name="Geometry",
         default='None',
         description="Layout method for Complex Molecules." )
+        #,
+        #update=mol_geom_type_changed_callback)
 
     component_distance = FloatProperty ( name="CompDist", min=0.0, default=0.01, description="Distance of Components from Molecule" )
 
@@ -1169,6 +1237,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
                   col = row.column()
                   col.prop(self, "component_distance")
+                  col = row.column()
+                  col.operator("mcell.molecule_recalc_comps", icon='FILE_REFRESH', text="")
             else:
                 #row.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
                 col = row.column()
@@ -1178,7 +1248,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
                   col = row.column()
                   col.prop(self, "component_distance")
-
+                  col = row.column()
+                  col.operator("mcell.molecule_recalc_comps", icon='FILE_REFRESH', text="")
 
                 row = box.row()
                 col = row.column()

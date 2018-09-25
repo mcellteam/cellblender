@@ -614,6 +614,12 @@ try:
                       f.write( c['cname'] )
                       for state in c['cstates']:
                         f.write ( "~" + state )
+                      if 'spatial_structure' in m:
+                        if m['spatial_structure'] != "None":
+                          # This molecule has spatial structure, so include it after the states
+                          f.write ( "{loc=[" + c['loc_x'] + "," + c['loc_y'] + "," + c['loc_z'] + "]" )
+                          f.write ( ",rot=[" + c['rot_x'] + "," + c['rot_y'] + "," + c['rot_z'] + "," + c['rot_ang'] + "]}" )
+                          print ( " Writing out spatial structure for mol " + m['mol_name'] + ", component " + c['cname'] )
                       if ci < num_components-1:
                         f.write ( "," )
                   f.write( ")" )
@@ -815,9 +821,12 @@ try:
         mdlr_cmd = os.path.join ( cb_path, 'mdlr2mdl.py' )
         mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
         wd = output_data_dir
-        p = subprocess.Popen(mdlr_args, cwd = wd)
+        p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
         p.wait()
-        print ( "\n\nAfter p.wait()\n\n" )
+        print ( "\n\n||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" )
+        print ( "\n\nProcess Finished from write_mdlr with:\n" + str(p.stdout.read().decode('utf-8')) + "\n\n" )
+        print ( "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n\n" )
+
 
         # For now return no commands at all since the run has already taken place
         command_list = []
