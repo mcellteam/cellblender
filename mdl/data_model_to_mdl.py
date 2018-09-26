@@ -548,7 +548,7 @@ try:
         final_lib_path = os.path.join(final_shared_path,"lib") + os.path.sep
         print ( "final_lib_path = " + str(final_lib_path) )
 
-        final_mcell_path = os.path.join(final_shared_path,"mcell")
+        final_mcell_path = os.path.join(final_shared_path,"mcell","mcell")
         print ( "final_mcell_path = " + str(final_mcell_path) )
 
         output_data_dir = project_dir
