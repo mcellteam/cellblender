@@ -914,7 +914,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           else:
                             my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
 
-                          mdlr_cmd = os.path.join ( ext_path, 'mdlr2mdl.py' )
+                          mdlr_cmd = os.path.join ( ext_path, 'mcell', 'mdlr2mdl.py' )
                           mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
                           wd = run_cmd[1]
                           print ( "\n\nConverting MDLR to MDL by running " + str(mdlr_args) + " from " + str(wd) )

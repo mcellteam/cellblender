@@ -539,7 +539,7 @@ try:
         print ( "project_dir = " + str(project_dir) )
 
         final_shared_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),"extensions")
-        cb_path = "" + final_shared_path
+        mc_path = os.path.join ( final_shared_path, "mcell" )
         print ( "final_shared_path = " + str(final_shared_path) )
 
         final_bionetgen_path = os.path.join(final_shared_path,"bng2","BNG2.pl")
@@ -818,7 +818,7 @@ try:
         end_seed = int(lseed)
 
         # execute mdlr2mdl.py to generate MDL from MDLR
-        mdlr_cmd = os.path.join ( cb_path, 'mdlr2mdl.py' )
+        mdlr_cmd = os.path.join ( mc_path, 'mdlr2mdl.py' )
         mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
         wd = output_data_dir
         p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
@@ -832,7 +832,7 @@ try:
         command_list = []
 
         command_dict = { 'cmd': cellblender.python_path,
-                         'args': [ os.path.join(cb_path, "mcell3r.py"), '-s', fseed, '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ],
+                         'args': [ os.path.join(mc_path, "mcell3r.py"), '-s', fseed, '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ],
                          'wd': output_data_dir
                        }
 
