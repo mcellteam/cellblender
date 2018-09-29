@@ -930,6 +930,8 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           # Passing mcellr_args as a list seemed to cause problems ... try as a string instead ...
                           # mcellr_args = [ os.path.join(ext_path, "mcell3r.py"), '-s', str(run_cmd[5]), '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ]
                           mcellr_args = os.path.join(ext_path, "mcell3r.py") + ' -s ' + str(run_cmd[5]) + ' -r ' + 'Scene.mdlr_rules.xml' + ' -m ' + 'Scene.main.mdl'
+                          if len(mcell.initialization.command_options) > 0:
+                            mcellr_args = mcellr_args + " " + mcell.initialization.command_options
 
                           make_texts = run_sim.save_text_logs
                           print ( 100 * "@" )
@@ -947,6 +949,8 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
 
                           mdl_filename = '%s.main.mdl' % (run_cmd[2])
                           mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
+                          if len(mcell.initialization.command_options) > 0:
+                            mcell_args = mcell_args + " " + mcell.initialization.command_options
                           make_texts = run_sim.save_text_logs
                           print ( 100 * "@" )
                           print ( "Add Task:" + run_cmd[0] + " args:" + str(mcell_args) + " wd:" + str(run_cmd[1]) + " txt:" + str(make_texts) )

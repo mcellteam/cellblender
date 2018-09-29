@@ -89,6 +89,8 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
     vacancy_search_distance = PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
     surface_grid_density = PointerProperty ( name="Surface Grid Density", type=parameter_system.Parameter_Reference )
 
+    command_options = StringProperty(name="Command Options", default="")
+
     def init_properties ( self, parameter_system ):
         helptext = "Number of iterations to run"
         self.iterations.init_ref    ( parameter_system,
@@ -221,6 +223,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         dm_dict['accurate_3d_reactions'] = self.accurate_3d_reactions==True
         dm_dict['center_molecules_on_grid'] = self.center_molecules_grid==True
         dm_dict['export_all_ascii'] = self.export_all_ascii==True
+        dm_dict['command_options'] = self.command_options
 
         notify_dict = {}
         notify_dict['all_notifications'] = str(self.all_notifications)
@@ -299,6 +302,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         if "accurate_3d_reactions" in dm_dict: self.accurate_3d_reactions = dm_dict["accurate_3d_reactions"]
         if "center_molecules_on_grid" in dm_dict: self.center_molecules_grid = dm_dict["center_molecules_on_grid"]
         if "export_all_ascii" in dm_dict: self.export_all_ascii = dm_dict["export_all_ascii"]
+        if "command_options" in dm_dict: self.command_options = dm_dict["command_options"]
 
         if "notifications" in dm_dict:
             note_dict = dm_dict['notifications']
@@ -539,6 +543,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
     center_on_grid_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     micro_rev_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     export_ascii_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    command_options_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
@@ -605,6 +610,8 @@ surfaces or only for those in the volume. OFF is the default."""
 read by MCell, export ASCII formatted data. The default is OFF."""
                 ps.draw_prop_with_help ( box, "Export all molecules as ASCII", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
                 
+                helptext = "Command Line Parameters - \nThese options are passed directly to the program."
+                ps.draw_prop_with_help ( box, "Command Options", mcell.initialization, "command_options", "command_options_show_help", self.command_options_show_help, helptext )
 
             else:
                 row.prop(mcell.initialization, "advanced", icon='TRIA_RIGHT',
