@@ -644,6 +644,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('None',   "Coincident", ""),
         ('2DAuto', "2D Auto", ""),
         ('3DAuto', "3D Auto", ""),
+        ('XYZRef', "XYZ,Ref Specified", ""),
         ('XYZ',    "XYZ Specified", ""),
         ('XYZA',   "XYZ,A Specified", ""),
         ('XYZVA',  "XYZ,V,A Specified", "")]
@@ -1828,6 +1829,32 @@ class MCell_UL_check_component(bpy.types.UIList):
             item.loc_y.draw_prop_only ( col, ps )
             col = layout.column()
             item.loc_z.draw_prop_only ( col, ps )
+
+        elif data.geom_type == 'XYZRef':
+
+            # Arrange the components at the coordinates x, y, z with reference point (using rot_x, rot_y, rot_z)
+
+            ps = context.scene.mcell.parameter_system
+
+            col = layout.column()
+            col.label(text='loc [x,y,z]', icon='NONE')
+
+            col = layout.column()
+            item.loc_x.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.loc_y.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.loc_z.draw_prop_only ( col, ps )
+
+            col = layout.column()
+            col.label(text='ref [x,y,z]', icon='NONE')
+
+            col = layout.column()
+            item.rot_x.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.rot_y.draw_prop_only ( col, ps )
+            col = layout.column()
+            item.rot_z.draw_prop_only ( col, ps )
 
         elif data.geom_type == 'XYZA':
 
