@@ -850,7 +850,7 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
 class MolMaker_OT_build_3D(bpy.types.Operator):
   bl_idname = "mol.rebuild_three_d"
   bl_label = "Build 3D"
-  bl_description = "Build a molecule based on CellBlender Definitions"
+  bl_description = "Build a molecule based on 3D Definitions"
   bl_options = {'REGISTER', 'UNDO'}
 
   def execute(self, context):
@@ -878,12 +878,12 @@ class MolMakerMolCompProperty(bpy.types.PropertyGroup):
   bond_index = IntProperty(name="Bond Index", default=-1)
   key_index = IntProperty(default=-1)
   error = StringProperty(default="")
-  
 
-class MolMaker_OT_scripting_refresh(bpy.types.Operator):
+
+class MolMaker_OT_refresh_mol_def(bpy.types.Operator):
   bl_idname = "mol.refresh_mol_def"
-  bl_label = "Refresh Complex"
-  bl_description = "Refresh the Molecules"
+  bl_label = "Layout Parts"
+  bl_description = "Layout Components for this Complex"
   bl_options = {'REGISTER', 'UNDO'}
 
   def execute(self, context):
@@ -906,8 +906,7 @@ class MolMaker_OT_scripting_refresh(bpy.types.Operator):
         for cindex in range(len(m.component_list)):
           new_comp = molmaker.molcomp_items.add()
           new_comp.name = m.component_list[cindex].component_name
-          r_index = m.component_list[cindex].rot_index
-          if r_index < 0:
+          if m.component_list[cindex].is_key:
             new_comp.field_type = "k"
           else:
             new_comp.field_type = "c"
@@ -1004,20 +1003,16 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
         col = row.column()
         col.label ( str(i) + " Molecule " + m.name )
         col = row.column()
-        col = row.column()
       elif m.field_type == "c":
         col = row.column()
         col.label ( str(i) + "     Component " + m.name )
         col = row.column()
         col.prop ( m, 'bond_index' )
         col = row.column()
-        col.prop ( m, 'key_index' )
-        col = row.column()
         col.prop ( m, 'angle' )
       elif m.field_type == "k":
         col = row.column()
         col.label ( str(i) + "     Key " + m.name )
-        col = row.column()
         col = row.column()
         col = row.column()
 

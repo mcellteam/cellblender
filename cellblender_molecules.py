@@ -531,6 +531,7 @@ class MCellMolComponentProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     component_name = StringProperty(default="", description="Component name")
     states_string = StringProperty(default="", description="States String")
+    is_key = BoolProperty(default=False, description="Indicates that this is a Rotation Key and not a true component")
     loc_x = PointerProperty ( name="loc_x",  type=parameter_system.Parameter_Reference )
     loc_y = PointerProperty ( name="loc_y",  type=parameter_system.Parameter_Reference )
     loc_z = PointerProperty ( name="loc_z",  type=parameter_system.Parameter_Reference )
@@ -592,6 +593,69 @@ class MCell_OT_molecule_recalc_comps(bpy.types.Operator):
               comp.loc_z.set_expr ( str(loc[2]) )
               index += 1
         return {'FINISHED'}
+
+
+class MCell_OT_molecule_2D_Circ(bpy.types.Operator):
+    bl_idname = "mcell.dist_two_d_circle"
+    bl_label = "Recalculate 2D"
+    bl_description = "Recalculate 2D Component Geometry"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        print ( "Recalculating Molecule Component Geometry in 3D" )
+        ps = context.scene.mcell.parameter_system
+        mols = context.scene.mcell.molecules
+        this_mol = mols.molecule_list[mols.active_mol_index]
+
+        # Arrange the components evenly spaced on a sphere
+
+        mols = context.scene.mcell.molecules
+        this_mol = mols.molecule_list[mols.active_mol_index]
+
+        # Create a list of ONLY the actual components
+        comp_only_list = [ c for c in this_mol.component_list if c.is_key == False ]
+        num_comps = len(comp_only_list)
+        comp_dist = this_mol.component_distance
+        index = 0
+        for comp in comp_only_list:
+          loc = get_2D_auto_point ( num_comps, comp_dist, index )
+          comp.loc_x.set_expr ( str(loc[0]) )
+          comp.loc_y.set_expr ( str(loc[1]) )
+          comp.loc_z.set_expr ( str(loc[2]) )
+          index += 1
+        return {'FINISHED'}
+
+
+class MCell_OT_molecule_3D_Sp(bpy.types.Operator):
+    bl_idname = "mcell.dist_three_d_sphere"
+    bl_label = "Recalculate 3D"
+    bl_description = "Recalculate 3D Component Geometry"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        print ( "Recalculating Molecule Component Geometry in 3D" )
+        ps = context.scene.mcell.parameter_system
+        mols = context.scene.mcell.molecules
+        this_mol = mols.molecule_list[mols.active_mol_index]
+
+        # Arrange the components evenly spaced on a sphere
+
+        mols = context.scene.mcell.molecules
+        this_mol = mols.molecule_list[mols.active_mol_index]
+
+        # Create a list of ONLY the actual components
+        comp_only_list = [ c for c in this_mol.component_list if c.is_key == False ]
+        num_comps = len(comp_only_list)
+        comp_dist = this_mol.component_distance
+        index = 0
+        for comp in comp_only_list:
+          loc = get_3D_auto_point ( num_comps, comp_dist, index )
+          comp.loc_x.set_expr ( str(loc[0]) )
+          comp.loc_y.set_expr ( str(loc[1]) )
+          comp.loc_z.set_expr ( str(loc[2]) )
+          index += 1
+        return {'FINISHED'}
+
 
 
 ### Using a mode change callback is one way to swap in the fields (currently disabled)
@@ -962,11 +1026,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         remove_mol_data_by_name ( self.name, context )
 
 
-    def add_component_vals ( self, context, name, states="", loc_x = "0", loc_y="0", loc_z="0", rot_x="0", rot_y="0", rot_z="0", rot_ang="0", rot_index=-1 ):
+    def add_component_vals ( self, context, name, states="", is_key = False, loc_x = "0", loc_y="0", loc_z="0", rot_x="0", rot_y="0", rot_z="0", rot_ang="0", rot_index=-1 ):
         new_comp = self.component_list.add()
         new_comp.init_properties(context.scene.mcell.parameter_system)
         new_comp.component_name = name
         new_comp.states_string = states
+        new_comp.is_key = is_key;
         new_comp.loc_x.set_expr ( loc_x )
         new_comp.loc_y.set_expr ( loc_y )
         new_comp.loc_z.set_expr ( loc_z )
@@ -990,7 +1055,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self ):
         m = self
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2018_10_15_2242"
+        m_dict['data_model_version'] = "DM_2018_10_16_1632"
         m_dict['mol_name'] = m.name
         m_dict['description'] = m.description
         m_dict['spatial_structure'] = m.geom_type
@@ -998,6 +1063,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         for comp in self.component_list:
           comp_list.append ( { 'cname':comp.component_name,
                                'cstates':comp.states_string.replace(',',' ').split(),
+                               'is_key':comp.is_key,
                                'loc_x':comp.loc_x.get_expr(),
                                'loc_y':comp.loc_y.get_expr(),
                                'loc_z':comp.loc_z.get_expr(),
@@ -1127,9 +1193,16 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 for comp in dm['bngl_component_list']:
                     comp['rot_index'] = 0
             dm['data_model_version'] = "DM_2018_10_15_2242"
+        if dm['data_model_version'] == "DM_2018_10_15_2242":
+            # Change on October 16th, 2018 to add an is_key flag (reflects older "comp_not_key" variable used in some code)
+            # Older code did not have rotation keys, so set them to False when upgrading
+            if 'bngl_component_list' in dm:
+                for comp in dm['bngl_component_list']:
+                    comp['is_key'] = False
+            dm['data_model_version'] = "DM_2018_10_16_1632"
 
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2018_10_15_2242":
+        if dm['data_model_version'] != "DM_2018_10_16_1632":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
@@ -1138,14 +1211,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2018_10_15_2242":
+        if dm_dict['data_model_version'] != "DM_2018_10_16_1632":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
         self.description = dm_dict["description"]
         if "bngl_component_list" in dm_dict:
             for comp in dm_dict["bngl_component_list"]:
-                self.add_component_vals ( context, comp['cname'], " ".join(comp['cstates']), comp['loc_x'], comp['loc_y'], comp['loc_z'], comp['rot_x'], comp['rot_y'], comp['rot_z'], comp['rot_ang'], comp['rot_index'] )
+                self.add_component_vals ( context, comp['cname'], " ".join(comp['cstates']), comp['is_key'], comp['loc_x'], comp['loc_y'], comp['loc_z'], comp['rot_x'], comp['rot_y'], comp['rot_z'], comp['rot_ang'], comp['rot_index'] )
         if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
         if "spatial_structure" in dm_dict: self.geom_type = dm_dict["spatial_structure"]
         if "mol_type" in dm_dict: self.type = dm_dict["mol_type"]
@@ -1257,7 +1330,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col = row.column()
                 col.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
                 col = row.column()
-                col.prop(self, "geom_type" );
+                col.prop(self, "geom_type" )
+                col = row.column() # Provide some space?
+                col.label ( " " )
+                col = row.column()
+                col.operator ( "mcell.dist_two_d_circle", icon='FILE_REFRESH', text='2D' )
+                col = row.column()
+                col.operator ( "mcell.dist_three_d_sphere", icon='FILE_REFRESH', text='3D' )
                 if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
                   col = row.column()
                   col.prop(self, "component_distance")
@@ -1727,14 +1806,21 @@ class MCell_UL_check_component(bpy.types.UIList):
         col = layout.column()
         if data.geom_type == 'XYZRef':
           #col.label(text=str(index) + ': Component / States:', icon='NONE')
-          col.label(text=str(index), icon='NONE')
+          label = str(index) + ": (Component)"
+          if item.is_key:
+            label = str(index) + ": (Rotation Key)"
+          col.prop (item, 'is_key', text=label, icon='NONE')
         else:
           col.label(text='Component / States:', icon='NONE')
 
         col = layout.column()
         col.prop(item, "component_name", text='', icon='NONE')
+
         col = layout.column()
-        col.prop(item, "states_string", text='', icon='NONE')
+        if (data.geom_type == 'XYZRef') and item.is_key:
+          col.label(text=' ', icon='NONE')
+        else:
+          col.prop(item, "states_string", text='', icon='NONE')
 
         if data.geom_type == '2DAuto':
 
@@ -1763,10 +1849,16 @@ class MCell_UL_check_component(bpy.types.UIList):
             ps = context.scene.mcell.parameter_system
             mols = context.scene.mcell.molecules
             this_mol = mols.molecule_list[mols.active_mol_index]
-            num_comps = len(this_mol.component_list)
+
+            # Create a list of ONLY the actual components
+            comp_only_list = [ c for c in this_mol.component_list if c.is_key == False ]
+            # Get the index of the original item in the new comp_only_list
+            comp_only_index = comp_only_list.index(this_mol.component_list[index])
+
+            num_comps = len(comp_only_list)
             comp_dist = this_mol.component_distance
 
-            loc = get_3D_auto_point ( num_comps, comp_dist, index )
+            loc = get_3D_auto_point ( num_comps, comp_dist, comp_only_index )
 
             x = loc[0]
             y = loc[1]
@@ -1813,7 +1905,10 @@ class MCell_UL_check_component(bpy.types.UIList):
             item.loc_z.draw_prop_only ( col, ps )
 
             col = layout.column()
-            col.prop ( item, "rot_index", text="Ref:", icon='NONE' )
+            if item.is_key:
+              col.label(text=' ', icon='NONE')
+            else:
+              col.prop ( item, "rot_index", text="Ref:", icon='NONE' )
 
         elif data.geom_type == 'XYZA':
 
