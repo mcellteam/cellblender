@@ -29,6 +29,7 @@ cellblender_info = {
         "cellblender_initialization.py",
         "cellblender_glyphs.py",
         "cellblender_molecules.py",
+        "cellblender_molmaker.py",
         "cellblender_reactions.py",
         "cellblender_release.py",
         "cellblender_surface_classes.py",

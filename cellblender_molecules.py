@@ -1230,7 +1230,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
               comp_label += " ( " + ", ".join(comp_list) + " )"
 
             if not molecules.show_components:
-                #row.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
+                row.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
+                """
                 col = row.column()
                 col.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
                 col = row.column()
@@ -1240,6 +1241,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                   col.prop(self, "component_distance")
                   col = row.column()
                   col.operator("mcell.molecule_recalc_comps", icon='FILE_REFRESH', text="")
+                """
             else:
                 #row.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
                 col = row.column()
@@ -1337,6 +1339,18 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             else:
                 print ( "Material " + mat_name + " not found, not showing materials" )
 
+
+        box = layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+        if not molecules.show_molmaker:
+            row.prop(molecules, "show_molmaker", icon='TRIA_RIGHT',
+                     text="Molecule Structure Tool", emboss=False)
+        else:
+            row.prop(molecules, "show_molmaker", icon='TRIA_DOWN',
+                     text="Molecule Structure Tool", emboss=False)
+            molmaker = bpy.context.scene.mcell.molmaker
+            molmaker.draw_layout ( bpy.context, box )
 
         box = layout.box()
         row = box.row(align=True)
@@ -1963,6 +1977,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     last_id = IntProperty(name="Counter for Unique Molecule IDs", default=0)  # Start ID's at 0 (will be incremented to 1)
+    show_molmaker = bpy.props.BoolProperty(default=False)
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_components = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!

@@ -62,6 +62,7 @@ if "bpy" in locals():
     imp.reload(cellblender_scripting)
     imp.reload(cellblender_objects)
     imp.reload(cellblender_molecules)
+    imp.reload(cellblender_molmaker)
     imp.reload(cellblender_reactions)
     imp.reload(cellblender_release)
     imp.reload(cellblender_surface_classes)
@@ -99,6 +100,7 @@ else:
     from . import cellblender_scripting
     from . import cellblender_objects
     from . import cellblender_molecules
+    from . import cellblender_molmaker
     from . import cellblender_reactions
     from . import cellblender_release
     from . import cellblender_surface_classes

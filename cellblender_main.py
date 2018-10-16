@@ -56,6 +56,7 @@ from . import cellblender_project
 from . import cellblender_initialization
 from . import cellblender_objects
 from . import cellblender_molecules
+from . import cellblender_molmaker
 from . import cellblender_reactions
 from . import cellblender_release
 from . import cellblender_surface_classes
@@ -939,6 +940,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     #parameters = PointerProperty ( type=MCellParametersPropertyGroup, name="Defined Parameters" )
     parameter_system = PointerProperty ( type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System" )
     molecules = PointerProperty ( type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules" )
+    molmaker = PointerProperty ( type=cellblender_molmaker.MCellMolMakerPropertyGroup, name="Molecule Maker" )
     reactions = PointerProperty ( type=cellblender_reactions.MCellReactionsListProperty, name="Defined Reactions" )
     surface_classes = PointerProperty ( type=cellblender_surface_classes.MCellSurfaceClassesPropertyGroup, name="Defined Surface Classes" )
     mod_surf_regions = PointerProperty ( type=cellblender_surface_regions.MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes" )
