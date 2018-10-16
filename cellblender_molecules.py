@@ -268,6 +268,9 @@ class MCELL_OT_mol_comp_stick(bpy.types.Operator):
             meshes.remove ( meshes[shape_name] )
 
         shape_vertices = []
+        shape_lines = []
+        shape_faces = []
+
         # Start with the origin molecule (for radial lines)
         shape_vertices.append ( mathutils.Vector((0.0, 0.0, 0.0)) )
 
@@ -283,7 +286,7 @@ class MCELL_OT_mol_comp_stick(bpy.types.Operator):
           elif this_mol.geom_type == '3DAuto':
             loc = get_3D_auto_point ( num_comps, comp_dist, index )
 
-          elif this_mol.geom_type in ['XYZ','XYZA','XYZVA']:
+          elif this_mol.geom_type in ['XYZ','XYZRef','XYZA','XYZVA']:
             loc[0] = this_mol.component_list[index].loc_x.get_value();
             loc[1] = this_mol.component_list[index].loc_y.get_value();
             loc[2] = this_mol.component_list[index].loc_z.get_value();
@@ -292,10 +295,8 @@ class MCELL_OT_mol_comp_stick(bpy.types.Operator):
           y = loc[1]
           z = loc[2]
           shape_vertices.append ( mathutils.Vector((x, y, z)) )
+          shape_lines.append ( [0,index+1] )
           print ( "  making a stick for " + str(x) + ", " + str(y) + ", " + str(z) )
-
-        shape_lines = []
-        shape_faces = []
 
         # Create and build the new mesh
         stick_shape_mesh = bpy.data.meshes.new ( shape_name )
@@ -536,6 +537,7 @@ class MCellMolComponentProperty(bpy.types.PropertyGroup):
     rot_x = PointerProperty ( name="rot_x",  type=parameter_system.Parameter_Reference )
     rot_y = PointerProperty ( name="rot_y",  type=parameter_system.Parameter_Reference )
     rot_z = PointerProperty ( name="rot_z",  type=parameter_system.Parameter_Reference )
+    rot_index = IntProperty ( name="AngleRef", default = 0 )
     rot_ang = PointerProperty ( name="rot_ang",  type=parameter_system.Parameter_Reference )
 
     def init_properties ( self, parameter_system ):
@@ -644,8 +646,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('None',   "Coincident", ""),
         ('2DAuto', "2D Auto", ""),
         ('3DAuto', "3D Auto", ""),
-        ('XYZRef', "XYZ,Ref Specified", ""),
-        ('XYZ',    "XYZ Specified", ""),
+        ('XYZRef', "XYZ,AngleRef", ""),
+        ('XYZ',    "XYZ", ""),
         ('XYZA',   "XYZ,A Specified", ""),
         ('XYZVA',  "XYZ,V,A Specified", "")]
     geom_type = EnumProperty(
@@ -1625,150 +1627,70 @@ def get_2D_auto_point ( num_components, component_radius, component_index ):
   return [x, y, z]
 
 
+def get_distributed_sphere_points ( num_points ):
+  points = None
+  if num_points == 0:     # Define the single point along the x axis
+    points = [ ]
+  elif num_points == 1:     # Define the single point along the x axis
+    points = [ [ 1, 0, 0 ] ]
+  elif num_points == 2:   # Define the two points along the x axis
+    points = [ [ 1, 0, 0 ], [ -1, 0, 0 ] ]
+  elif num_points == 3:   # Define an equilateral triangle in the x-y plane with one point on x axis
+    sr3o2 = math.sqrt(3.0) / 2.0
+    points = [ [ 1, 0, 0 ], [ -0.5, sr3o2, 0 ], [ -0.5, -sr3o2, 0 ] ]
+  elif num_points == 4:   # Define the points on a tetrahedron
+    oosr2 = 1.0 / math.sqrt(2.0)
+    points = [ [ 1, 0, -oosr2 ], [ -1, 0, -oosr2 ], [ 0, 1, oosr2 ], [ 0, -1, oosr2 ] ]
+  elif num_points == 5:   # The "best" answer isn't clear, so place one on each pole and 3 around the "equator"
+    sr3o2 = math.sqrt(3.0) / 2.0
+    points = [ [ 0, 0, 1 ], [ 1, 0, 0 ], [ -0.5, sr3o2, 0 ], [ -0.5, -sr3o2, 0 ], [ 0, 0, -1 ] ]
+  elif num_points == 6:   # Define 2 points on each axis (x, y, z)
+    points = [
+      [ 1, 0, 0 ],
+      [-1, 0, 0 ],
+      [ 0, 1, 0 ],
+      [ 0,-1, 0 ],
+      [ 0, 0, 1 ],
+      [ 0, 0,-1 ] ]
+  elif num_points == 8:   # Define 8 points at the corners of a cube
+    d = 1.0 / math.sqrt(3)
+    points = [
+      [  d,  d,  d ],
+      [  d,  d, -d ],
+      [  d, -d,  d ],
+      [  d, -d, -d ],
+      [ -d,  d,  d ],
+      [ -d,  d, -d ],
+      [ -d, -d,  d ],
+      [ -d, -d, -d ] ]
+  else:   # Use the Fibonacci Sphere Algorithm ("Golden Spiral") for any undefined number of points
+    points = [ [0,0,0] for i in range(num_points) ]
+    rnd = 1
+    offset = 2.0 / num_points
+    increment = math.pi * (3.0 - math.sqrt(5.0))
+    for i in range(num_points):
+      y = ((i * offset) -1) + (offset / 2)
+      r = math.sqrt ( 1 - math.pow(y,2) )
+      phi = ( (i+rnd) % num_points ) * increment
+
+      x = math.cos(phi) * r
+      z = math.sin(phi) * r
+      points[i][0] = x
+      points[i][1] = y
+      points[i][2] = z
+  return ( points )
+
 
 def get_3D_auto_point ( num_components, component_radius, component_index ):
+
   x = 0
   y = 0
   z = 0
 
-  if num_components == 1:
-    # Put the component along the x axis
-    x = component_radius
-    y = 0;
-    z = 0;
+  points = get_distributed_sphere_points ( num_components )
+  p = points[component_index]
 
-  elif num_components == 2:
-    # Put both components along the x axis
-    if component_index == 0:
-      x = component_radius
-      y = 0;
-      z = 0;
-    else:
-      x = -component_radius
-      y = 0;
-      z = 0;
-
-  elif num_components == 3:
-    # Put all components on the equator
-    if component_index == 0:
-      x = component_radius
-      y = 0;
-      z = 0;
-    elif component_index == 1:
-      x = math.cos(2*math.pi/3) * component_radius
-      y = math.sin(2*math.pi/3) * component_radius
-      z = 0
-    else:
-      x = math.cos(4*math.pi/3) * component_radius
-      y = math.sin(4*math.pi/3) * component_radius
-      z = 0
-
-  elif num_components == 4:
-    # Put components on a tetrahedron (coordinates from Blender)
-    if component_index == 0:
-      x = 0
-      y = 0;
-      z = component_radius;
-    elif component_index == 1:
-      x = 0
-      y = -0.942809 * component_radius
-      z = -0.333333 * component_radius
-    elif component_index == 2:
-      x = 0.816497 * component_radius
-      y = 0.471405 * component_radius
-      z = -0.333333 * component_radius
-    else:
-      x = -0.816497 * component_radius
-      y = 0.471405 * component_radius
-      z = -0.333333 * component_radius
-
-  elif num_components == 6:
-    # Put all components at each end of the 3 axes
-    if component_index == 0:
-      x = component_radius
-      y = 0
-      z = 0
-    elif component_index == 1:
-      x = -component_radius
-      y = 0
-      z = 0
-    elif component_index == 2:
-      x = 0
-      y = component_radius
-      z = 0
-    elif component_index == 3:
-      x = 0
-      y = -component_radius
-      z = 0
-    elif component_index == 4:
-      x = 0
-      y = 0
-      z = component_radius
-    else:
-      x = 0
-      y = 0
-      z = -component_radius
-
-  elif num_components == 8:
-    # Put all components at corners of a cube
-    diag = math.sqrt(3)/3
-    if component_index == 0:
-      x =  component_radius * diag
-      y =  component_radius * diag
-      z =  component_radius * diag
-    elif component_index == 1:
-      x = -component_radius * diag
-      y =  component_radius * diag
-      z =  component_radius * diag
-    elif component_index == 2:
-      x =  component_radius * diag
-      y = -component_radius * diag
-      z =  component_radius * diag
-    elif component_index == 3:
-      x = -component_radius * diag
-      y = -component_radius * diag
-      z =  component_radius * diag
-    elif component_index == 4:
-      x =  component_radius * diag
-      y =  component_radius * diag
-      z = -component_radius * diag
-    elif component_index == 5:
-      x = -component_radius * diag
-      y =  component_radius * diag
-      z = -component_radius * diag
-    elif component_index == 6:
-      x =  component_radius * diag
-      y = -component_radius * diag
-      z = -component_radius * diag
-    else:
-      x = -component_radius * diag
-      y = -component_radius * diag
-      z = -component_radius * diag
-
-  else:
-    # Get component locations from a Fibonacci Sphere
-    rnd = 1
-    offset = 2.0 / num_components
-    increment = math.pi * (3.0 - math.sqrt(5.0))
-    i = component_index
-    y = ((i * offset) -1) + (offset / 2);
-    r = math.sqrt ( 1 - math.pow(y,2) );
-    phi = ( (i+rnd) % num_components ) * increment;
-    x = math.cos(phi) * r;
-    z = math.sin(phi) * r;
-    x = x * component_radius
-    y = y * component_radius
-    z = z * component_radius
-
-  # Move coordinate values close to zero ... to zero
-  if abs(x) < 1e-10:
-    x = 0
-  if abs(y) < 1e-10:
-    y = 0
-  if abs(z) < 1e-10:
-    z = 0
-
-  return [x, y, z]
+  return ( [ v*component_radius for v in p ] )
 
 
 
@@ -1778,7 +1700,11 @@ class MCell_UL_check_component(bpy.types.UIList):
         # print ("  Type = " + data.geom_type )
 
         col = layout.column()
-        col.label(text='Component / States:', icon='NONE')
+        if data.geom_type == 'XYZRef':
+          col.label(text=str(index) + ': Component / States:', icon='NONE')
+        else:
+          col.label(text='Component / States:', icon='NONE')
+
         col = layout.column()
         col.prop(item, "component_name", text='', icon='NONE')
         col = layout.column()
@@ -1861,14 +1787,7 @@ class MCell_UL_check_component(bpy.types.UIList):
             item.loc_z.draw_prop_only ( col, ps )
 
             col = layout.column()
-            col.label(text='ref [x,y,z]', icon='NONE')
-
-            col = layout.column()
-            item.rot_x.draw_prop_only ( col, ps )
-            col = layout.column()
-            item.rot_y.draw_prop_only ( col, ps )
-            col = layout.column()
-            item.rot_z.draw_prop_only ( col, ps )
+            col.prop ( item, "rot_index", text='Index', icon='NONE' )
 
         elif data.geom_type == 'XYZA':
 

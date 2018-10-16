@@ -859,6 +859,22 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
 class MolMakerFileNameProperty(bpy.types.PropertyGroup):
   name = StringProperty(name="Script")
 
+class MolMakerMolCompProperty(bpy.types.PropertyGroup):
+  name = StringProperty(name="Script")
+  """
+    mc = { # 'line':l,
+      'ftype':'c',
+      'has_coords':False,
+      'is_final':False,
+      'coords':[0,0,0],
+      'name':"",
+      'graph_string':"",
+      'peer_list':[],
+      'key_list':[],
+      'angle': 0,
+    }
+  """
+
 
 class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   molecule_texts_list = CollectionProperty(type=MolMakerFileNameProperty, name="Molecule Texts List")
@@ -867,7 +883,18 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   comp_loc_text_name = StringProperty ( name = "Text name containing optional component locations (rather than from CellBlender)" )
 
 
+  molcomp_items = CollectionProperty(type=MolMakerMolCompProperty, name="MolCompList")
+
+  molecule_name = StringProperty ( name = "" )
+
+
   def draw_layout ( self, context, layout ):
+
+    mcell = context.scene.mcell
+
+    row = layout.row()
+    layout.prop_search( self, "molecule_name", mcell.molecules, "molecule_list", icon='FORCE_LENNARDJONES')
+
     row = layout.row()
     row.prop_search ( self, "molecule_text_name",
                       self, "molecule_texts_list",
