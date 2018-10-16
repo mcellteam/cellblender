@@ -537,8 +537,8 @@ class MCellMolComponentProperty(bpy.types.PropertyGroup):
     rot_x = PointerProperty ( name="rot_x",  type=parameter_system.Parameter_Reference )
     rot_y = PointerProperty ( name="rot_y",  type=parameter_system.Parameter_Reference )
     rot_z = PointerProperty ( name="rot_z",  type=parameter_system.Parameter_Reference )
-    rot_index = IntProperty ( name="AngleRef", default = 0 )
     rot_ang = PointerProperty ( name="rot_ang",  type=parameter_system.Parameter_Reference )
+    rot_index = IntProperty ( name="AngleRef", default = 0 )
 
     def init_properties ( self, parameter_system ):
 
@@ -549,6 +549,7 @@ class MCellMolComponentProperty(bpy.types.PropertyGroup):
         self.rot_x.init_ref   ( parameter_system, user_name="Component rotation axis x",   user_expr="0", user_units="none", user_descr="rot_x" )
         self.rot_y.init_ref   ( parameter_system, user_name="Component rotation axis y",   user_expr="0", user_units="none", user_descr="rot_y" )
         self.rot_z.init_ref   ( parameter_system, user_name="Component rotation axis z",   user_expr="0", user_units="none", user_descr="rot_z" )
+
         self.rot_ang.init_ref   ( parameter_system, user_name="Component rotation angle",   user_expr="0", user_units="degrees", user_descr="rot_ang" )
 
     def remove_properties ( self, context ):
@@ -961,18 +962,19 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         remove_mol_data_by_name ( self.name, context )
 
 
-    def add_component ( self, context, name, states="", loc_x = "0", loc_y="0", loc_z="0", rot_x="0", rot_y="0", rot_z="0", rot_ang="0" ):
+    def add_component_vals ( self, context, name, states="", loc_x = "0", loc_y="0", loc_z="0", rot_x="0", rot_y="0", rot_z="0", rot_ang="0", rot_index=-1 ):
         new_comp = self.component_list.add()
         new_comp.init_properties(context.scene.mcell.parameter_system)
         new_comp.component_name = name
         new_comp.states_string = states
-        new_comp.loc_x.set_expr ( loc_x );
-        new_comp.loc_y.set_expr ( loc_y );
-        new_comp.loc_z.set_expr ( loc_z );
-        new_comp.rot_x.set_expr ( rot_x );
-        new_comp.rot_y.set_expr ( rot_y );
-        new_comp.rot_z.set_expr ( rot_z );
-        new_comp.rot_ang.set_expr ( rot_ang );
+        new_comp.loc_x.set_expr ( loc_x )
+        new_comp.loc_y.set_expr ( loc_y )
+        new_comp.loc_z.set_expr ( loc_z )
+        new_comp.rot_x.set_expr ( rot_x )
+        new_comp.rot_y.set_expr ( rot_y )
+        new_comp.rot_z.set_expr ( rot_z )
+        new_comp.rot_ang.set_expr ( rot_ang )
+        new_comp.rot_index = rot_index
         self.active_component_index = len(self.component_list)-1
 
 
@@ -988,7 +990,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self ):
         m = self
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2018_09_24_1620"
+        m_dict['data_model_version'] = "DM_2018_10_15_2242"
         m_dict['mol_name'] = m.name
         m_dict['description'] = m.description
         m_dict['spatial_structure'] = m.geom_type
@@ -1002,7 +1004,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                                'rot_x':comp.rot_x.get_expr(),
                                'rot_y':comp.rot_y.get_expr(),
                                'rot_z':comp.rot_z.get_expr(),
-                               'rot_ang':comp.rot_ang.get_expr() } )
+                               'rot_ang':comp.rot_ang.get_expr(),
+                               'rot_index':comp.rot_index } )
         m_dict['bngl_component_list'] = comp_list
         m_dict['mol_bngl_label'] = m.bnglLabel
         m_dict['mol_type'] = str(m.type)
@@ -1112,16 +1115,21 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                     if 'ang' in comp:
                       comp['rot_ang'] = comp.pop('ang')
             dm['data_model_version'] = "DM_2018_08_21_1200"
-
         if dm['data_model_version'] == "DM_2018_08_21_1200":
             # Change on September 24th, 2018 to add the spatial_structure type indicator
             # Use a default of "None" for older models that had no spatial structure
             dm['spatial_structure'] = "None"
             dm['data_model_version'] = "DM_2018_09_24_1620"
-
+        if dm['data_model_version'] == "DM_2018_09_24_1620":
+            # Change on October 15th, 2018 to add the rotation angle reference index
+            # Add the new rot_index field as an integer (it doesn't need to be a parameterized string for now)
+            if 'bngl_component_list' in dm:
+                for comp in dm['bngl_component_list']:
+                    comp['rot_index'] = 0
+            dm['data_model_version'] = "DM_2018_10_15_2242"
 
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2018_09_24_1620":
+        if dm['data_model_version'] != "DM_2018_10_15_2242":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
@@ -1130,14 +1138,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2018_09_24_1620":
+        if dm_dict['data_model_version'] != "DM_2018_10_15_2242":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
         self.description = dm_dict["description"]
         if "bngl_component_list" in dm_dict:
             for comp in dm_dict["bngl_component_list"]:
-                self.add_component ( context, comp['cname'], " ".join(comp['cstates']), comp['loc_x'], comp['loc_y'], comp['loc_z'], comp['rot_x'], comp['rot_y'], comp['rot_z'], comp['rot_ang'] )
+                self.add_component_vals ( context, comp['cname'], " ".join(comp['cstates']), comp['loc_x'], comp['loc_y'], comp['loc_z'], comp['rot_x'], comp['rot_y'], comp['rot_z'], comp['rot_ang'], comp['rot_index'] )
         if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
         if "spatial_structure" in dm_dict: self.geom_type = dm_dict["spatial_structure"]
         if "mol_type" in dm_dict: self.type = dm_dict["mol_type"]

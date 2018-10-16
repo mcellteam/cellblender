@@ -150,8 +150,8 @@ def update_available_scripts ( molmaker ):
         index = len(molmaker.comp_loc_texts_list)-1
         molmaker.comp_loc_texts_list[index].name = txt.name
 
-class MolMaker_OT_scripting_refresh(bpy.types.Operator):
-  bl_idname = "mol.scripting_refresh"
+class MolMaker_OT_update_files(bpy.types.Operator):
+  bl_idname = "mol.update_files"
   bl_label = "Refresh Files"
   bl_description = "Refresh the list of available script files"
   bl_options = {'REGISTER', 'UNDO'}
@@ -275,7 +275,10 @@ def MolComp_to_SphereCyl ( molcomp_list, build_as_3D ):
 def dump_molcomp_list ( molcomp_list ):
   i = 0
   for mc in molcomp_list:
-    print ( "[" + str(i) + "] = " + mc['name'] + " (" + mc['ftype'] + ") at (" + str(mc['coords'][0]) + "," + str(mc['coords'][1]) + "," + str(mc['coords'][2]) + ") with peers " + str(mc['peer_list']) + " with keys " + str(mc['key_list']) + " and angle " + str(mc['angle']) )
+    mc_str = "[" + str(i) + "] = " + mc['name'] + " (" + mc['ftype'] + ") at (" + str(mc['coords'][0]) + "," + str(mc['coords'][1]) + "," + str(mc['coords'][2]) + ") with peers " + str(mc['peer_list'])
+    if len(mc['key_list']) > 0:
+      mc_str += " <" + str(mc['key_list'][0]) + "," + str(mc['angle']) + ">"
+    print ( mc_str )
     i += 1
 
 
@@ -738,7 +741,7 @@ def bind_all_molecules ( molcomp_array, build_as_3D ):
 
 
 
-def build_all_mols ( context, build_as_3D ):
+def build_all_mols ( context, molcomp_text, build_as_3D ):
 
   if build_as_3D:
     print ( "\n\nBuilding as 3D" )
@@ -746,9 +749,8 @@ def build_all_mols ( context, build_as_3D ):
     print ( "\n\nBuilding as 2D" )
 
   molmaker = context.scene.mcell.molmaker
-  fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
 
-  molcomp_list = read_molcomp_data_MolComp ( fdata )
+  molcomp_list = read_molcomp_data_MolComp ( molcomp_text )
 
   # Use the default cases to start
   if build_as_3D:
@@ -838,7 +840,9 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
 
   def execute(self, context):
     print ( "Build Molecule 2D" )
-    build_all_mols ( context, build_as_3D=False )
+    molmaker = context.scene.mcell.molmaker
+    fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
+    build_all_mols ( context, fdata, build_as_3D=False )
     return {'FINISHED'}
 
 
@@ -851,7 +855,9 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
 
   def execute(self, context):
     print ( "Build Molecule calculating new values from CellBlender" )
-    build_all_mols ( context, build_as_3D=True )
+    molmaker = context.scene.mcell.molmaker
+    fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
+    build_all_mols ( context, fdata, build_as_3D=True )
     return {'FINISHED'}
 
 
@@ -861,19 +867,113 @@ class MolMakerFileNameProperty(bpy.types.PropertyGroup):
 
 class MolMakerMolCompProperty(bpy.types.PropertyGroup):
   name = StringProperty(name="Script")
-  """
-    mc = { # 'line':l,
-      'ftype':'c',
-      'has_coords':False,
-      'is_final':False,
-      'coords':[0,0,0],
-      'name':"",
-      'graph_string':"",
-      'peer_list':[],
-      'key_list':[],
-      'angle': 0,
-    }
-  """
+  field_type = StringProperty() # Either m, c, or k (for molecule, component, or key)
+  has_coords = BoolProperty()
+  is_final = BoolProperty()
+  coords = FloatVectorProperty ( size=3 )
+  graph_string = StringProperty(default="")
+  peer_list = StringProperty(default="") # Comma-separated list of indexes
+  key_list = StringProperty(default="")  # Comma-separated list of indexes
+  angle = FloatProperty()
+  bond_index = IntProperty(name="Bond Index", default=-1)
+  key_index = IntProperty(default=-1)
+  error = StringProperty(default="")
+  
+
+class MolMaker_OT_scripting_refresh(bpy.types.Operator):
+  bl_idname = "mol.refresh_mol_def"
+  bl_label = "Refresh Complex"
+  bl_description = "Refresh the Molecules"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self, context):
+    mcell = context.scene.mcell
+    molmaker = mcell.molmaker
+    parts = molmaker.molecule_definition.split(".")
+    print ( "Update the molecule/component list with " + str(parts) )
+    while len(molmaker.molcomp_items) > 0:
+      molmaker.molcomp_items.remove ( 0 )
+    cur_mol_index = 0
+    for p in parts:
+      new_mol = molmaker.molcomp_items.add()
+      new_mol.name = p
+      new_mol.field_type = "m"
+      new_mol.error = ""
+      new_mol.peer_list = ""
+      if p in mcell.molecules.molecule_list:
+        m = mcell.molecules.molecule_list[p]
+        cur_comp_index = cur_mol_index + 1
+        for cindex in range(len(m.component_list)):
+          new_comp = molmaker.molcomp_items.add()
+          new_comp.name = m.component_list[cindex].component_name
+          r_index = m.component_list[cindex].rot_index
+          if r_index < 0:
+            new_comp.field_type = "k"
+          else:
+            new_comp.field_type = "c"
+          # Link the component to the molecule
+          new_comp.peer_list = str(cur_mol_index)
+          if len(new_mol.peer_list) > 0:
+            new_mol.peer_list = new_mol.peer_list + ','
+          # Link the molecule to the component
+          new_mol.peer_list = new_mol.peer_list + str(cur_comp_index)
+          cur_comp_index += 1
+        cur_mol_index = cur_comp_index
+      else:
+        new_mol.error = "Undefined Molecule Name: " + p
+        cur_mol_index += 1
+
+
+    return {'FINISHED'}
+
+
+
+class MolMaker_OT_build_struct(bpy.types.Operator):
+  bl_idname = "mol.rebuild_struct"
+  bl_label = "Build Structure"
+  bl_description = "Build a molecule based on CellBlender Definitions"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self, context):
+    print ( "Build Molecule calculating new values from CellBlender" )
+    molmaker = context.scene.mcell.molmaker
+    fdata = ""
+
+    for i in range(len(molmaker.molcomp_items)):
+      m = molmaker.molcomp_items[i]
+      fdata += '[' + str(i) + '] = ' + m.name
+      if m.field_type == 'm':
+        fdata += ' (m)'
+      elif m.field_type == 'c':
+        fdata += ' (c)'
+      elif m.field_type == 'k':
+        fdata += ' (k)'
+      fdata += ' at (' + str(m.coords[0]) + ',' + str(m.coords[1]) + ',' + str(m.coords[2]) + ')'
+      peers = '' + m.peer_list
+      if m.bond_index >= 0:
+        if len(peers) > 0:
+          peers += ','
+        peers += str(m.bond_index)
+      fdata += ' with peers [' + peers + ']'
+      if m.field_type == 'c':
+        if m.bond_index >= 0:
+          if m.key_index >= 0:
+            # Include the reference angle for this bond
+            fdata += ' <' + str(m.key_index) + ',' + str(m.angle) + '>'
+
+
+      fdata += '\n'
+
+    print ( 'Built text model:\n' + fdata )
+      
+    build_all_mols ( context, fdata, build_as_3D=True )
+
+    print ( 'Built Blender model\n' )
+
+    return {'FINISHED'}
+
+
+
 
 
 class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
@@ -882,30 +982,61 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   comp_loc_texts_list = CollectionProperty(type=MolMakerFileNameProperty, name="Component Location Texts List")
   comp_loc_text_name = StringProperty ( name = "Text name containing optional component locations (rather than from CellBlender)" )
 
-
   molcomp_items = CollectionProperty(type=MolMakerMolCompProperty, name="MolCompList")
 
-  molecule_name = StringProperty ( name = "" )
+  molecule_definition = StringProperty ( name = "MolDef", description="Molecule Definition (such as: A.B.B.C)" )
 
 
   def draw_layout ( self, context, layout ):
 
     mcell = context.scene.mcell
+    molmaker = mcell.molmaker
 
     row = layout.row()
-    layout.prop_search( self, "molecule_name", mcell.molecules, "molecule_list", icon='FORCE_LENNARDJONES')
+    #row.prop_search( self, "molecule_definition", mcell.molecules, "molecule_list", icon='FORCE_LENNARDJONES')
+    row.prop ( self, "molecule_definition", icon='FORCE_LENNARDJONES')
+    row.operator("mol.refresh_mol_def", icon='NLA_PUSHDOWN', text="")
 
+    for i in range(len(molmaker.molcomp_items)):
+      m = molmaker.molcomp_items[i]
+      row = layout.row()
+      if m.field_type == "m":
+        col = row.column()
+        col.label ( str(i) + " Molecule " + m.name )
+        col = row.column()
+        col = row.column()
+      elif m.field_type == "c":
+        col = row.column()
+        col.label ( str(i) + "     Component " + m.name )
+        col = row.column()
+        col.prop ( m, 'bond_index' )
+        col = row.column()
+        col.prop ( m, 'key_index' )
+        col = row.column()
+        col.prop ( m, 'angle' )
+      elif m.field_type == "k":
+        col = row.column()
+        col.label ( str(i) + "     Key " + m.name )
+        col = row.column()
+        col = row.column()
+        col = row.column()
+
+    row = layout.row()
+    row.operator ( "mol.rebuild_struct" )
+
+    row = layout.row()
+    row.label ( "=========================================" )
     row = layout.row()
     row.prop_search ( self, "molecule_text_name",
                       self, "molecule_texts_list",
                       text="Molecule Definition Text:", icon='TEXT' )
-    row.operator("mol.scripting_refresh", icon='FILE_REFRESH', text="")
+    row.operator("mol.update_files", icon='FILE_REFRESH', text="")
 
     row = layout.row()
     row.prop_search ( self, "comp_loc_text_name",
                       self, "comp_loc_texts_list",
                       text="Component Location Text (opt):", icon='TEXT' )
-    row.operator("mol.scripting_refresh", icon='FILE_REFRESH', text="")
+    row.operator("mol.update_files", icon='FILE_REFRESH', text="")
 
 
     row = layout.row()
