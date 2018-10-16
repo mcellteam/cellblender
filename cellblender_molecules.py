@@ -538,7 +538,7 @@ class MCellMolComponentProperty(bpy.types.PropertyGroup):
     rot_y = PointerProperty ( name="rot_y",  type=parameter_system.Parameter_Reference )
     rot_z = PointerProperty ( name="rot_z",  type=parameter_system.Parameter_Reference )
     rot_ang = PointerProperty ( name="rot_ang",  type=parameter_system.Parameter_Reference )
-    rot_index = IntProperty ( name="AngleRef", default = 0 )
+    rot_index = IntProperty ( name="AngleRef", default = 0, description="Index of Component/Key to use as Angle Reference (-1 defines a key)" )
 
     def init_properties ( self, parameter_system ):
 
@@ -1264,6 +1264,23 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                   col = row.column()
                   col.operator("mcell.molecule_recalc_comps", icon='FILE_REFRESH', text="")
 
+                if self.geom_type == 'XYZRef':
+                  row = box.row()
+                  col = row.column()
+                  col.label ( "Index" )
+                  col = row.column()
+                  col.label ( "Name" )
+                  col = row.column()
+                  col.label ( "States" )
+                  col = row.column()
+                  col.label ( "Loc: x" )
+                  col = row.column()
+                  col.label ( "Loc: y" )
+                  col = row.column()
+                  col.label ( "Loc: z" )
+                  col = row.column()
+                  col.label ( "Rot Ref" )
+
                 row = box.row()
                 col = row.column()
                 col.template_list("MCell_UL_check_component", "define_molecules",
@@ -1709,7 +1726,8 @@ class MCell_UL_check_component(bpy.types.UIList):
 
         col = layout.column()
         if data.geom_type == 'XYZRef':
-          col.label(text=str(index) + ': Component / States:', icon='NONE')
+          #col.label(text=str(index) + ': Component / States:', icon='NONE')
+          col.label(text=str(index), icon='NONE')
         else:
           col.label(text='Component / States:', icon='NONE')
 
@@ -1784,8 +1802,8 @@ class MCell_UL_check_component(bpy.types.UIList):
 
             ps = context.scene.mcell.parameter_system
 
-            col = layout.column()
-            col.label(text='loc [x,y,z]', icon='NONE')
+            #col = layout.column()
+            #col.label(text='loc [x,y,z]', icon='NONE')
 
             col = layout.column()
             item.loc_x.draw_prop_only ( col, ps )
@@ -1795,7 +1813,7 @@ class MCell_UL_check_component(bpy.types.UIList):
             item.loc_z.draw_prop_only ( col, ps )
 
             col = layout.column()
-            col.prop ( item, "rot_index", text='Index', icon='NONE' )
+            col.prop ( item, "rot_index", text="Ref:", icon='NONE' )
 
         elif data.geom_type == 'XYZA':
 
@@ -1948,7 +1966,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         
     
     def add_molecule ( self, context ):
-        mcell = context.scene.mcell        
+        mcell = context.scene.mcell
         """ Add a new molecule to the list of molecules and set as the active molecule """
         if mcell.mol_viz.molecule_read_in == False:
             new_mol = self.molecule_list.add()
@@ -1996,7 +2014,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         if len(self.molecule_list) > 0:
             mol = self.molecule_list[self.active_mol_index]
             if mol:
-                mol.add_component ( context, "C" + str(self.allocate_available_id()) )
+                mol.add_component_vals ( context, "C" + str(self.allocate_available_id()) )
 
     def remove_active_component ( self, context ):
         """ Remove the active component from the active molecule """
