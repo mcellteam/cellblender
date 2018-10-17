@@ -935,13 +935,19 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
 
   def execute(self, context):
     print ( "Build Molecule calculating new values from CellBlender" )
-    molmaker = context.scene.mcell.molmaker
+    # Note that this assumes that the Molecules come first followed by components
+    mcell = context.scene.mcell
+    mols = mcell.molecules.molecule_list
+    molmaker = mcell.molmaker
     fdata = ""
 
+    cur_mol_index = -1
     for i in range(len(molmaker.molcomp_items)):
+      print ( "Current Index = " + str(i) )
       m = molmaker.molcomp_items[i]
       fdata += '[' + str(i) + '] = ' + m.name
       if m.field_type == 'm':
+        cur_mol_index = i
         fdata += ' (m)'
       elif m.field_type == 'c':
         fdata += ' (c)'
@@ -955,11 +961,24 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
         peers += str(m.bond_index)
       fdata += ' with peers [' + peers + ']'
       if m.field_type == 'c':
-        if m.bond_index >= 0:
-          if m.key_index >= 0:
-            # Include the reference angle for this bond
-            fdata += ' <' + str(m.key_index) + ',' + str(m.angle) + '>'
-
+        # mcell.molecules.molecule_list[mm.molcomp_items[0].name].component_list[0].rot_index
+        # mols[0].component_list[0].rot_index
+        print ( " Found a Component" )
+        print ( "  Current Mol Index = " + str(cur_mol_index) )
+        cur_comp_index = i - (cur_mol_index+1)
+        print ( "  Current Relative Index = " + str(cur_comp_index) )
+        # print ( "  Current Mol Name = " + mols[molmaker.molcomp_items[cur_mol_index].name].name )
+        comp = mols[molmaker.molcomp_items[cur_mol_index].name].component_list[cur_comp_index]
+        rot_index = comp.rot_index
+        if rot_index < 0:
+          print ( "Warning: This bond uses a component that has no reference!!" )
+        print ( "  Relative Rot Index = " + str(rot_index) )
+        abs_rot_index = rot_index + cur_mol_index
+        print ( "  Absolute Rot Index = " + str(abs_rot_index) )
+        # print ( "  Current Mol Name = " + mcell.molecules.molecule_list[molmaker.molcomp_items[cur_comp_index].name].name )
+        if rot_index >= 0:
+          # Include the reference angle for this bond
+          fdata += ' <' + str(abs_rot_index) + ',' + str(m.angle) + '>'
 
       fdata += '\n'
 
