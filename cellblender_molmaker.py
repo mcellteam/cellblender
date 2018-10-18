@@ -972,10 +972,14 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
 
     mols_used = {}
 
-    cur_mol_index = -1
+    cur_mol_index = -1 # The Molecules must come before the components for this to work!!
+
     for i in range(len(molmaker.molcomp_items)):
       print ( "Current Index = " + str(i) )
       m = molmaker.molcomp_items[i]
+
+      # First build the Name and Location Fields
+
       fdata += '[' + str(i) + '] = ' + m.name
       if m.field_type == 'm':
         cur_mol_index = i
@@ -992,20 +996,23 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
           peers += ','
         peers += str(m.bond_index)
       fdata += ' with peers [' + peers + ']'
+
+      # Next build the Angle References for components
+
       if m.field_type == 'c':
         # mcell.molecules.molecule_list[mm.molcomp_items[0].name].component_list[0].rot_index
         # mcell_mols[0].component_list[0].rot_index
         print ( " Found a Component" )
         print ( "  Current Mol Index = " + str(cur_mol_index) )
-        cur_comp_index = i - (cur_mol_index+1)
-        print ( "  Current Relative Index = " + str(cur_comp_index) )
+        cur_comp_index = (i - cur_mol_index) - 1
+        print ( "  Current Relative Component Index = " + str(cur_comp_index) )
         # print ( "  Current Mol Name = " + mcell_mols[molmaker.molcomp_items[cur_mol_index].name].name )
         comp = mcell_mols[molmaker.molcomp_items[cur_mol_index].name].component_list[cur_comp_index]
         rot_index = comp.rot_index
         if rot_index < 0:
           print ( "Warning: This bond uses a component that has no reference!!" )
         print ( "  Relative Rot Index = " + str(rot_index) )
-        abs_rot_index = rot_index + cur_mol_index
+        abs_rot_index = rot_index + cur_mol_index + 1
         print ( "  Absolute Rot Index = " + str(abs_rot_index) )
         # print ( "  Current Mol Name = " + mcell.molecules.molecule_list[molmaker.molcomp_items[cur_comp_index].name].name )
         if rot_index >= 0:
