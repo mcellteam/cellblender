@@ -461,7 +461,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
   # Reverse the direction since we want the components attached to each other
   angle = math.pi + angle;
 
-  # Normalize between -PI and PI
+  # Bound between -PI and PI
   while angle > math.pi:
     angle = angle - (2 * math.pi)
   while angle <= -math.pi:
@@ -956,6 +956,30 @@ class MolMaker_OT_refresh_mol_def(bpy.types.Operator):
 
 
 
+class MolMaker_OT_chain_mols(bpy.types.Operator):
+  bl_idname = "mol.chain_mol_defs"
+  bl_label = "Chain Molecules"
+  bl_description = "Connect Molecules to form a Chain"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self, context):
+    mcell = context.scene.mcell
+    molmaker = mcell.molmaker
+    molcomp_items = molmaker.molcomp_items
+    for mol_index in range(len(molcomp_items)):
+      mol = molcomp_items[mol_index]
+      if mol.field_type == 'm':
+        # Found a molecule, so connect the previous and next components if possible
+        if (mol_index > 0) and (mol_index < (len(molcomp_items)-1)):
+          # This molecule is at least between two non-molecules
+          # This is where the code should search both up and down for actual components (not keys)
+          # However, for now, we'll assume that there are no keys and make the bond
+          molcomp_items[mol_index-1].bond_index = mol_index+1
+          molcomp_items[mol_index+1].bond_index = mol_index-1
+    return {'FINISHED'}
+
+
+
 class MolMaker_OT_build_struct(bpy.types.Operator):
   bl_idname = "mol.rebuild_with_cb"
   bl_label = "Build Structure from CellBlender"
@@ -1062,6 +1086,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     #row.prop_search( self, "molecule_definition", mcell.molecules, "molecule_list", icon='FORCE_LENNARDJONES')
     row.prop ( self, "molecule_definition", icon='FORCE_LENNARDJONES')
     row.operator("mol.refresh_mol_def", icon='NLA_PUSHDOWN', text="")
+    row.operator("mol.chain_mol_defs", icon='CONSTRAINT', text="")
 
     for i in range(len(molmaker.molcomp_items)):
       m = molmaker.molcomp_items[i]
