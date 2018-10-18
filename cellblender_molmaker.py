@@ -740,8 +740,24 @@ def bind_all_molecules ( molcomp_array, build_as_3D ):
                   molcomp_array[molcomp_array[vmi]['peer_list'][vmici]]['is_final'] = True
 
 
+'''
+MolDef Text File Format:
+# Type M C      x     y      z                 rfx rfy rfz  Unused
+XYZRef T t    0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef T t   -0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef T t    0.00  0.01  0.007071067811865476  0   0   0   0
+XYZRef T t    0.00 -0.01  0.007071067811865476  0   0   0   0
 
-def build_all_mols ( context, molcomp_text, build_as_3D ):
+XYZRef B t    0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef B t   -0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef B t    0.00  0.01  0.007071067811865476  0   0   0   0
+XYZRef B t    0.00 -0.01  0.007071067811865476  0   0   0   0
+
+XYZRef C c    0.00  0.01  -0.002                0   0   0   0
+XYZRef C c    0.00 -0.01   0.002                0   0   0   0
+'''
+
+def build_all_mols ( context, molcomp_text, moldef_text=None, build_as_3D=True ):
 
   if build_as_3D:
     print ( "\n\nBuilding as 3D" )
@@ -758,9 +774,16 @@ def build_all_mols ( context, molcomp_text, build_as_3D ):
   else:
     set_component_positions_2D ( molcomp_list )
 
-  if molmaker.comp_loc_text_name in bpy.data.texts:
+  if moldef_text == None:
+    # Try reading from a file
+    if molmaker.comp_loc_text_name in bpy.data.texts:
+      # There is a component location definition text
+      print ( "Read component definition text named " + molmaker.comp_loc_text_name )
+      # Read the component definitions
+      moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
+
+  if moldef_text != None:
     # There is a component location definition text
-    print ( "Read component definition text named " + molmaker.comp_loc_text_name )
 
     # Set the has_coords flag to false on each component of each molecule
     for mc in molcomp_list:
@@ -771,7 +794,7 @@ def build_all_mols ( context, molcomp_text, build_as_3D ):
         mc['has_coords'] = False
 
     # Read the component definitions
-    ldata = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
+    ldata = moldef_text
     comploc_lines = [ l.strip() for l in ldata.split('\n') if len(l.strip()) > 0 ]
     comploc_lines = [ l for l in comploc_lines if not l.startswith('#') ]
 
@@ -841,8 +864,11 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
   def execute(self, context):
     print ( "Build Molecule 2D" )
     molmaker = context.scene.mcell.molmaker
+    moldef_text = None
+    if molmaker.comp_loc_text_name in bpy.data.texts:
+      moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    build_all_mols ( context, fdata, build_as_3D=False )
+    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=False )
     return {'FINISHED'}
 
 
@@ -856,8 +882,11 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
   def execute(self, context):
     print ( "Build Molecule calculating new values from CellBlender" )
     molmaker = context.scene.mcell.molmaker
+    moldef_text = None
+    if molmaker.comp_loc_text_name in bpy.data.texts:
+      moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    build_all_mols ( context, fdata, build_as_3D=True )
+    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=True )
     return {'FINISHED'}
 
 
@@ -928,8 +957,8 @@ class MolMaker_OT_refresh_mol_def(bpy.types.Operator):
 
 
 class MolMaker_OT_build_struct(bpy.types.Operator):
-  bl_idname = "mol.rebuild_struct"
-  bl_label = "Build Structure"
+  bl_idname = "mol.rebuild_with_cb"
+  bl_label = "Build Structure from CellBlender"
   bl_description = "Build a molecule based on CellBlender Definitions"
   bl_options = {'REGISTER', 'UNDO'}
 
@@ -937,9 +966,11 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
     print ( "Build Molecule calculating new values from CellBlender" )
     # Note that this assumes that the Molecules come first followed by components
     mcell = context.scene.mcell
-    mols = mcell.molecules.molecule_list
+    mcell_mols = mcell.molecules.molecule_list
     molmaker = mcell.molmaker
     fdata = ""
+
+    mols_used = {}
 
     cur_mol_index = -1
     for i in range(len(molmaker.molcomp_items)):
@@ -949,6 +980,7 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
       if m.field_type == 'm':
         cur_mol_index = i
         fdata += ' (m)'
+        mols_used[m.name] = True # Store this molecule name in the dictionary
       elif m.field_type == 'c':
         fdata += ' (c)'
       elif m.field_type == 'k':
@@ -962,13 +994,13 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
       fdata += ' with peers [' + peers + ']'
       if m.field_type == 'c':
         # mcell.molecules.molecule_list[mm.molcomp_items[0].name].component_list[0].rot_index
-        # mols[0].component_list[0].rot_index
+        # mcell_mols[0].component_list[0].rot_index
         print ( " Found a Component" )
         print ( "  Current Mol Index = " + str(cur_mol_index) )
         cur_comp_index = i - (cur_mol_index+1)
         print ( "  Current Relative Index = " + str(cur_comp_index) )
-        # print ( "  Current Mol Name = " + mols[molmaker.molcomp_items[cur_mol_index].name].name )
-        comp = mols[molmaker.molcomp_items[cur_mol_index].name].component_list[cur_comp_index]
+        # print ( "  Current Mol Name = " + mcell_mols[molmaker.molcomp_items[cur_mol_index].name].name )
+        comp = mcell_mols[molmaker.molcomp_items[cur_mol_index].name].component_list[cur_comp_index]
         rot_index = comp.rot_index
         if rot_index < 0:
           print ( "Warning: This bond uses a component that has no reference!!" )
@@ -984,7 +1016,15 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
 
     print ( 'Built text model:\n' + fdata )
       
-    build_all_mols ( context, fdata, build_as_3D=True )
+    moldef_txt = ""
+    for mol_name in mols_used.keys():
+      if mol_name in mcell_mols:
+        for comp in mcell_mols[mol_name].component_list:
+          moldef_txt += "XYZRef " + mol_name + " " + comp.component_name + "  " + str(comp.loc_x.get_value()) + " " + str(comp.loc_y.get_value()) + " " + str(comp.loc_z.get_value()) + " 0   0   0   0\n"
+
+    print ( 'Built location model:\n' + moldef_txt )
+
+    build_all_mols ( context, fdata, moldef_text=moldef_txt, build_as_3D=True )
 
     print ( 'Built Blender model\n' )
 
@@ -1036,7 +1076,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
         col = row.column()
 
     row = layout.row()
-    row.operator ( "mol.rebuild_struct" )
+    row.operator ( "mol.rebuild_with_cb" )
 
     row = layout.row()
     row.label ( "=========================================" )
