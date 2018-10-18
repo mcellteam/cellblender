@@ -296,7 +296,7 @@ class MolMaker_OT_build_as_is(bpy.types.Operator):
     print ( "Read:\n" + fdata )
     mol_data = read_molcomp_data_SphereCyl ( fdata )
 
-    new_blender_mol_from_SphereCyl_data ( context, mol_data )
+    new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=molmaker.show_key_planes )
 
     return {'FINISHED'}
 
@@ -851,7 +851,7 @@ def build_all_mols ( context, molcomp_text, moldef_text=None, build_as_3D=True )
   dump_molcomp_list ( molcomp_list )
   print ( "======================================================================================" )
 
-  new_blender_mol_from_SphereCyl_data ( context, MolComp_to_SphereCyl ( molcomp_list, build_as_3D ) )
+  new_blender_mol_from_SphereCyl_data ( context, MolComp_to_SphereCyl ( molcomp_list, build_as_3D ), show_key_planes=molmaker.show_key_planes )
 
 
 
@@ -1051,6 +1051,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
   molecule_definition = StringProperty ( name = "MolDef", description="Molecule Definition (such as: A.B.B.C)" )
 
+  show_key_planes = BoolProperty ( default=True )
 
   def draw_layout ( self, context, layout ):
 
@@ -1083,7 +1084,10 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
         col = row.column()
 
     row = layout.row()
-    row.operator ( "mol.rebuild_with_cb" )
+    col = row.column()
+    col.prop ( self, 'show_key_planes', text="Draw Key Planes" )
+    col = row.column()
+    col.operator ( "mol.rebuild_with_cb" )
 
     row = layout.row()
     row.label ( "=========================================" )
@@ -1142,7 +1146,7 @@ def join_to_working_object ( context, working_obj ):
   bpy.ops.object.join()
 
 
-def new_blender_mol_from_SphereCyl_data ( context, mol_data ):
+def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=False ):
 
   # print ( "Mol data = " + str(mol_data) )
 
@@ -1184,25 +1188,26 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data ):
     join_to_working_object ( context, mol_obj )
 
   # Add the keys (as faces)
-  for i in range(len(face_list)):
-    print ( "Adding a face" )
-    vlist = face_list[i]
+  if show_key_planes:
+    for i in range(len(face_list)):
+      print ( "Adding a face" )
+      vlist = face_list[i]
 
-    Vertices = []
-    Faces = [[]]
-    i = 0
-    for vertex in vlist:
-      print ( "  Adding vertex at " + str(vertex) )
-      Vertices.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
-      Faces[0].append ( i )
-      i += 1
+      Vertices = []
+      Faces = [[]]
+      i = 0
+      for vertex in vlist:
+        print ( "  Adding vertex at " + str(vertex) )
+        Vertices.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
+        Faces[0].append ( i )
+        i += 1
 
-    NewMesh = bpy.data.meshes.new("KeyMesh")
-    NewMesh.from_pydata ( Vertices, [], Faces )
-    NewMesh.update()
-    NewObj = bpy.data.objects.new("KeyObj", NewMesh)
-    context.scene.objects.link ( NewObj)
-    # This fails for some reason:   join_to_working_object ( context, mol_obj )
+      NewMesh = bpy.data.meshes.new("KeyMesh")
+      NewMesh.from_pydata ( Vertices, [], Faces )
+      NewMesh.update()
+      NewObj = bpy.data.objects.new("KeyObj", NewMesh)
+      context.scene.objects.link ( NewObj)
+      # This fails for some reason:   join_to_working_object ( context, mol_obj )
 
 
 
