@@ -1111,7 +1111,10 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
         col = row.column()
       elif m.field_type == "c":
         col = row.column()
-        col.label ( str(i) + "   Component:   " + m.name )
+        label_string = "   Component:  " + m.name
+        if m.bond_index >= 0:
+          label_string += "  (bonded)"
+        col.label ( str(i) + label_string )
         col = row.column()
         if len(m.alert_string) > 0:
           col.alert = True
