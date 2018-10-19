@@ -891,6 +891,20 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
 
 
 
+def check_bond_index ( self, context ):
+  mcell = context.scene.mcell
+  molmaker = mcell.molmaker
+  this_mc_index = 0
+  for mc in molmaker.molcomp_items:
+    if mc.bond_index >= 0:
+      # Check that the link is reciprocated
+      if molmaker.molcomp_items[mc.bond_index].bond_index != this_mc_index:
+        mc.alert_string = "Unmatched bond"
+      else:
+        if mc.alert_string == "Unmatched bond":
+          mc.alert_string = ""
+    this_mc_index += 1
+
 class MolMakerFileNameProperty(bpy.types.PropertyGroup):
   name = StringProperty(name="Script")
 
@@ -904,9 +918,9 @@ class MolMakerMolCompProperty(bpy.types.PropertyGroup):
   peer_list = StringProperty(default="") # Comma-separated list of indexes
   key_list = StringProperty(default="")  # Comma-separated list of indexes
   angle = FloatProperty()
-  bond_index = IntProperty(name="Bond Index", default=-1)
+  bond_index = IntProperty(name="Bond Index", default=-1, update=check_bond_index)
   key_index = IntProperty(default=-1)
-  error = StringProperty(default="")
+  alert_string = StringProperty(default="")
 
 
 class MolMaker_OT_refresh_mol_def(bpy.types.Operator):
@@ -927,7 +941,7 @@ class MolMaker_OT_refresh_mol_def(bpy.types.Operator):
       new_mol = molmaker.molcomp_items.add()
       new_mol.name = p
       new_mol.field_type = "m"
-      new_mol.error = ""
+      new_mol.alert_string = ""
       new_mol.peer_list = ""
       if p in mcell.molecules.molecule_list:
         m = mcell.molecules.molecule_list[p]
@@ -948,7 +962,7 @@ class MolMaker_OT_refresh_mol_def(bpy.types.Operator):
           cur_comp_index += 1
         cur_mol_index = cur_comp_index
       else:
-        new_mol.error = "Undefined Molecule Name: " + p
+        new_mol.alert_string = "Undefined Molecule Name: " + p
         cur_mol_index += 1
 
 
@@ -1097,8 +1111,10 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
         col = row.column()
       elif m.field_type == "c":
         col = row.column()
-        col.label ( str(i) + "     Component " + m.name )
+        col.label ( str(i) + "   Component:   " + m.name )
         col = row.column()
+        if len(m.alert_string) > 0:
+          col.alert = True
         col.prop ( m, 'bond_index' )
         col = row.column()
         col.prop ( m, 'angle' )
