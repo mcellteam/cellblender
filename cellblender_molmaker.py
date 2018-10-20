@@ -362,9 +362,11 @@ def set_component_positions_3D ( mc ):
     if mc[mi]['ftype'] == 'm':
       #### fprintf ( stdout, "Setting component positions for %s\n", mc[mi].name );
       mc[mi]['coords'] = [0,0,0]
-      num_points = len(mc[mi]['peer_list'])
+      # Because the molecule's peer list includes keys, they must be removed by creating a separate list of components only
+      component_index_list = [ ci for ci in range(len(mc[mi]['peer_list'])) if mc[mc[mi]['peer_list'][ci]]['ftype'] == 'c' ]
+      num_points = len(component_index_list)
       points = get_distributed_sphere_points ( num_points )
-      for ci in range(num_points):
+      for ci in component_index_list:
         mc[mc[mi]['peer_list'][ci]]['coords'][0] = scale * points[ci][0];
         mc[mc[mi]['peer_list'][ci]]['coords'][1] = scale * points[ci][1];
         mc[mc[mi]['peer_list'][ci]]['coords'][2] = scale * points[ci][2];
@@ -384,8 +386,10 @@ def set_component_positions_2D ( mc ):
     if mc[mi]['ftype'] == 'm':
       #### fprintf ( stdout, "Setting component positions for %s\n", mc[mi].name );
       mc[mi]['coords'] = [0,0,0]
-      for ci in range(len(mc[mi]['peer_list'])):
-        angle = 2 * math.pi * ci / len(mc[mi]['peer_list'])
+      # Because the molecule's peer list includes keys, they must be removed by creating a separate list of components only
+      component_index_list = [ ci for ci in range(len(mc[mi]['peer_list'])) if mc[mc[mi]['peer_list'][ci]]['ftype'] == 'c' ]
+      for ci in component_index_list:
+        angle = 2 * math.pi * ci / len(component_index_list)
         mc[mc[mi]['peer_list'][ci]]['coords'][0] = scale * math.cos(angle)
         mc[mc[mi]['peer_list'][ci]]['coords'][1] = scale * math.sin(angle)
         mc[mc[mi]['peer_list'][ci]]['coords'][2] = 0
@@ -872,7 +876,8 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
     if molmaker.comp_loc_text_name in bpy.data.texts:
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=False, include_rotation=True )
+
+    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=False, include_rotation=molmaker.include_rotation )
     return {'FINISHED'}
 
 
@@ -890,7 +895,7 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
     if molmaker.comp_loc_text_name in bpy.data.texts:
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=True, include_rotation=True )
+    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=True, include_rotation=molmaker.include_rotation )
     return {'FINISHED'}
 
 
