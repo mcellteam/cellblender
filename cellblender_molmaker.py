@@ -500,7 +500,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
     if axis_length < 1e-30:
         # Can't compute a meaningful unit vector to use for rotation matrix or quaternion
-        if norm_dot_prod >= 0:
+        if norm_dot_prod < 0:
           R = [ [ 1, 0, 0 ],
                 [ 0, 1, 0 ],
                 [ 0, 0, 1 ] ]
@@ -954,7 +954,9 @@ def check_bond_index ( self, context ):
   molmaker = mcell.molmaker
   this_mc_index = 0
   for mc in molmaker.molcomp_items:
-    if mc.bond_index >= 0:
+    if mc.bond_index < 0:
+      mc.alert_string = ""
+    else:
       # Check that the link is reciprocated
       if molmaker.molcomp_items[mc.bond_index].bond_index != this_mc_index:
         mc.alert_string = "Unmatched bond"
@@ -962,6 +964,8 @@ def check_bond_index ( self, context ):
         if mc.alert_string == "Unmatched bond":
           mc.alert_string = ""
     this_mc_index += 1
+
+
 
 class MolMakerFileNameProperty(bpy.types.PropertyGroup):
   name = StringProperty(name="Script")
@@ -1187,7 +1191,10 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
           col.alert = True
         col.prop ( m, 'bond_index' )
         col = row.column()
-        col.prop ( m, 'angle' )
+        if m.bond_index >= 0:
+          col.prop ( m, 'angle' )
+        else:
+          col.label ( " " )
       elif m.field_type == "k":
         col = row.column()
         col.label ( str(i) + "     Key " + m.name )
