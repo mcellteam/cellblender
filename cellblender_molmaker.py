@@ -224,7 +224,7 @@ def read_molcomp_data_SphereCyl ( fdata ):
   this_index = 0
   for l in ldata:
     print ( "Line: " + l )
-    m = { 'name':'', 'loc':[0,0,0], 'r':1 }
+    m = { 'name':'', 'loc':[0,0,0], 'r':1, 'c':'MolMaker_mol', 'ftype':mc['ftype'] }
     m['name'] = l.split("=")[1].split('(')[0].strip()
     m['ftype'] = l.split('(')[1][0]   # Pull out the type (m or c or k)
     if m['ftype'] == 'm':
@@ -238,8 +238,10 @@ def read_molcomp_data_SphereCyl ( fdata ):
           print ( "  Bond: " + str(this_index) + " " + p.strip() )
     elif m['ftype'] == 'c':
       m['r'] = 0.0025
+      m['c'] = 'MolMaker_comp'
     elif m['ftype'] == 'k':
       m['r'] = 0.0015
+      m['c'] = 'MolMaker_key'
     m['loc'] = eval ( '[' + l.split('(')[2].split(')')[0] + ']' )
     SphereCyl_data['SphereList'].append ( m )
     this_index += 1
@@ -251,7 +253,7 @@ def MolComp_to_SphereCyl ( molcomp_list, build_as_3D ):
   SphereCyl_data = { 'Version':1.1, 'SphereList':[], 'CylList':[], 'FaceList':[] }
   this_index = 0
   for mc in molcomp_list:
-    m = { 'name':'', 'loc':mc['coords'], 'r':1 }
+    m = { 'name':'', 'loc':mc['coords'], 'r':1, 'c':'MolMaker_mol', 'ftype':mc['ftype'] }
     if mc['ftype'] == 'm':
       m['r'] = 0.005
       if len(mc['peer_list']) > 0:
@@ -265,8 +267,10 @@ def MolComp_to_SphereCyl ( molcomp_list, build_as_3D ):
             SphereCyl_data['FaceList'].append ( [ mc['coords'], molcomp_list[p]['coords'], molcomp_list[k]['coords'] ] ) # , [0.01,0.01,0.0 1] ] )
     elif mc['ftype'] == 'c':
       m['r'] = 0.0025
+      m['c'] = 'MolMaker_comp'
     elif mc['ftype'] == 'k':
       m['r'] = 0.0015
+      m['c'] = 'MolMaker_key'
     SphereCyl_data['SphereList'].append ( m )
     this_index += 1
   return SphereCyl_data
@@ -1159,6 +1163,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
   molecule_definition = StringProperty ( name = "MolDef", description="Molecule Definition (such as: A.B.B.C)" )
 
+  make_materials = BoolProperty ( default=True )
   show_key_planes = BoolProperty ( default=True )
   include_rotation = BoolProperty ( default=True )
 
@@ -1203,7 +1208,9 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
     row = layout.row()
     col = row.column()
-    col.prop ( self, 'show_key_planes', text="Draw Key Planes" )
+    col.prop ( self, 'make_materials', text="Make Materials" )
+    col = row.column()
+    col.prop ( self, 'show_key_planes', text="Show Key Planes" )
     col = row.column()
     col.prop ( self, 'include_rotation', text="Axial Rotation" )
     col = row.column()
@@ -1269,6 +1276,57 @@ def join_to_working_object ( context, working_obj ):
 def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=False ):
 
   # print ( "Mol data = " + str(mol_data) )
+  mcell = context.scene.mcell
+  mcell_mols = mcell.molecules.molecule_list
+  molmaker = mcell.molmaker
+  mats = bpy.data.materials
+
+  if molmaker.make_materials:
+    mol_mat = mats.get ( "MolMaker_mol" )
+    if not mol_mat:
+      # It didn't exist, so make it
+      mol_mat = mats.new ( "MolMaker_mol" )
+      color = mol_mat.diffuse_color
+      color[0] = 1
+      color[1] = 0.03
+      color[2] = 0.03
+    mol_mat = mats.get ( "MolMaker_comp" )
+    if not mol_mat:
+      # It didn't exist, so make it
+      mol_mat = mats.new ( "MolMaker_comp" )
+      color = mol_mat.diffuse_color
+      color[0] = 0.3
+      color[1] = 0.3
+      color[2] = 0.6
+    mol_mat = mats.get ( "MolMaker_bond" )
+    if not mol_mat:
+      # It didn't exist, so make it
+      mol_mat = mats.new ( "MolMaker_bond" )
+      color = mol_mat.diffuse_color
+      color[0] = 0.1
+      color[1] = 0.1
+      color[2] = 0.1
+      mol_mat.specular_intensity = 0
+    mol_mat = mats.get ( "MolMaker_key" )
+    if not mol_mat:
+      # It didn't exist, so make it
+      mol_mat = mats.new ( "MolMaker_key" )
+      color = mol_mat.diffuse_color
+      color[0] = 0
+      color[1] = 0.25
+      color[2] = 0.25
+      mol_mat.specular_intensity = 0
+    mol_mat = mats.get ( "MolMaker_key_plane" )
+    if not mol_mat:
+      # It didn't exist, so make it
+      mol_mat = mats.new ( "MolMaker_key_plane" )
+      color = mol_mat.diffuse_color
+      color[0] = 0
+      color[1] = 0.5
+      color[2] = 0.5
+      mol_mat.specular_intensity = 0
+      mol_mat.use_transparency = True
+      mol_mat.alpha = 0.2
 
   # Make an empty mesh
   mol_mesh = bpy.data.meshes.new ( "Mol Mesh" )
@@ -1292,10 +1350,14 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
 
   # Add the molecules (spheres)
   for mol in sphere_list:
-    p = mol['loc']
-    # bpy.ops.mesh.primitive_uv_sphere_add(size=mol['r'],location=p)
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, size=mol['r'],location=p)
-    join_to_working_object ( context, mol_obj )
+    if show_key_planes or (mol['ftype'] != 'k'):
+      p = mol['loc']
+      # bpy.ops.mesh.primitive_uv_sphere_add(size=mol['r'],location=p)
+      bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, size=mol['r'],location=p)
+      if 'c' in mol:
+        if mol['c'] in mats:
+          context.active_object.data.materials.append ( mats.get(mol['c']) )
+      join_to_working_object ( context, mol_obj )
 
   # Add the bonds (cylinders)
   for i in range(len(cylinder_list)):
@@ -1305,6 +1367,7 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
     p0 = sph0['loc']
     p1 = sph1['loc']
     add_cylinder_from_lpts ( p0, p1, radius=cyl[2], faces=16, caps=False )
+    context.active_object.data.materials.append ( mats.get("MolMaker_bond") )
     join_to_working_object ( context, mol_obj )
 
   # Add the keys (as faces)
@@ -1325,11 +1388,17 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
       NewMesh = bpy.data.meshes.new("KeyMesh")
       NewMesh.from_pydata ( Vertices, [], Faces )
       NewMesh.update()
+      NewMesh.materials.append ( mats.get("MolMaker_key_plane") )
       NewObj = bpy.data.objects.new("KeyObj", NewMesh)
+      NewObj.show_transparent = True
       context.scene.objects.link ( NewObj)
-      # This fails for some reason:   join_to_working_object ( context, mol_obj )
-
-
+      context.scene.objects.active = NewObj
+      for o in context.scene.objects:
+        o.select = False
+      context.scene.objects.active = NewObj
+      NewObj.select = True
+      join_to_working_object ( context, mol_obj )
+      mol_obj.show_transparent = True
 
 
 
