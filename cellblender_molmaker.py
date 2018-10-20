@@ -496,45 +496,58 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
     axis_length = math.sqrt( (xpx*xpx) + (xpy*xpy) + (xpz*xpz) )
 
-    ux = xpx / axis_length
-    uy = xpy / axis_length
-    uz = xpz / axis_length
-
     R = None
 
-    if True:  # Build the rotation matrix directly
+    if axis_length < 1e-30:
+        # Can't compute a meaningful unit vector to use for rotation matrix or quaternion
+        if norm_dot_prod >= 0:
+          R = [ [ 1, 0, 0 ],
+                [ 0, 1, 0 ],
+                [ 0, 0, 1 ] ]
+        else:
+          R = [ [ -1,  0,  0 ],
+                [  0, -1,  0 ],
+                [  0,  0, -1 ] ]
 
-      # Build a 3D rotation matrix
-      omca = 1 - ca
+    else:
 
-      R = [ [ca + (ux*ux*omca), (ux*uy*omca) - (uz*sa), (ux*uz*omca) + (uy*sa)],
-            [(uy*ux*omca) + (uz*sa), ca + (uy*uy*omca), (uy*uz*omca) - (ux*sa)],
-            [(uz*ux*omca) - (uy*sa), (uz*uy*omca) + (ux*sa), ca + (uz*uz*omca)] ]
+        ux = xpx / axis_length
+        uy = xpy / axis_length
+        uz = xpz / axis_length
 
-    else:  # Build the rotation matrix from a quaternion
+        if True:  # Build the rotation matrix directly
 
-      s2 = math.sin(angle/2)
-      c2 = math.cos(angle/2)
+          # Build a 3D rotation matrix
+          omca = 1 - ca
 
-      q  = [ c2,  s2*ux,  s2*uy,  s2*uz ]
-      # qconj = [ c2, -s2*ux, -s2*uy, -s2*uz ]
+          R = [ [ca + (ux*ux*omca), (ux*uy*omca) - (uz*sa), (ux*uz*omca) + (uy*sa)],
+                [(uy*ux*omca) + (uz*sa), ca + (uy*uy*omca), (uy*uz*omca) - (ux*sa)],
+                [(uz*ux*omca) - (uy*sa), (uz*uy*omca) + (ux*sa), ca + (uz*uz*omca)] ]
 
-      # Create convenience variables for components and squares
+        else:  # Build the rotation matrix from a quaternion
 
-      qr = q[0]
-      qi = q[1]
-      qj = q[2]
-      qk = q[3]
+          s2 = math.sin(angle/2)
+          c2 = math.cos(angle/2)
 
-      qi2 = qi * qi
-      qj2 = qj * qj
-      qk2 = qk * qk
+          q  = [ c2,  s2*ux,  s2*uy,  s2*uz ]
+          # qconj = [ c2, -s2*ux, -s2*uy, -s2*uz ]
 
-      # Create the rotation matrix itself from the quaternion
+          # Create convenience variables for components and squares
 
-      R = [ [     1-(2*(qj2+qk2)), 2*((qi*qj)-(qk*qr)), 2*((qi*qk)+(qj*qr)) ],
-            [ 2*((qi*qj)+(qk*qr)),     1-(2*(qi2+qk2)), 2*((qj*qk)-(qi*qr)) ],
-            [ 2*((qi*qk)-(qj*qr)), 2*((qj*qk)+(qi*qr)),     1-(2*(qi2+qj2)) ] ]
+          qr = q[0]
+          qi = q[1]
+          qj = q[2]
+          qk = q[3]
+
+          qi2 = qi * qi
+          qj2 = qj * qj
+          qk2 = qk * qk
+
+          # Create the rotation matrix itself from the quaternion
+
+          R = [ [     1-(2*(qj2+qk2)), 2*((qi*qj)-(qk*qr)), 2*((qi*qk)+(qj*qr)) ],
+                [ 2*((qi*qj)+(qk*qr)),     1-(2*(qi2+qk2)), 2*((qj*qk)-(qi*qr)) ],
+                [ 2*((qi*qk)-(qj*qr)), 2*((qj*qk)+(qi*qr)),     1-(2*(qi2+qj2)) ] ]
 
     ##### fprintf ( stdout, "Rotating component positions for %s by %g\n", mc[var_mol_index].name, 180*angle/math.pi );
     # for (int ci=0; ci<mc[var_mol_index].num_peers; ci++) {
