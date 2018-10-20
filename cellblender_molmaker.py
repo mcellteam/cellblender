@@ -398,7 +398,7 @@ def set_component_positions_2D ( mc ):
 
 
 
-def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_as_3D ):
+def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_as_3D, include_rotation=True ):
   # Bind these two molecules by aligning their axes and shifting to align their components
   # num_parts = len(mc)
 
@@ -442,9 +442,11 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
   # Ensure that the dot product is a legal argument for the "acos" function:
   if norm_dot_prod >  1:
+    print ( "Numerical Warning: normalized dot product was greater than 1" )
     norm_dot_prod =  1
   if norm_dot_prod < -1:
     norm_dot_prod = -1
+    print ( "Numerical Warning: normalized dot product was less than -1" )
 
   ##### fprintf ( stdout, "norm_dot_prod = %g\n", norm_dot_prod );
   angle = math.acos ( norm_dot_prod )
@@ -462,7 +464,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
   # Reverse the direction since we want the components attached to each other
   angle = math.pi + angle;
 
-  # Bound between -PI and PI
+  # Bound the angle between -PI and PI
   while angle > math.pi:
     angle = angle - (2 * math.pi)
   while angle <= -math.pi:
@@ -539,7 +541,8 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
   # Now the molecules are aligned as they would be except for rotation along their bonding axis
 
-  if build_as_3D:
+  if build_as_3D and include_rotation:
+
     # dump_molcomp_list ( mc )
 
     # Rotate the variable molecule along its bonding axis to align based on the rotation key angle
@@ -677,7 +680,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
 
 
-def bind_all_molecules ( molcomp_array, build_as_3D ):
+def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
   # Compute positions for all molecules/components in a molcomp_array
   num_parts = len(molcomp_array)
 
@@ -731,7 +734,7 @@ def bind_all_molecules ( molcomp_array, build_as_3D ):
 
                 # Perform the bond (changes the locations)
 
-                bind_molecules_at_components ( molcomp_array, fci, vci, build_as_3D )
+                bind_molecules_at_components ( molcomp_array, fci, vci, build_as_3D, include_rotation )
 
                 # The bonding process will have specified the placement of the variable molecule
                 # Set the variable molecule and all of its components to final
@@ -758,7 +761,7 @@ XYZRef C c    0.00  0.01  -0.002                0   0   0   0
 XYZRef C c    0.00 -0.01   0.002                0   0   0   0
 '''
 
-def build_all_mols ( context, molcomp_text, moldef_text=None, build_as_3D=True ):
+def build_all_mols ( context, molcomp_text, moldef_text=None, build_as_3D=True, include_rotation=True ):
 
   if build_as_3D:
     print ( "\n\nBuilding as 3D" )
@@ -846,7 +849,7 @@ def build_all_mols ( context, molcomp_text, moldef_text=None, build_as_3D=True )
                   c['assigned'] = True
                   break
 
-  bind_all_molecules ( molcomp_list, build_as_3D )
+  bind_all_molecules ( molcomp_list, build_as_3D, include_rotation=molmaker.include_rotation )
 
   print ( "======================================================================================" )
   dump_molcomp_list ( molcomp_list )
@@ -869,7 +872,7 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
     if molmaker.comp_loc_text_name in bpy.data.texts:
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=False )
+    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=False, include_rotation=True )
     return {'FINISHED'}
 
 
@@ -887,7 +890,7 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
     if molmaker.comp_loc_text_name in bpy.data.texts:
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=True )
+    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=True, include_rotation=True )
     return {'FINISHED'}
 
 
@@ -1078,7 +1081,7 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
 
     print ( 'Built location model:\n' + moldef_txt )
 
-    build_all_mols ( context, fdata, moldef_text=moldef_txt, build_as_3D=True )
+    build_all_mols ( context, fdata, moldef_text=moldef_txt, build_as_3D=True, include_rotation=True )
 
     print ( 'Built Blender model\n' )
 
@@ -1099,6 +1102,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   molecule_definition = StringProperty ( name = "MolDef", description="Molecule Definition (such as: A.B.B.C)" )
 
   show_key_planes = BoolProperty ( default=True )
+  include_rotation = BoolProperty ( default=True )
 
   def draw_layout ( self, context, layout ):
 
@@ -1139,6 +1143,8 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     row = layout.row()
     col = row.column()
     col.prop ( self, 'show_key_planes', text="Draw Key Planes" )
+    col = row.column()
+    col.prop ( self, 'include_rotation', text="Axial Rotation" )
     col = row.column()
     col.operator ( "mol.rebuild_with_cb" )
 
