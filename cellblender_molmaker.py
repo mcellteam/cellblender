@@ -490,15 +490,51 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
                    (fixed_vec[0] * var_vec[1]) - (fixed_vec[1] * var_vec[0]) ]
     norm_cross_prod = [ cp / ( fixed_mag * var_mag ) for cp in cross_prod ]
 
-    # Build a 3D rotation matrix
-    ux = norm_cross_prod[0]
-    uy = norm_cross_prod[1]
-    uz = norm_cross_prod[2]
-    omca = 1 - ca
+    xpx = norm_cross_prod[0]
+    xpy = norm_cross_prod[1]
+    xpz = norm_cross_prod[2]
 
-    R = [ [ca + (ux*ux*omca), (ux*uy*omca) - (uz*sa), (ux*uz*omca) + (uy*sa)],
-          [(uy*ux*omca) + (uz*sa), ca + (uy*uy*omca), (uy*uz*omca) - (ux*sa)],
-          [(uz*ux*omca) - (uy*sa), (uz*uy*omca) + (ux*sa), ca + (uz*uz*omca)] ]
+    axis_length = math.sqrt( (xpx*xpx) + (xpy*xpy) + (xpz*xpz) )
+
+    ux = xpx / axis_length
+    uy = xpy / axis_length
+    uz = xpz / axis_length
+
+    R = None
+
+    if True:  # Build the rotation matrix directly
+
+      # Build a 3D rotation matrix
+      omca = 1 - ca
+
+      R = [ [ca + (ux*ux*omca), (ux*uy*omca) - (uz*sa), (ux*uz*omca) + (uy*sa)],
+            [(uy*ux*omca) + (uz*sa), ca + (uy*uy*omca), (uy*uz*omca) - (ux*sa)],
+            [(uz*ux*omca) - (uy*sa), (uz*uy*omca) + (ux*sa), ca + (uz*uz*omca)] ]
+
+    else:  # Build the rotation matrix from a quaternion
+
+      s2 = math.sin(angle/2)
+      c2 = math.cos(angle/2)
+
+      q  = [ c2,  s2*ux,  s2*uy,  s2*uz ]
+      # qconj = [ c2, -s2*ux, -s2*uy, -s2*uz ]
+
+      # Create convenience variables for components and squares
+
+      qr = q[0]
+      qi = q[1]
+      qj = q[2]
+      qk = q[3]
+
+      qi2 = qi * qi
+      qj2 = qj * qj
+      qk2 = qk * qk
+
+      # Create the rotation matrix itself from the quaternion
+
+      R = [ [     1-(2*(qj2+qk2)), 2*((qi*qj)-(qk*qr)), 2*((qi*qk)+(qj*qr)) ],
+            [ 2*((qi*qj)+(qk*qr)),     1-(2*(qi2+qk2)), 2*((qj*qk)-(qi*qr)) ],
+            [ 2*((qi*qk)-(qj*qr)), 2*((qj*qk)+(qi*qr)),     1-(2*(qi2+qj2)) ] ]
 
     ##### fprintf ( stdout, "Rotating component positions for %s by %g\n", mc[var_mol_index].name, 180*angle/math.pi );
     # for (int ci=0; ci<mc[var_mol_index].num_peers; ci++) {
