@@ -224,7 +224,7 @@ def read_molcomp_data_SphereCyl ( fdata ):
   this_index = 0
   for l in ldata:
     print ( "Line: " + l )
-    m = { 'name':'', 'loc':[0,0,0], 'r':1, 'c':'MolMaker_mol', 'ftype':mc['ftype'] }
+    m = { 'name':'', 'loc':[0,0,0], 'r':1, 'c':'MolMaker_mol', 'ftype':'' }
     m['name'] = l.split("=")[1].split('(')[0].strip()
     m['ftype'] = l.split('(')[1][0]   # Pull out the type (m or c or k)
     if m['ftype'] == 'm':
@@ -253,7 +253,7 @@ def MolComp_to_SphereCyl ( molcomp_list, build_as_3D ):
   SphereCyl_data = { 'Version':1.1, 'SphereList':[], 'CylList':[], 'FaceList':[] }
   this_index = 0
   for mc in molcomp_list:
-    m = { 'name':'', 'loc':mc['coords'], 'r':1, 'c':'MolMaker_mol', 'ftype':mc['ftype'] }
+    m = { 'name':mc['name'], 'loc':mc['coords'], 'r':1, 'c':'MolMaker_mol', 'ftype':mc['ftype'] }
     if mc['ftype'] == 'm':
       m['r'] = 0.005
       if len(mc['peer_list']) > 0:
@@ -1164,6 +1164,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   molecule_definition = StringProperty ( name = "MolDef", description="Molecule Definition (such as: A.B.B.C)" )
 
   make_materials = BoolProperty ( default=True )
+  cellblender_colors = BoolProperty ( default=True )
   show_key_planes = BoolProperty ( default=True )
   include_rotation = BoolProperty ( default=True )
 
@@ -1209,6 +1210,8 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     row = layout.row()
     col = row.column()
     col.prop ( self, 'make_materials', text="Make Materials" )
+    col = row.column()
+    col.prop ( self, 'cellblender_colors', text="CellBlender Colors" )
     col = row.column()
     col.prop ( self, 'show_key_planes', text="Show Key Planes" )
     col = row.column()
@@ -1354,7 +1357,14 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
       p = mol['loc']
       # bpy.ops.mesh.primitive_uv_sphere_add(size=mol['r'],location=p)
       bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, size=mol['r'],location=p)
-      if 'c' in mol:
+      color_set = False
+      if molmaker.cellblender_colors:
+        # Try to find a molecule color material matching this molecule
+        mname = "mol_" + mol['name'] + "_mat"
+        if mname in mats:
+          context.active_object.data.materials.append ( mats.get(mname) )
+          color_set = True
+      if (not color_set) and ('c' in mol):
         if mol['c'] in mats:
           context.active_object.data.materials.append ( mats.get(mol['c']) )
       join_to_working_object ( context, mol_obj )
