@@ -234,12 +234,12 @@ def read_molcomp_data_SphereCyl ( fdata ):
         peers = peer_part.split('[')[1].split(']')[0].split(',')
         peers = [ p for p in peers if len(p) > 0 ]  # Remove any empty peers
         for p in peers:
-          SphereCyl_data['CylList'].append ( [this_index, int(p), 0.001] )
+          SphereCyl_data['CylList'].append ( [this_index, int(p), 0.001] )  # Add the connecting bond cylinder
           print ( "  Bond: " + str(this_index) + " " + p.strip() )
     elif m['ftype'] == 'c':
       m['r'] = 0.0025
     elif m['ftype'] == 'k':
-      m['r'] = 0.001
+      m['r'] = 0.0015
     m['loc'] = eval ( '[' + l.split('(')[2].split(')')[0] + ']' )
     SphereCyl_data['SphereList'].append ( m )
     this_index += 1
@@ -257,7 +257,8 @@ def MolComp_to_SphereCyl ( molcomp_list, build_as_3D ):
       if len(mc['peer_list']) > 0:
         peers = mc['peer_list']
         for p in peers:
-          SphereCyl_data['CylList'].append ( [this_index, int(p), 0.001] )  # Add the connecting bond cylinder
+          if molcomp_list[int(p)]['ftype'] != 'k':
+            SphereCyl_data['CylList'].append ( [this_index, int(p), 0.001] )  # Add the connecting bond cylinder
           if build_as_3D and len(molcomp_list[int(p)]['key_list']) > 0:
             # This component has a key
             k = molcomp_list[int(p)]['key_list'][0]
@@ -265,7 +266,7 @@ def MolComp_to_SphereCyl ( molcomp_list, build_as_3D ):
     elif mc['ftype'] == 'c':
       m['r'] = 0.0025
     elif mc['ftype'] == 'k':
-      m['r'] = 0.001
+      m['r'] = 0.0015
     SphereCyl_data['SphereList'].append ( m )
     this_index += 1
   return SphereCyl_data
@@ -988,8 +989,16 @@ class MolMaker_OT_chain_mols(bpy.types.Operator):
           # This molecule is at least between two non-molecules
           # This is where the code should search both up and down for actual components (not keys)
           # However, for now, we'll assume that there are no keys and make the bond
-          molcomp_items[mol_index-1].bond_index = mol_index+1
-          molcomp_items[mol_index+1].bond_index = mol_index-1
+          prev_comp_index = mol_index-1
+          while (prev_comp_index > 0) and (molcomp_items[prev_comp_index].field_type != 'c'):
+            prev_comp_index += -1
+          if (prev_comp_index >= 0) and (molcomp_items[prev_comp_index].field_type == 'c'):
+            next_comp_index = mol_index+1
+            while (next_comp_index < len(molcomp_items)) and (molcomp_items[next_comp_index].field_type != 'c'):
+              next_comp_index += 1
+            if (next_comp_index < len(molcomp_items)) and (molcomp_items[next_comp_index].field_type == 'c'):
+              molcomp_items[prev_comp_index].bond_index = next_comp_index
+              molcomp_items[next_comp_index].bond_index = prev_comp_index
     return {'FINISHED'}
 
 
