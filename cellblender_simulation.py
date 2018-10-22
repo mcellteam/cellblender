@@ -740,6 +740,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
         mcell_processes = run_sim.mcell_processes
         mcell_processes_str = str(run_sim.mcell_processes)
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
+        ext_path = os.path.dirname(os.path.realpath(mcell_binary))
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
         status = ""
@@ -906,7 +907,6 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
 
                       if bionetgen_mode:
                           # execute mdlr2mdl.py to generate MDL from MDLR
-                          ext_path = os.path.dirname(run_cmd[0])
 
                           my_env = {}
                           if (sys.platform == 'darwin'):
@@ -935,7 +935,6 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           proc = cellblender.simulation_queue.add_task(cellblender.python_path, mcellr_args, run_cmd[1], make_texts, env=my_env)
                           print ( 100 * "@" )
                       else:
-                          ext_path = os.path.dirname(run_cmd[0])
 
                           my_env = {}
                           if (sys.platform == 'darwin'):
