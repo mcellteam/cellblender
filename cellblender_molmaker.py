@@ -17,84 +17,61 @@
 
 ### NOTE: Portions of this were intentionally written to be more "C-like" than "Pythonic"
 
-# This code is based model text that looks like this:
+# This code is based on text representation that looks like this:
 
 """
-  [0] = l (c) at  (0.0950524, -0.0258901, 0) with peers [59,32]
-  [1] = l (c) at  (0.0950524, -0.0430901, 0) with peers [58,31]
-  [2] = l (c) at  (0.085, -0.0086, 0) with peers [59,30]
-  [3] = l (c) at  (0.085, -0.0603803, 0) with peers [58,33]
-  [4] = l (c) at  (0.05, 0, 0) with peers [60,34]
-  [5] = l (c) at  (0.03, 0, 0) with peers [60,38]
-  [6] = l (c) at  (0.05, -0.0689803, 0) with peers [61,35]
-  [7] = l (c) at  (-0.005, 0.0086, 0) with peers [62,39]
-  [8] = l (c) at  (0.03, -0.0689803, 0) with peers [61,37]
-  [9] = l (c) at  (-0.0150524, 0.0258901, 0) with peers [62,36]
-  [10] = l (c) at  (-0.0299999, 0.0343998, 0) with peers [64,41]
-  [11] = l (c) at  (-0.00521005, 0.0605613, 0) with peers [63,40]
-  [12] = l (c) at  (0.0151305, -0.0776254, 0) with peers [65,42]
-  [13] = l (c) at  (-0.005, -0.0086, 0) with peers [66,43]
-  [14] = l (c) at  (-0.049999, 0.0342181, 0) with peers [64,45]
-  [15] = l (c) at  (0.00468486, 0.077942, 0) with peers [63,44]
-  [16] = l (c) at  (0.00523557, -0.0950061, 0) with peers [65,46]
-  [17] = l (c) at  (-0.0150524, -0.0258901, 0) with peers [66,47]
-  [18] = r (c) at  (0.085, 0.0086, 0) with peers [51]
-  [19] = r (c) at  (0.130052, -0.0344901, 0) with peers [50]
-  [20] = r (c) at  (0.085, -0.0775803, 0) with peers [52]
-  [21] = r (c) at  (0.00497352, -0.0430451, 0) with peers [53]
-  [22] = r (c) at  (0.0396053, 0.0868597, 0) with peers [55]
-  [23] = r (c) at  (0.00452859, 0.0951413, 0) with peers [55]
-  [24] = r (c) at  (-0.0850757, 0.0424997, 0) with peers [54]
-  [25] = r (c) at  (-0.0849195, 0.0253004, 0) with peers [54]
-  [26] = r (c) at  (0.0153925, -0.129586, 0) with peers [56]
-  [27] = r (c) at  (-0.00963395, -0.103651, 0) with peers [56]
-  [28] = r (c) at  (-0.0500524, -0.0344901, 0) with peers [57]
-  [29] = r (c) at  (-0.0150524, -0.0430901, 0) with peers [57]
-  [30] = r (c) at  (0.085, -0.0086, 0) with peers [51,2]
-  [31] = r (c) at  (0.0950524, -0.0430901, 0) with peers [50,1]
-  [32] = r (c) at  (0.0950524, -0.0258901, 0) with peers [50,0]
-  [33] = r (c) at  (0.085, -0.0603803, 0) with peers [52,3]
-  [34] = r (c) at  (0.05, 0, 0) with peers [51,4]
-  [35] = r (c) at  (0.05, -0.0689803, 0) with peers [52,6]
-  [36] = r (c) at  (-0.0150524, 0.0258901, 0) with peers [49,9]
-  [37] = r (c) at  (0.03, -0.0689803, 0) with peers [53,8]
-  [38] = r (c) at  (0.03, 0, 0) with peers [48,5]
-  [39] = r (c) at  (-0.005, 0.0086, 0) with peers [48,7]
-  [40] = r (c) at  (-0.00521005, 0.0605613, 0) with peers [49,11]
-  [41] = r (c) at  (-0.0299999, 0.0343998, 0) with peers [49,10]
-  [42] = r (c) at  (0.0151305, -0.0776254, 0) with peers [53,12]
-  [43] = r (c) at  (-0.005, -0.0086, 0) with peers [48,13]
-  [44] = r (c) at  (0.00468486, 0.077942, 0) with peers [55,15]
-  [45] = r (c) at  (-0.049999, 0.0342181, 0) with peers [54,14]
-  [46] = r (c) at  (0.00523557, -0.0950061, 0) with peers [56,16]
-  [47] = r (c) at  (-0.0150524, -0.0258901, 0) with peers [57,17]
-  [48] = L (m) at  (0, 0, 0) with peers [38,39,43]
-  [49] = L (m) at  (-0.0200524, 0.0344901, 0) with peers [40,41,36]
-  [50] = L (m) at  (0.100052, -0.0344901, 0) with peers [19,32,31]
-  [51] = L (m) at  (0.08, -3.67394e-18, 0) with peers [34,30,18]
-  [52] = L (m) at  (0.08, -0.0689803, 0) with peers [35,20,33]
-  [53] = L (m) at  (0.0200521, -0.0689803, 0) with peers [21,42,37]
-  [54] = L (m) at  (-0.0799978, 0.0339455, 0) with peers [45,24,25]
-  [55] = L (m) at  (0.00960652, 0.0865871, 0) with peers [22,23,44]
-  [56] = L (m) at  (0.00031391, -0.103651, 0) with peers [26,46,27]
-  [57] = L (m) at  (-0.0200524, -0.0344901, 0) with peers [28,29,47]
-  [58] = R (m) at  (0.0900262, -0.0517352, 0) with peers [1,3]
-  [59] = R (m) at  (0.0900262, -0.0172451, 0) with peers [0,2]
-  [60] = R (m) at  (0.04, 0, 0) with peers [4,5]
-  [61] = R (m) at  (0.04, -0.0689803, 0) with peers [8,6]
-  [62] = R (m) at  (-0.0100262, 0.0172451, 0) with peers [7,9]
-  [63] = R (m) at  (-0.000262595, 0.0692517, 0) with peers [11,15]
-  [64] = R (m) at  (-0.0399994, 0.0343089, 0) with peers [14,10]
-  [65] = R (m) at  (0.010183, -0.0863157, 0) with peers [12,16]
-  [66] = R (m) at  (-0.0100262, -0.0172451, 0) with peers [17,13]
+  [0] = A (m) at (0,0,0) with peers [1, 2, 3, 4, 5, 6, 7]
+  [1] = a (c) at (0.009999999776482582,0.0,0.0) with peers [0] <7,0.0>
+  [2] = a (c) at (-0.009999999776482582,0.0,0.0) with peers [0] <7,0.0>
+  [3] = a (c) at (0.0,0.009999999776482582,0.0) with peers [0] <7,0.0>
+  [4] = a (c) at (0.0,-0.009999999776482582,0.0) with peers [0] <7,0.0>
+  [5] = a (c) at (0.0,0.0,0.009999999776482582) with peers [0] <7,0.0>
+  [6] = a (c) at (0.0,0.0,-0.009999999776482582) with peers [0, 9] <7,0.0>
+  [7] = a (k) at (0.0,0.0,0.03) with peers [0]
+  [8] = A (m) at (-6.12323385887182e-19,0.0,-0.019999999552965164) with peers [9, 10, 11, 12, 13, 14, 15]
+  [9] = a (c) at (0.0,0.0,-0.009999999776482582) with peers [8, 6] <15,0.0>
+  [10] = a (c) at (-1.224646771774364e-18,0.0,-0.029999999329447746) with peers [8] <15,0.0>
+  [11] = a (c) at (0.009999999776482582,6.123233858871821e-19,-0.019999999552965164) with peers [8] <15,0.0>
+  [12] = a (c) at (-0.009999999776482582,-6.123233858871821e-19,-0.019999999552965164) with peers [8] <15,0.0>
+  [13] = a (c) at (-1.224646771774364e-18,0.009999999776482582,-0.019999999552965164) with peers [8] <15,0.0>
+  [14] = a (c) at (9.62964972193618e-35,-0.009999999776482582,-0.019999999552965164) with peers [8, 17] <15,0.0>
+  [15] = a (k) at (-2.4492935846082116e-18,0.03,-0.019999999552965164) with peers [8]
+  [16] = A (m) at (-6.123233858871819e-19,-0.019999999552965164,-0.019999999552965164) with peers [17, 18, 19, 20, 21, 22, 23]
+  [17] = a (c) at (9.62964972193618e-35,-0.009999999776482582,-0.019999999552965164) with peers [16, 14] <23,0.0>
+  [18] = a (c) at (-1.224646771774364e-18,-0.029999999329447746,-0.019999999552965164) with peers [16] <23,0.0>
+  [19] = a (c) at (-1.224646771774364e-18,-0.019999999552965164,-0.029999999329447746) with peers [16] <23,0.0>
+  [20] = a (c) at (1.925929944387236e-34,-0.019999999552965164,-0.009999999776482582) with peers [16] <23,0.0>
+  [21] = a (c) at (-0.009999999776482582,-0.019999999552965164,-0.019999999552965164) with peers [16] <23,0.0>
+  [22] = a (c) at (0.009999999776482582,-0.019999999552965164,-0.019999999552965164) with peers [16] <23,0.0>
+  [23] = a (k) at (-0.03,-0.01999999955296516,-0.01999999955296516) with peers [16]
 """
 
-# Note that this was extended as follows to support a bond angle:
+# This example text was printed by CellBlender's MolMaker code.
+# The format shown here can be used as an "interchange" format.
 
-#   The type can now be "m" or "c" or "k". The "k" indicates a rotation key.
-#   An optional field was added after the components with <#> to reference the rotation key index.
-#   A rotation key index can reference any other entry in the table (m, c, or k).
-#   The triad of the molecule, component, and key fields must define a unique plane.
+# This example shows a complex of 3 "A" molecules (each denoted with an "(m)").
+# Each "A" molecule has 6 "normal" components and one "key" component (all named "a").
+# Normal components are denoted with a "(c)" and key components are denoted with a "(k)".
+# All final coordinate positions are relative to the molecule located at the origin (0,0,0).
+# All molecules, components, and keys are related through their "peer" lists.
+# All entries in any "peer" list refer to the item's index in the table (such as "[3]").
+# Each molecule lists all of its components (both "normal" and "key") in its list of peers.
+# All of a molecule's peers will be rotated and translated along with the molecule itself.
+# Each non-molecule ("component" or "key") has a list of either 1 or 2 peers.
+# The first peer of each non-molecule is an index to that item's molecule.
+# The second peer of each non-molecule (if it exists) references a binding partner.
+# The binding between molecules is done by co-locating the binding components.
+# Any two bound molecules and their respective binding components are collinear.
+# The angle brackets "<...>" define rotation angles about the collinear binding axis.
+# A rotation angle is specified as "reference,angle" pair: <reference,angle>
+# The "reference" in a rotation angle specification is an index into that molecule's table.
+# A rotation "reference" may refer to either a component (c) or a key (k) in that molecule.
+# Rotation Alignment Planes are defined by the ordered triplet: (molecule, component, reference).
+# Rotation Alignment Planes must be defined (molecule, component, reference must not be collinear).
+# Rotational Alignment between two molecules specifies an angle between their Alignment Planes.
+# The binding angle between bound Alignment Planes is the sum of the two angles in each component.
+# The rotation angle is interpreted as counter-clockwise viewed from its associated molecule.
+# When both rotation angles are 0, the normals to the Rotation Alignment Planes are opposites.
 
 
 import bpy
