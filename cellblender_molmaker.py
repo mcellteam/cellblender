@@ -580,6 +580,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     # dump_molcomp_list ( mc )
 
     # Rotate the variable molecule along its bonding axis to align based on the rotation key angle
+
     print ( "Final Rotation:" )
     print ( "  Fixed mol " + str(fixed_mol_index) + " binding to Var mol " + str(var_mol_index) )
     print ( "  Fixed component " + str(fixed_comp_index) + " binding to Var component " + str(var_comp_index) )
@@ -590,52 +591,63 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     var_angle = mc[var_comp_index]['angle']
     print ( "  Fixed angle = " + str(fixed_angle) + ", Var angle = " + str(var_angle) )
 
-    vec1 = []
-    vec2 = []
+    fixed_vcomp = []
+    fixed_vkey = []
 
-    vec1.append ( mc[fixed_comp_index]['coords'][0] - mc[fixed_mol_index]['coords'][0] )
-    vec1.append ( mc[fixed_comp_index]['coords'][1] - mc[fixed_mol_index]['coords'][1] )
-    vec1.append ( mc[fixed_comp_index]['coords'][2] - mc[fixed_mol_index]['coords'][2] )
+    # fixed_vcomp will be the vector from the fixed molecule to the fixed component
+    fixed_vcomp.append ( mc[fixed_comp_index]['coords'][0] - mc[fixed_mol_index]['coords'][0] )
+    fixed_vcomp.append ( mc[fixed_comp_index]['coords'][1] - mc[fixed_mol_index]['coords'][1] )
+    fixed_vcomp.append ( mc[fixed_comp_index]['coords'][2] - mc[fixed_mol_index]['coords'][2] )
 
-    vec2.append ( mc[fixed_key_index]['coords'][0] - mc[fixed_mol_index]['coords'][0] )
-    vec2.append ( mc[fixed_key_index]['coords'][1] - mc[fixed_mol_index]['coords'][1] )
-    vec2.append ( mc[fixed_key_index]['coords'][2] - mc[fixed_mol_index]['coords'][2] )
+    # fixed_vkey will be the vector from the fixed molecule to the fixed key
+    fixed_vkey.append ( mc[fixed_key_index]['coords'][0] - mc[fixed_mol_index]['coords'][0] )
+    fixed_vkey.append ( mc[fixed_key_index]['coords'][1] - mc[fixed_mol_index]['coords'][1] )
+    fixed_vkey.append ( mc[fixed_key_index]['coords'][2] - mc[fixed_mol_index]['coords'][2] )
 
-    fixed_normal = [ (vec1[1] * vec2[2]) - (vec1[2] * vec2[1]),
-                     (vec1[2] * vec2[0]) - (vec1[0] * vec2[2]),
-                     (vec1[0] * vec2[1]) - (vec1[1] * vec2[0]) ]
+    # Use the cross product to get the normal to the fixed key plane
+    fixed_normal = [ (fixed_vcomp[1] * fixed_vkey[2]) - (fixed_vcomp[2] * fixed_vkey[1]),
+                     (fixed_vcomp[2] * fixed_vkey[0]) - (fixed_vcomp[0] * fixed_vkey[2]),
+                     (fixed_vcomp[0] * fixed_vkey[1]) - (fixed_vcomp[1] * fixed_vkey[0]) ]
 
-    v1_mag = math.sqrt ( (vec1[0]*vec1[0]) + (vec1[1]*vec1[1]) + (vec1[2]*vec1[2]) )
-    v2_mag = math.sqrt ( (vec2[0]*vec2[0]) + (vec2[1]*vec2[1]) + (vec2[2]*vec2[2]) )
+    #fixed_vcomp_mag = math.sqrt ( (fixed_vcomp[0]*fixed_vcomp[0]) + (fixed_vcomp[1]*fixed_vcomp[1]) + (fixed_vcomp[2]*fixed_vcomp[2]) )
+    #fixed_vkey_mag = math.sqrt ( (fixed_vkey[0]*fixed_vkey[0]) + (fixed_vkey[1]*fixed_vkey[1]) + (fixed_vkey[2]*fixed_vkey[2]) )
 
-    fixed_normal = [ cp / ( v1_mag * v2_mag ) for cp in fixed_normal ]
+    fixed_norm_mag = math.sqrt ( (fixed_normal[0]*fixed_normal[0]) + (fixed_normal[1]*fixed_normal[1]) + (fixed_normal[2]*fixed_normal[2]) )
 
-    print ( "  Fixed normal = " + str(fixed_normal) )
+    # fixed_normal = [ cp / ( fixed_vcomp_mag * fixed_vkey_mag ) for cp in fixed_normal ]
+    fixed_unit = [ cp / fixed_norm_mag for cp in fixed_normal ]
 
-    vec1 = []
-    vec2 = []
+    print ( "  Fixed unit = " + str(fixed_unit) )
 
-    vec1.append ( mc[var_comp_index]['coords'][0] - mc[var_mol_index]['coords'][0] )
-    vec1.append ( mc[var_comp_index]['coords'][1] - mc[var_mol_index]['coords'][1] )
-    vec1.append ( mc[var_comp_index]['coords'][2] - mc[var_mol_index]['coords'][2] )
+    var_vcomp = []
+    var_vkey = []
 
-    vec2.append ( mc[var_key_index]['coords'][0] - mc[var_mol_index]['coords'][0] )
-    vec2.append ( mc[var_key_index]['coords'][1] - mc[var_mol_index]['coords'][1] )
-    vec2.append ( mc[var_key_index]['coords'][2] - mc[var_mol_index]['coords'][2] )
+    # var_vcomp will be the vector from the var molecule to the var component
+    var_vcomp.append ( mc[var_comp_index]['coords'][0] - mc[var_mol_index]['coords'][0] )
+    var_vcomp.append ( mc[var_comp_index]['coords'][1] - mc[var_mol_index]['coords'][1] )
+    var_vcomp.append ( mc[var_comp_index]['coords'][2] - mc[var_mol_index]['coords'][2] )
 
-    var_normal = [ (vec1[1] * vec2[2]) - (vec1[2] * vec2[1]),
-                   (vec1[2] * vec2[0]) - (vec1[0] * vec2[2]),
-                   (vec1[0] * vec2[1]) - (vec1[1] * vec2[0]) ]
+    # var_vcomp will be the vector from the var molecule to the var key
+    var_vkey.append ( mc[var_key_index]['coords'][0] - mc[var_mol_index]['coords'][0] )
+    var_vkey.append ( mc[var_key_index]['coords'][1] - mc[var_mol_index]['coords'][1] )
+    var_vkey.append ( mc[var_key_index]['coords'][2] - mc[var_mol_index]['coords'][2] )
 
-    v1_mag = math.sqrt ( (vec1[0]*vec1[0]) + (vec1[1]*vec1[1]) + (vec1[2]*vec1[2]) )
-    v2_mag = math.sqrt ( (vec2[0]*vec2[0]) + (vec2[1]*vec2[1]) + (vec2[2]*vec2[2]) )
+    var_normal = [ (var_vcomp[1] * var_vkey[2]) - (var_vcomp[2] * var_vkey[1]),
+                   (var_vcomp[2] * var_vkey[0]) - (var_vcomp[0] * var_vkey[2]),
+                   (var_vcomp[0] * var_vkey[1]) - (var_vcomp[1] * var_vkey[0]) ]
 
-    var_normal = [ cp / ( v1_mag * v2_mag ) for cp in var_normal ]
+    var_vcomp_mag = math.sqrt ( (var_vcomp[0]*var_vcomp[0]) + (var_vcomp[1]*var_vcomp[1]) + (var_vcomp[2]*var_vcomp[2]) )
+    #var_vkey_mag = math.sqrt ( (var_vkey[0]*var_vkey[0]) + (var_vkey[1]*var_vkey[1]) + (var_vkey[2]*var_vkey[2]) )
 
-    print ( "  Var normal = " + str(var_normal) )
+    var_norm_mag = math.sqrt ( (var_normal[0]*var_normal[0]) + (var_normal[1]*var_normal[1]) + (var_normal[2]*var_normal[2]) )
+
+    # var_normal = [ cp / ( var_vcomp_mag * var_vkey_mag ) for cp in var_normal ]
+    var_unit = [ cp / var_norm_mag for cp in var_normal ]
+
+    print ( "  Var unit = " + str(var_unit) )
 
 
-    norm_dot_prod = (fixed_normal[0] * var_normal[0]) + (fixed_normal[1] * var_normal[1]) + (fixed_normal[2] * var_normal[2])
+    norm_dot_prod = (fixed_unit[0] * var_unit[0]) + (fixed_unit[1] * var_unit[1]) + (fixed_unit[2] * var_unit[2])
 
     # Ensure that the dot product is a legal argument for the "acos" function:
     if norm_dot_prod >  1:
@@ -645,10 +657,10 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
     cur_rot_angle = math.acos ( norm_dot_prod )
 
-    composite_rot_angle = (var_angle-fixed_angle) - cur_rot_angle
+    composite_rot_angle = math.pi + (var_angle-fixed_angle) + cur_rot_angle # The "math.pi" adds 180 degrees to make the components "line up"
 
-    # Build a 3D rotation matrix
-    var_rot_unit = [ v / v1_mag for v in vec1 ]
+    # Build a 3D rotation matrix along the axis of the molecule to the component
+    var_rot_unit = [ v / var_vcomp_mag for v in var_vcomp ]
     ux = var_rot_unit[0]
     uy = var_rot_unit[1]
     uz = var_rot_unit[2]
@@ -1307,9 +1319,9 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
       # It didn't exist, so make it
       mol_mat = mats.new ( "MolMaker_key_plane" )
       color = mol_mat.diffuse_color
-      color[0] = 0
-      color[1] = 0.5
-      color[2] = 0.5
+      color[0] = 0.5
+      color[1] = 0.0
+      color[2] = 0.0
       mol_mat.specular_intensity = 0
       mol_mat.use_transparency = True
       mol_mat.alpha = 0.2
