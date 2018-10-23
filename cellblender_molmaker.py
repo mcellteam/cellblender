@@ -1145,6 +1145,8 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   show_key_planes = BoolProperty ( default=True )
   include_rotation = BoolProperty ( default=True )
 
+  show_text_interface = BoolProperty ( default=False )
+
   def draw_layout ( self, context, layout ):
 
     mcell = context.scene.mcell
@@ -1196,29 +1198,33 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     col = row.column()
     col.operator ( "mol.rebuild_with_cb" )
 
-    row = layout.row()
-    row.label ( "=========================================" )
-    row = layout.row()
-    row.prop_search ( self, "molecule_text_name",
-                      self, "molecule_texts_list",
-                      text="Molecule Definition Text:", icon='TEXT' )
-    row.operator("mol.update_files", icon='FILE_REFRESH', text="")
-
-    row = layout.row()
-    row.prop_search ( self, "comp_loc_text_name",
-                      self, "comp_loc_texts_list",
-                      text="Component Location Text (opt):", icon='TEXT' )
-    row.operator("mol.update_files", icon='FILE_REFRESH', text="")
-
-
-    row = layout.row()
-    row.operator ( "mol.build_as_is" )
-    if 'mcell' in context.scene:
-      # CellBlender is installed, so allow this option
+    row = layout.row(align=True)
+    row.alignment = 'LEFT'
+    if not self.show_text_interface:
+      row.prop(self, "show_text_interface", icon='TRIA_RIGHT', text="Show Text Interface", emboss=False)
+    else:
+      row.prop(self, "show_text_interface", icon='TRIA_DOWN',  text="Show Text Interface", emboss=False)
       row = layout.row()
-      row.operator ( "mol.rebuild_two_d" )
+      row.prop_search ( self, "molecule_text_name",
+                        self, "molecule_texts_list",
+                        text="Molecule Definition Text:", icon='TEXT' )
+      row.operator("mol.update_files", icon='FILE_REFRESH', text="")
+
       row = layout.row()
-      row.operator ( "mol.rebuild_three_d" )
+      row.prop_search ( self, "comp_loc_text_name",
+                        self, "comp_loc_texts_list",
+                        text="Component Location Text (opt):", icon='TEXT' )
+      row.operator("mol.update_files", icon='FILE_REFRESH', text="")
+
+
+      row = layout.row()
+      row.operator ( "mol.build_as_is" )
+      if 'mcell' in context.scene:
+        # CellBlender is installed, so allow this option
+        row = layout.row()
+        row.operator ( "mol.rebuild_two_d" )
+        row = layout.row()
+        row.operator ( "mol.rebuild_three_d" )
 
 
   def draw_panel ( self, context, panel ):
