@@ -709,12 +709,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     geom_type_enum = [
         ('None',   "Coincident", ""),
-        ('2DAuto', "2D Auto", ""),
-        ('3DAuto', "3D Auto", ""),
+        #('2DAuto', "2D Auto", ""),
+        #('3DAuto', "3D Auto", ""),
         ('XYZRef', "XYZ,AngleRef", ""),
-        ('XYZ',    "XYZ", ""),
-        ('XYZA',   "XYZ,A Specified", ""),
-        ('XYZVA',  "XYZ,V,A Specified", "")]
+        #('XYZ',    "XYZ", ""),
+        #('XYZA',   "XYZ,A Specified", ""),
+        #('XYZVA',  "XYZ,V,A Specified", "")
+        ]
     geom_type = EnumProperty(
         items=geom_type_enum, name="Geometry",
         default='None',
@@ -722,7 +723,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         #,
         #update=mol_geom_type_changed_callback)
 
-    component_distance = FloatProperty ( name="CompDist", min=0.0, default=0.01, description="Distance of Components from Molecule" )
+    component_distance = FloatProperty ( name="R", min=0.0, default=0.01, description="Distance of Components from Molecule" )
 
     shape_name = StringProperty(name="ShapeName", default="")
     material_name = StringProperty(name="MatName", default="")
@@ -1334,12 +1335,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col = row.column() # Provide some space?
                 col.label ( " " )
                 col = row.column()
+                col.prop(self, "component_distance")
+                col = row.column()
                 col.operator ( "mcell.dist_two_d_circle", icon='FILE_REFRESH', text='2D' )
                 col = row.column()
                 col.operator ( "mcell.dist_three_d_sphere", icon='FILE_REFRESH', text='3D' )
                 if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
-                  col = row.column()
-                  col.prop(self, "component_distance")
                   col = row.column()
                   col.operator("mcell.molecule_recalc_comps", icon='FILE_REFRESH', text="")
 
@@ -1853,16 +1854,20 @@ class MCell_UL_check_component(bpy.types.UIList):
             # Create a list of ONLY the actual components
             comp_only_list = [ c for c in this_mol.component_list if c.is_key == False ]
             # Get the index of the original item in the new comp_only_list
-            comp_only_index = comp_only_list.index(this_mol.component_list[index])
+            x = 0
+            y = 0
+            z = 0
+            if this_mol.component_list[index] in comp_only_list:
+              comp_only_index = comp_only_list.index(this_mol.component_list[index])
 
-            num_comps = len(comp_only_list)
-            comp_dist = this_mol.component_distance
+              num_comps = len(comp_only_list)
+              comp_dist = this_mol.component_distance
 
-            loc = get_3D_auto_point ( num_comps, comp_dist, comp_only_index )
+              loc = get_3D_auto_point ( num_comps, comp_dist, comp_only_index )
 
-            x = loc[0]
-            y = loc[1]
-            z = loc[2]
+              x = loc[0]
+              y = loc[1]
+              z = loc[2]
 
             # Show the point
             col = layout.column()
