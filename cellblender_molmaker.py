@@ -150,7 +150,7 @@ class MolMaker_OT_update_files(bpy.types.Operator):
 
 
 # This one is called by Build 2D and Build 3D
-def read_molcomp_data_MolComp ( fdata ):
+def read_molcomp_data_from_text ( fdata ):
   ldata = [ l.strip() for l in fdata.split('\n') if len(l.strip()) > 0 ]
   ldata = [ l for l in ldata if not l.startswith('#') ]
 
@@ -199,6 +199,101 @@ def read_molcomp_data_MolComp ( fdata ):
     molcomp_list.append ( mc )
 
   return molcomp_list
+
+
+'''
+MolDef Text File Format:
+# Type M C      x     y      z                 rfx rfy rfz  Unused
+XYZRef T t    0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef T t   -0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef T t    0.00  0.01  0.007071067811865476  0   0   0   0
+XYZRef T t    0.00 -0.01  0.007071067811865476  0   0   0   0
+
+XYZRef B t    0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef B t   -0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef B t    0.00  0.01  0.007071067811865476  0   0   0   0
+XYZRef B t    0.00 -0.01  0.007071067811865476  0   0   0   0
+
+XYZRef C c    0.00  0.01  -0.002                0   0   0   0
+XYZRef C c    0.00 -0.01   0.002                0   0   0   0
+'''
+
+def update_molcomp_list_from_defs ( context, molcomp_list, moldef_text, build_as_3D ):
+
+  mcell = context.scene.mcell
+  mcell_mols = mcell.molecules.molecule_list
+  molmaker = mcell.molmaker
+
+  if moldef_text == None:
+    # Try reading from a file
+    if molmaker.comp_loc_text_name in bpy.data.texts:
+      # There is a component location definition text
+      checked_print ( "Read component definition text named " + molmaker.comp_loc_text_name )
+      # Read the component definitions
+      moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
+
+  if moldef_text != None:
+    # There is a component location definition text
+
+    # Set the has_coords flag to false on each component of each molecule
+    for mc in molcomp_list:
+      if mc['ftype'] == 'm':
+        mc['coords'] = [0,0,0]
+        mc['has_coords'] = False
+      else:
+        mc['has_coords'] = False
+
+    # Read the component definitions
+    ldata = moldef_text
+    comploc_lines = [ l.strip() for l in ldata.split('\n') if len(l.strip()) > 0 ]
+    comploc_lines = [ l for l in comploc_lines if not l.startswith('#') ]
+
+    mol_comp_loc_dict = {}
+    for cll in comploc_lines:
+      cl_parts = [ p.strip() for p in cll.split() if len(p.strip()) > 0 ]
+      cl_type      = cl_parts[0]
+      cl_mol_name  = cl_parts[1]
+      cl_comp_name = cl_parts[2]
+      cl_x         = float(cl_parts[3])
+      cl_y         = float(cl_parts[4])
+      cl_z         = float(cl_parts[5])
+      cl_refx      = float(cl_parts[6])
+      cl_refy      = float(cl_parts[7])
+      cl_refz      = float(cl_parts[8])
+      if not build_as_3D:
+        checked_print ( "Setting z to zero for " + cl_mol_name + "." + cl_comp_name )
+        cl_z       = 0.0
+        cl_refz    = 0.0
+
+      if not (cl_mol_name in mol_comp_loc_dict):
+        # Make a list for this mol name
+        mol_comp_loc_dict[cl_mol_name] = []
+      # Append the current component definition to the list for this molecule
+      mol_comp_loc_dict[cl_mol_name].append ( { 'cname':cl_comp_name, 'coords':[cl_x, cl_y, cl_z], 'ref':[cl_refx, cl_refy, cl_refz], 'assigned':False } )
+
+    # Assign the component locations by molecule
+    for mc in molcomp_list:
+      # Only assign to components connected to molecules
+      if (mc['ftype']=='m') and (len(mc['peer_list']) > 0):
+        # Clear out the usage for this molecule in the component location table
+        for c in mol_comp_loc_dict[mc['name']]:
+          checked_print ( " Clearing assigned for " + c['cname'] + " with coords: " + str(c['coords']) )
+          c['assigned'] = False
+        # Sweep through all the components for this molecule
+        checked_print ( " Assigning coordinates to components in mol " + mc['name'] )
+        for pi in mc['peer_list']:
+          # Only assign to components that don't have coords
+          checked_print ( "   Checking peer " + str(pi) )
+          if not molcomp_list[pi]['has_coords']:
+            # Sweep through the component name list looking for an unassigned match
+            for c in mol_comp_loc_dict[mc['name']]:
+              if not c['assigned']:
+                if c['cname'] == molcomp_list[pi]['name']:
+                  molcomp_list[pi]['coords'] = [ cc for cc in c['coords'] ]
+                  checked_print ( "          Assigning coordinates: " + str(molcomp_list[pi]['coords']) )
+                  molcomp_list[pi]['has_coords'] = True
+                  c['assigned'] = True
+                  break
 
 
 # This is called directly by the "build as is" operator.
@@ -796,24 +891,7 @@ def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
                   molcomp_array[molcomp_array[vmi]['peer_list'][vmici]]['is_final'] = True
 
 
-'''
-MolDef Text File Format:
-# Type M C      x     y      z                 rfx rfy rfz  Unused
-XYZRef T t    0.01  0.00 -0.007071067811865476  0   0   0   0
-XYZRef T t   -0.01  0.00 -0.007071067811865476  0   0   0   0
-XYZRef T t    0.00  0.01  0.007071067811865476  0   0   0   0
-XYZRef T t    0.00 -0.01  0.007071067811865476  0   0   0   0
-
-XYZRef B t    0.01  0.00 -0.007071067811865476  0   0   0   0
-XYZRef B t   -0.01  0.00 -0.007071067811865476  0   0   0   0
-XYZRef B t    0.00  0.01  0.007071067811865476  0   0   0   0
-XYZRef B t    0.00 -0.01  0.007071067811865476  0   0   0   0
-
-XYZRef C c    0.00  0.01  -0.002                0   0   0   0
-XYZRef C c    0.00 -0.01   0.002                0   0   0   0
-'''
-
-def build_all_mols ( context, molcomp_list, moldef_text=None, build_as_3D=True, include_rotation=True ):
+def build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True ):
 
   if build_as_3D:
     checked_print ( "\n\nBuilding as 3D" )
@@ -821,83 +899,6 @@ def build_all_mols ( context, molcomp_list, moldef_text=None, build_as_3D=True, 
     checked_print ( "\n\nBuilding as 2D" )
 
   molmaker = context.scene.mcell.molmaker
-
-  # Use the default cases to start
-  if build_as_3D:
-    set_component_positions_3D ( molcomp_list )
-  else:
-    set_component_positions_2D ( molcomp_list )
-
-  if moldef_text == None:
-    # Try reading from a file
-    if molmaker.comp_loc_text_name in bpy.data.texts:
-      # There is a component location definition text
-      checked_print ( "Read component definition text named " + molmaker.comp_loc_text_name )
-      # Read the component definitions
-      moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
-
-  if moldef_text != None:
-    # There is a component location definition text
-
-    # Set the has_coords flag to false on each component of each molecule
-    for mc in molcomp_list:
-      if mc['ftype'] == 'm':
-        mc['coords'] = [0,0,0]
-        mc['has_coords'] = False
-      else:
-        mc['has_coords'] = False
-
-    # Read the component definitions
-    ldata = moldef_text
-    comploc_lines = [ l.strip() for l in ldata.split('\n') if len(l.strip()) > 0 ]
-    comploc_lines = [ l for l in comploc_lines if not l.startswith('#') ]
-
-    mol_comp_loc_dict = {}
-    for cll in comploc_lines:
-      cl_parts = [ p.strip() for p in cll.split() if len(p.strip()) > 0 ]
-      cl_type      = cl_parts[0]
-      cl_mol_name  = cl_parts[1]
-      cl_comp_name = cl_parts[2]
-      cl_x         = float(cl_parts[3])
-      cl_y         = float(cl_parts[4])
-      cl_z         = float(cl_parts[5])
-      cl_refx      = float(cl_parts[6])
-      cl_refy      = float(cl_parts[7])
-      cl_refz      = float(cl_parts[8])
-      if not build_as_3D:
-        checked_print ( "Setting z to zero for " + cl_mol_name + "." + cl_comp_name )
-        cl_z       = 0.0
-        cl_refz    = 0.0
-
-      if not (cl_mol_name in mol_comp_loc_dict):
-        # Make a list for this mol name
-        mol_comp_loc_dict[cl_mol_name] = []
-      # Append the current component definition to the list for this molecule
-      mol_comp_loc_dict[cl_mol_name].append ( { 'cname':cl_comp_name, 'coords':[cl_x, cl_y, cl_z], 'ref':[cl_refx, cl_refy, cl_refz], 'assigned':False } )
-
-    # Assign the component locations by molecule
-    for mc in molcomp_list:
-      # Only assign to components connected to molecules
-      if (mc['ftype']=='m') and (len(mc['peer_list']) > 0):
-        # Clear out the usage for this molecule in the component location table
-        for c in mol_comp_loc_dict[mc['name']]:
-          checked_print ( " Clearing assigned for " + c['cname'] + " with coords: " + str(c['coords']) )
-          c['assigned'] = False
-        # Sweep through all the components for this molecule
-        checked_print ( " Assigning coordinates to components in mol " + mc['name'] )
-        for pi in mc['peer_list']:
-          # Only assign to components that don't have coords
-          checked_print ( "   Checking peer " + str(pi) )
-          if not molcomp_list[pi]['has_coords']:
-            # Sweep through the component name list looking for an unassigned match
-            for c in mol_comp_loc_dict[mc['name']]:
-              if not c['assigned']:
-                if c['cname'] == molcomp_list[pi]['name']:
-                  molcomp_list[pi]['coords'] = [ cc for cc in c['coords'] ]
-                  checked_print ( "          Assigning coordinates: " + str(molcomp_list[pi]['coords']) )
-                  molcomp_list[pi]['has_coords'] = True
-                  c['assigned'] = True
-                  break
 
   bind_all_molecules ( molcomp_list, build_as_3D, include_rotation=molmaker.include_rotation )
 
@@ -923,9 +924,11 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
 
-    molcomp_list = read_molcomp_data_MolComp ( fdata )
+    molcomp_list = read_molcomp_data_from_text ( fdata )
+    update_molcomp_list_from_defs ( context, molcomp_list, moldef_text, build_as_3D=False )
 
-    build_all_mols ( context, molcomp_list, moldef_text=moldef_text, build_as_3D=False, include_rotation=molmaker.include_rotation )
+    set_component_positions_2D ( molcomp_list )
+    build_all_mols ( context, molcomp_list, build_as_3D=False, include_rotation=molmaker.include_rotation )
     return {'FINISHED'}
 
 
@@ -944,9 +947,11 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
 
-    molcomp_list = read_molcomp_data_MolComp ( fdata )
+    molcomp_list = read_molcomp_data_from_text ( fdata )
+    update_molcomp_list_from_defs ( context, molcomp_list, moldef_text, build_as_3D=True )
 
-    build_all_mols ( context, molcomp_list, moldef_text=moldef_text, build_as_3D=True, include_rotation=molmaker.include_rotation )
+    set_component_positions_3D ( molcomp_list )
+    build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=molmaker.include_rotation )
     return {'FINISHED'}
 
 
@@ -1147,9 +1152,11 @@ def build_complex_from_cellblender ( context ):
 
   checked_print ( 'Built location model:\n' + moldef_txt )
 
-  molcomp_list = read_molcomp_data_MolComp ( fdata )
+  molcomp_list = read_molcomp_data_from_text ( fdata )
 
-  build_all_mols ( context, molcomp_list, moldef_text=moldef_txt, build_as_3D=True, include_rotation=True )
+  update_molcomp_list_from_defs ( context, molcomp_list, moldef_txt, build_as_3D=True )
+
+  build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True )
 
   checked_print ( 'Built Blender model\n' )
 
