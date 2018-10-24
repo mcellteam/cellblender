@@ -1084,11 +1084,18 @@ class MolMaker_OT_chain_mols(bpy.types.Operator):
 
 
 def build_complex_from_cellblender ( context ):
+
   checked_print ( "Build Molecule calculating new values from CellBlender" )
   # Note that this assumes that the Molecules come first followed by components
   mcell = context.scene.mcell
   mcell_mols = mcell.molecules.molecule_list
   molmaker = mcell.molmaker
+
+  # Save the user's setting
+  saved_print_debug = molmaker.print_debug
+  molmaker.print_debug = False
+
+
   fdata = ""
 
   mols_used = {}
@@ -1156,10 +1163,120 @@ def build_complex_from_cellblender ( context ):
 
   update_molcomp_list_from_defs ( context, molcomp_list, moldef_txt, build_as_3D=True )
 
-  build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True )
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "MolCompList from text translation (dump):" )
+  molmaker.print_debug = True
+  dump_molcomp_list ( molcomp_list )
+  molmaker.print_debug = False
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "MolCompList from text translation (raw):" )
+  print ( "{" )
+  for l in molcomp_list:
+    print ( str(l) )
+  print ( "}" )
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "Data from CellBlender:" )
+  mols_used = {}
+  new_molcomp_list = []
+
+  cur_mol_index = -1 # The Molecules must come before the components for this to work!!
+
+  # Build the molcomp list (without coordinates) from Blender's Molecule Structure Property List
+
+  for i in range(len(molmaker.molcomp_items)):
+    checked_print ( "Current Index = " + str(i) )
+    m = molmaker.molcomp_items[i]
+    mc = {
+      'name': m.name,
+      'ftype':m.field_type,
+      'has_coords':m.has_coords,
+      'is_final':m.is_final,
+      'coords':[c for c in m.coords],
+      'graph_string':m.graph_string,
+      'peer_list':[int(s.strip()) for s in m.peer_list.split(',') if len(s.strip()) > 0],
+      'key_list':[int(s.strip()) for s in m.key_list.split(',') if len(s.strip()) > 0],
+      'bond_index': m.bond_index,
+      'angle': m.angle,
+    }
+
+    if m.field_type == 'm':
+      cur_mol_index = i
+      mols_used[m.name] = True # Store this molecule name in the dictionary
+    if m.bond_index >= 0:
+      mc['peer_list'].append ( m.bond_index )
+
+    # Next build the Angle References for any components
+
+    if m.field_type == 'c':
+      cur_comp_index = (i - cur_mol_index) - 1
+      comp = mcell_mols[molmaker.molcomp_items[cur_mol_index].name].component_list[cur_comp_index]
+      rot_index = comp.rot_index
+      if rot_index < 0:
+        print ( "Warning: This bond uses a component that has no reference!!" )
+      abs_rot_index = rot_index + cur_mol_index + 1
+      if rot_index >= 0:
+        mc['key_list'] = [ abs_rot_index ]
+        mc['angle'] = m.angle
+
+    new_molcomp_list.append ( mc )
+
+
+  # Update the molcomp list with actual coordinates from each molecule
+
+  mol_comp_loc_dict = {}
+  for mol_name in mols_used.keys():
+    mol_comp_loc_dict[mol_name] = []  # This will be a list of dictionaries for each component
+    cb_mol = mcell.molecules.molecule_list[mol_name]
+    for cb_comp in cb_mol.component_list:
+      mol_comp_loc_dict[mol_name].append ( { 'cname':cb_comp.component_name, 'coords':[cb_comp.loc_x.get_value(),cb_comp.loc_y.get_value(),cb_comp.loc_z.get_value()], 'assigned':False } )
+
+  # Assign the component locations by molecule
+  for mc in new_molcomp_list:
+    # Only assign to components connected to molecules
+    if (mc['ftype']=='m') and (len(mc['peer_list']) > 0):
+      # Clear out the usage for this molecule in the component location table
+      for c in mol_comp_loc_dict[mc['name']]:
+        checked_print ( " Clearing assigned for " + c['cname'] + " with coords: " + str(c['coords']) )
+        c['assigned'] = False
+      # Sweep through all the components for this molecule
+      checked_print ( " Assigning coordinates to components in mol " + mc['name'] )
+      for peer_index in mc['peer_list']:
+        # Only assign to components that don't have coords
+        checked_print ( "   Checking peer " + str(peer_index) )
+        if not new_molcomp_list[peer_index]['has_coords']:
+          # Sweep through the component name list looking for an unassigned match
+          for c in mol_comp_loc_dict[mc['name']]:
+            if not c['assigned']:
+              if c['cname'] == new_molcomp_list[peer_index]['name']:
+                new_molcomp_list[peer_index]['coords'] = [ cc for cc in c['coords'] ]
+                checked_print ( "          Assigning coordinates: " + str(new_molcomp_list[peer_index]['coords']) )
+                new_molcomp_list[peer_index]['has_coords'] = True
+                c['assigned'] = True
+                break
+
+  molmaker.print_debug = True
+  dump_molcomp_list ( new_molcomp_list )
+  molmaker.print_debug = False
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "MolCompList from text CellBlender (raw):" )
+  print ( "{" )
+  for l in new_molcomp_list:
+    print ( str(l) )
+  print ( "}" )
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+  print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+  #build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True )
+  build_all_mols ( context, new_molcomp_list, build_as_3D=True, include_rotation=True )
 
   checked_print ( 'Built Blender model\n' )
 
+  # Restore the user's setting
+  molmaker.print_debug = saved_print_debug
 
 
 class MolMaker_OT_build_struct(bpy.types.Operator):
