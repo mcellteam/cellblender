@@ -595,14 +595,12 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     fixed_vkey = []
 
     # fixed_vcomp will be the vector from the fixed molecule to the fixed component
-    fixed_vcomp.append ( mc[fixed_comp_index]['coords'][0] - mc[fixed_mol_index]['coords'][0] )
-    fixed_vcomp.append ( mc[fixed_comp_index]['coords'][1] - mc[fixed_mol_index]['coords'][1] )
-    fixed_vcomp.append ( mc[fixed_comp_index]['coords'][2] - mc[fixed_mol_index]['coords'][2] )
+    for i in range(3):
+      fixed_vcomp.append ( mc[fixed_comp_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
 
     # fixed_vkey will be the vector from the fixed molecule to the fixed key
-    fixed_vkey.append ( mc[fixed_key_index]['coords'][0] - mc[fixed_mol_index]['coords'][0] )
-    fixed_vkey.append ( mc[fixed_key_index]['coords'][1] - mc[fixed_mol_index]['coords'][1] )
-    fixed_vkey.append ( mc[fixed_key_index]['coords'][2] - mc[fixed_mol_index]['coords'][2] )
+    for i in range(3):
+      fixed_vkey.append ( mc[fixed_key_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
 
     # Use the cross product to get the normal to the fixed key plane
     fixed_normal = [ (fixed_vcomp[1] * fixed_vkey[2]) - (fixed_vcomp[2] * fixed_vkey[1]),
@@ -623,14 +621,12 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     var_vkey = []
 
     # var_vcomp will be the vector from the var molecule to the var component
-    var_vcomp.append ( mc[var_comp_index]['coords'][0] - mc[var_mol_index]['coords'][0] )
-    var_vcomp.append ( mc[var_comp_index]['coords'][1] - mc[var_mol_index]['coords'][1] )
-    var_vcomp.append ( mc[var_comp_index]['coords'][2] - mc[var_mol_index]['coords'][2] )
+    for i in range(3):
+      var_vcomp.append ( mc[var_comp_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
 
     # var_vcomp will be the vector from the var molecule to the var key
-    var_vkey.append ( mc[var_key_index]['coords'][0] - mc[var_mol_index]['coords'][0] )
-    var_vkey.append ( mc[var_key_index]['coords'][1] - mc[var_mol_index]['coords'][1] )
-    var_vkey.append ( mc[var_key_index]['coords'][2] - mc[var_mol_index]['coords'][2] )
+    for i in range(3):
+      var_vkey.append ( mc[var_key_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
 
     var_normal = [ (var_vcomp[1] * var_vkey[2]) - (var_vcomp[2] * var_vkey[1]),
                    (var_vcomp[2] * var_vkey[0]) - (var_vcomp[0] * var_vkey[2]),
