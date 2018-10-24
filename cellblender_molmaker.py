@@ -105,13 +105,23 @@ bl_info = {
 	"category": "Add Mesh",
 }
 
+
+def checked_print ( s ):
+  context = bpy.context
+  mcell = context.scene.mcell
+  molmaker = mcell.molmaker
+  if molmaker.print_debug:
+    print ( s )
+
+
+
 def update_available_scripts ( molmaker ):
   # Delete current scripts list
   while molmaker.molecule_texts_list:
     molmaker.molecule_texts_list.remove(0)
   # Find the current internal scripts and add them to the list
   for txt in bpy.data.texts:
-     print ( "\n" + txt.name + "\n" + txt.as_string() + "\n" )
+     checked_print ( "\n" + txt.name + "\n" + txt.as_string() + "\n" )
      if True or (txt.name[-3:] == ".py"):
         molmaker.molecule_texts_list.add()
         index = len(molmaker.molecule_texts_list)-1
@@ -121,7 +131,7 @@ def update_available_scripts ( molmaker ):
     molmaker.comp_loc_texts_list.remove(0)
   # Find the current internal scripts and add them to the list
   for txt in bpy.data.texts:
-     print ( "\n" + txt.name + "\n" + txt.as_string() + "\n" )
+     checked_print ( "\n" + txt.name + "\n" + txt.as_string() + "\n" )
      if True or (txt.name[-3:] == ".py"):
         molmaker.comp_loc_texts_list.add()
         index = len(molmaker.comp_loc_texts_list)-1
@@ -140,7 +150,7 @@ class MolMaker_OT_update_files(bpy.types.Operator):
 
 
 # This one is called by Build 2D and Build 3D
-def read_molcomp_data_MolComp ( fdata ):
+def read_molcomp_data_from_text ( fdata ):
   ldata = [ l.strip() for l in fdata.split('\n') if len(l.strip()) > 0 ]
   ldata = [ l for l in ldata if not l.startswith('#') ]
 
@@ -191,6 +201,101 @@ def read_molcomp_data_MolComp ( fdata ):
   return molcomp_list
 
 
+'''
+MolDef Text File Format:
+# Type M C      x     y      z                 rfx rfy rfz  Unused
+XYZRef T t    0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef T t   -0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef T t    0.00  0.01  0.007071067811865476  0   0   0   0
+XYZRef T t    0.00 -0.01  0.007071067811865476  0   0   0   0
+
+XYZRef B t    0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef B t   -0.01  0.00 -0.007071067811865476  0   0   0   0
+XYZRef B t    0.00  0.01  0.007071067811865476  0   0   0   0
+XYZRef B t    0.00 -0.01  0.007071067811865476  0   0   0   0
+
+XYZRef C c    0.00  0.01  -0.002                0   0   0   0
+XYZRef C c    0.00 -0.01   0.002                0   0   0   0
+'''
+
+def update_molcomp_list_from_defs ( context, molcomp_list, moldef_text, build_as_3D ):
+
+  mcell = context.scene.mcell
+  mcell_mols = mcell.molecules.molecule_list
+  molmaker = mcell.molmaker
+
+  if moldef_text == None:
+    # Try reading from a file
+    if molmaker.comp_loc_text_name in bpy.data.texts:
+      # There is a component location definition text
+      checked_print ( "Read component definition text named " + molmaker.comp_loc_text_name )
+      # Read the component definitions
+      moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
+
+  if moldef_text != None:
+    # There is a component location definition text
+
+    # Set the has_coords flag to false on each component of each molecule
+    for mc in molcomp_list:
+      if mc['ftype'] == 'm':
+        mc['coords'] = [0,0,0]
+        mc['has_coords'] = False
+      else:
+        mc['has_coords'] = False
+
+    # Read the component definitions
+    ldata = moldef_text
+    comploc_lines = [ l.strip() for l in ldata.split('\n') if len(l.strip()) > 0 ]
+    comploc_lines = [ l for l in comploc_lines if not l.startswith('#') ]
+
+    mol_comp_loc_dict = {}
+    for cll in comploc_lines:
+      cl_parts = [ p.strip() for p in cll.split() if len(p.strip()) > 0 ]
+      cl_type      = cl_parts[0]
+      cl_mol_name  = cl_parts[1]
+      cl_comp_name = cl_parts[2]
+      cl_x         = float(cl_parts[3])
+      cl_y         = float(cl_parts[4])
+      cl_z         = float(cl_parts[5])
+      cl_refx      = float(cl_parts[6])
+      cl_refy      = float(cl_parts[7])
+      cl_refz      = float(cl_parts[8])
+      if not build_as_3D:
+        checked_print ( "Setting z to zero for " + cl_mol_name + "." + cl_comp_name )
+        cl_z       = 0.0
+        cl_refz    = 0.0
+
+      if not (cl_mol_name in mol_comp_loc_dict):
+        # Make a list for this mol name
+        mol_comp_loc_dict[cl_mol_name] = []
+      # Append the current component definition to the list for this molecule
+      mol_comp_loc_dict[cl_mol_name].append ( { 'cname':cl_comp_name, 'coords':[cl_x, cl_y, cl_z], 'ref':[cl_refx, cl_refy, cl_refz], 'assigned':False } )
+
+    # Assign the component locations by molecule
+    for mc in molcomp_list:
+      # Only assign to components connected to molecules
+      if (mc['ftype']=='m') and (len(mc['peer_list']) > 0):
+        # Clear out the usage for this molecule in the component location table
+        for c in mol_comp_loc_dict[mc['name']]:
+          checked_print ( " Clearing assigned for " + c['cname'] + " with coords: " + str(c['coords']) )
+          c['assigned'] = False
+        # Sweep through all the components for this molecule
+        checked_print ( " Assigning coordinates to components in mol " + mc['name'] )
+        for pi in mc['peer_list']:
+          # Only assign to components that don't have coords
+          checked_print ( "   Checking peer " + str(pi) )
+          if not molcomp_list[pi]['has_coords']:
+            # Sweep through the component name list looking for an unassigned match
+            for c in mol_comp_loc_dict[mc['name']]:
+              if not c['assigned']:
+                if c['cname'] == molcomp_list[pi]['name']:
+                  molcomp_list[pi]['coords'] = [ cc for cc in c['coords'] ]
+                  checked_print ( "          Assigning coordinates: " + str(molcomp_list[pi]['coords']) )
+                  molcomp_list[pi]['has_coords'] = True
+                  c['assigned'] = True
+                  break
+
+
 # This is called directly by the "build as is" operator.
 # The SphereCyl format is simpler and intended for rendering.
 # The SphereCyl format only contains Spheres ("SphereList") and Cylinders ("CylList").
@@ -200,7 +305,7 @@ def read_molcomp_data_SphereCyl ( fdata ):
   SphereCyl_data = { 'Version':1.1, 'SphereList':[], 'CylList':[], 'FaceList':[] }
   this_index = 0
   for l in ldata:
-    print ( "Line: " + l )
+    checked_print ( "Line: " + l )
     m = { 'name':'', 'loc':[0,0,0], 'r':1, 'c':'MolMaker_mol', 'ftype':'' }
     m['name'] = l.split("=")[1].split('(')[0].strip()
     m['ftype'] = l.split('(')[1][0]   # Pull out the type (m or c or k)
@@ -212,7 +317,7 @@ def read_molcomp_data_SphereCyl ( fdata ):
         peers = [ p for p in peers if len(p) > 0 ]  # Remove any empty peers
         for p in peers:
           SphereCyl_data['CylList'].append ( [this_index, int(p), 0.001] )  # Add the connecting bond cylinder
-          print ( "  Bond: " + str(this_index) + " " + p.strip() )
+          checked_print ( "  Bond: " + str(this_index) + " " + p.strip() )
     elif m['ftype'] == 'c':
       m['r'] = 0.0025
       m['c'] = 'MolMaker_comp'
@@ -260,7 +365,7 @@ def dump_molcomp_list ( molcomp_list ):
     mc_str = "[" + str(i) + "] = " + mc['name'] + " (" + mc['ftype'] + ") at (" + str(mc['coords'][0]) + "," + str(mc['coords'][1]) + "," + str(mc['coords'][2]) + ") with peers " + str(mc['peer_list'])
     if len(mc['key_list']) > 0:
       mc_str += " <" + str(mc['key_list'][0]) + "," + str(mc['angle']) + ">"
-    print ( mc_str )
+    checked_print ( mc_str )
     i += 1
 
 
@@ -272,10 +377,10 @@ class MolMaker_OT_build_as_is(bpy.types.Operator):
 
 
   def execute(self, context):
-    print ( "Build Molecule from values in file" )
+    checked_print ( "Build Molecule from values in file" )
     molmaker = context.scene.mcell.molmaker
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    print ( "Read:\n" + fdata )
+    checked_print ( "Read:\n" + fdata )
     mol_data = read_molcomp_data_SphereCyl ( fdata )
 
     new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=molmaker.show_key_planes )
@@ -387,7 +492,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
   # Bind these two molecules by aligning their axes and shifting to align their components
   # num_parts = len(mc)
 
-  print ( "  Binding " + str(mc[fixed_comp_index]['name']) + " to " + str(mc[var_comp_index]['name']) );
+  checked_print ( "  Binding " + str(mc[fixed_comp_index]['name']) + " to " + str(mc[var_comp_index]['name']) );
   ##### dump_molcomp_array(mc,num_parts);
 
   fixed_mol_index = mc[fixed_comp_index]['peer_list'][0]
@@ -427,11 +532,11 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
   # Ensure that the dot product is a legal argument for the "acos" function:
   if norm_dot_prod >  1:
-    print ( "Numerical Warning: normalized dot product was greater than 1" )
+    checked_print ( "Numerical Warning: normalized dot product was greater than 1" )
     norm_dot_prod =  1
   if norm_dot_prod < -1:
     norm_dot_prod = -1
-    print ( "Numerical Warning: normalized dot product was less than -1" )
+    checked_print ( "Numerical Warning: normalized dot product was less than -1" )
 
   ##### fprintf ( stdout, "norm_dot_prod = %g\n", norm_dot_prod );
   angle = math.acos ( norm_dot_prod )
@@ -580,62 +685,70 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     # dump_molcomp_list ( mc )
 
     # Rotate the variable molecule along its bonding axis to align based on the rotation key angle
-    print ( "Final Rotation:" )
-    print ( "  Fixed mol " + str(fixed_mol_index) + " binding to Var mol " + str(var_mol_index) )
-    print ( "  Fixed component " + str(fixed_comp_index) + " binding to Var component " + str(var_comp_index) )
+
+    checked_print ( "Final Rotation:" )
+    checked_print ( "  Fixed mol " + str(fixed_mol_index) + " binding to Var mol " + str(var_mol_index) )
+    checked_print ( "  Fixed component " + str(fixed_comp_index) + " binding to Var component " + str(var_comp_index) )
     fixed_key_index = int(mc[fixed_comp_index]['key_list'][0])
     var_key_index = int(mc[var_comp_index]['key_list'][0])
-    print ( "  Fixed component key: " + str(fixed_key_index) + ", Var component key: " + str(var_key_index) )
+    checked_print ( "  Fixed component key: " + str(fixed_key_index) + ", Var component key: " + str(var_key_index) )
     fixed_angle = mc[fixed_comp_index]['angle']
     var_angle = mc[var_comp_index]['angle']
-    print ( "  Fixed angle = " + str(fixed_angle) + ", Var angle = " + str(var_angle) )
+    checked_print ( "  Fixed angle = " + str(fixed_angle) + ", Var angle = " + str(var_angle) )
 
-    vec1 = []
-    vec2 = []
+    # fixed_vcomp will be the vector from the fixed molecule to the fixed component
+    fixed_vcomp = []
+    for i in range(3):
+      fixed_vcomp.append ( mc[fixed_comp_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
 
-    vec1.append ( mc[fixed_comp_index]['coords'][0] - mc[fixed_mol_index]['coords'][0] )
-    vec1.append ( mc[fixed_comp_index]['coords'][1] - mc[fixed_mol_index]['coords'][1] )
-    vec1.append ( mc[fixed_comp_index]['coords'][2] - mc[fixed_mol_index]['coords'][2] )
+    # fixed_vkey will be the vector from the fixed molecule to the fixed key
+    fixed_vkey = []
+    for i in range(3):
+      fixed_vkey.append ( mc[fixed_key_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
 
-    vec2.append ( mc[fixed_key_index]['coords'][0] - mc[fixed_mol_index]['coords'][0] )
-    vec2.append ( mc[fixed_key_index]['coords'][1] - mc[fixed_mol_index]['coords'][1] )
-    vec2.append ( mc[fixed_key_index]['coords'][2] - mc[fixed_mol_index]['coords'][2] )
+    # Use the cross product to get the normal to the fixed key plane
+    fixed_normal = [ (fixed_vcomp[1] * fixed_vkey[2]) - (fixed_vcomp[2] * fixed_vkey[1]),
+                     (fixed_vcomp[2] * fixed_vkey[0]) - (fixed_vcomp[0] * fixed_vkey[2]),
+                     (fixed_vcomp[0] * fixed_vkey[1]) - (fixed_vcomp[1] * fixed_vkey[0]) ]
 
-    fixed_normal = [ (vec1[1] * vec2[2]) - (vec1[2] * vec2[1]),
-                     (vec1[2] * vec2[0]) - (vec1[0] * vec2[2]),
-                     (vec1[0] * vec2[1]) - (vec1[1] * vec2[0]) ]
+    #fixed_vcomp_mag = math.sqrt ( (fixed_vcomp[0]*fixed_vcomp[0]) + (fixed_vcomp[1]*fixed_vcomp[1]) + (fixed_vcomp[2]*fixed_vcomp[2]) )
+    #fixed_vkey_mag = math.sqrt ( (fixed_vkey[0]*fixed_vkey[0]) + (fixed_vkey[1]*fixed_vkey[1]) + (fixed_vkey[2]*fixed_vkey[2]) )
 
-    v1_mag = math.sqrt ( (vec1[0]*vec1[0]) + (vec1[1]*vec1[1]) + (vec1[2]*vec1[2]) )
-    v2_mag = math.sqrt ( (vec2[0]*vec2[0]) + (vec2[1]*vec2[1]) + (vec2[2]*vec2[2]) )
+    fixed_norm_mag = math.sqrt ( (fixed_normal[0]*fixed_normal[0]) + (fixed_normal[1]*fixed_normal[1]) + (fixed_normal[2]*fixed_normal[2]) )
 
-    fixed_normal = [ cp / ( v1_mag * v2_mag ) for cp in fixed_normal ]
+    # fixed_normal = [ cp / ( fixed_vcomp_mag * fixed_vkey_mag ) for cp in fixed_normal ]
+    fixed_unit = [ cp / fixed_norm_mag for cp in fixed_normal ]
 
-    print ( "  Fixed normal = " + str(fixed_normal) )
+    checked_print ( "  Fixed unit = " + str(fixed_unit) )
 
-    vec1 = []
-    vec2 = []
+    # var_vcomp will be the vector from the var molecule to the var component
+    var_vcomp = []
+    for i in range(3):
+      var_vcomp.append ( mc[var_comp_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
 
-    vec1.append ( mc[var_comp_index]['coords'][0] - mc[var_mol_index]['coords'][0] )
-    vec1.append ( mc[var_comp_index]['coords'][1] - mc[var_mol_index]['coords'][1] )
-    vec1.append ( mc[var_comp_index]['coords'][2] - mc[var_mol_index]['coords'][2] )
+    # var_vcomp will be the vector from the var molecule to the var key
+    var_vkey = []
+    for i in range(3):
+      var_vkey.append ( mc[var_key_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
 
-    vec2.append ( mc[var_key_index]['coords'][0] - mc[var_mol_index]['coords'][0] )
-    vec2.append ( mc[var_key_index]['coords'][1] - mc[var_mol_index]['coords'][1] )
-    vec2.append ( mc[var_key_index]['coords'][2] - mc[var_mol_index]['coords'][2] )
+    var_normal = [ (var_vcomp[1] * var_vkey[2]) - (var_vcomp[2] * var_vkey[1]),
+                   (var_vcomp[2] * var_vkey[0]) - (var_vcomp[0] * var_vkey[2]),
+                   (var_vcomp[0] * var_vkey[1]) - (var_vcomp[1] * var_vkey[0]) ]
 
-    var_normal = [ (vec1[1] * vec2[2]) - (vec1[2] * vec2[1]),
-                   (vec1[2] * vec2[0]) - (vec1[0] * vec2[2]),
-                   (vec1[0] * vec2[1]) - (vec1[1] * vec2[0]) ]
+    var_vcomp_mag = math.sqrt ( (var_vcomp[0]*var_vcomp[0]) + (var_vcomp[1]*var_vcomp[1]) + (var_vcomp[2]*var_vcomp[2]) )
+    #var_vkey_mag = math.sqrt ( (var_vkey[0]*var_vkey[0]) + (var_vkey[1]*var_vkey[1]) + (var_vkey[2]*var_vkey[2]) )
 
-    v1_mag = math.sqrt ( (vec1[0]*vec1[0]) + (vec1[1]*vec1[1]) + (vec1[2]*vec1[2]) )
-    v2_mag = math.sqrt ( (vec2[0]*vec2[0]) + (vec2[1]*vec2[1]) + (vec2[2]*vec2[2]) )
+    var_norm_mag = math.sqrt ( (var_normal[0]*var_normal[0]) + (var_normal[1]*var_normal[1]) + (var_normal[2]*var_normal[2]) )
 
-    var_normal = [ cp / ( v1_mag * v2_mag ) for cp in var_normal ]
+    # var_normal = [ cp / ( var_vcomp_mag * var_vkey_mag ) for cp in var_normal ]
+    var_unit = [ cp / var_norm_mag for cp in var_normal ]
 
-    print ( "  Var normal = " + str(var_normal) )
+    checked_print ( "  Var unit = " + str(var_unit) )
 
 
-    norm_dot_prod = (fixed_normal[0] * var_normal[0]) + (fixed_normal[1] * var_normal[1]) + (fixed_normal[2] * var_normal[2])
+    norm_dot_prod = (fixed_unit[0] * var_unit[0]) + (fixed_unit[1] * var_unit[1]) + (fixed_unit[2] * var_unit[2])
+
+    checked_print ( "  Dot product between fixed and var is " + str(norm_dot_prod) )
 
     # Ensure that the dot product is a legal argument for the "acos" function:
     if norm_dot_prod >  1:
@@ -645,10 +758,10 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
     cur_rot_angle = math.acos ( norm_dot_prod )
 
-    composite_rot_angle = (var_angle-fixed_angle) - cur_rot_angle
+    composite_rot_angle = math.pi + (var_angle-fixed_angle) + cur_rot_angle # The "math.pi" adds 180 degrees to make the components "line up"
 
-    # Build a 3D rotation matrix
-    var_rot_unit = [ v / v1_mag for v in vec1 ]
+    # Build a 3D rotation matrix along the axis of the molecule to the component
+    var_rot_unit = [ v / var_vcomp_mag for v in var_vcomp ]
     ux = var_rot_unit[0]
     uy = var_rot_unit[1]
     uz = var_rot_unit[2]
@@ -778,116 +891,20 @@ def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
                   molcomp_array[molcomp_array[vmi]['peer_list'][vmici]]['is_final'] = True
 
 
-'''
-MolDef Text File Format:
-# Type M C      x     y      z                 rfx rfy rfz  Unused
-XYZRef T t    0.01  0.00 -0.007071067811865476  0   0   0   0
-XYZRef T t   -0.01  0.00 -0.007071067811865476  0   0   0   0
-XYZRef T t    0.00  0.01  0.007071067811865476  0   0   0   0
-XYZRef T t    0.00 -0.01  0.007071067811865476  0   0   0   0
-
-XYZRef B t    0.01  0.00 -0.007071067811865476  0   0   0   0
-XYZRef B t   -0.01  0.00 -0.007071067811865476  0   0   0   0
-XYZRef B t    0.00  0.01  0.007071067811865476  0   0   0   0
-XYZRef B t    0.00 -0.01  0.007071067811865476  0   0   0   0
-
-XYZRef C c    0.00  0.01  -0.002                0   0   0   0
-XYZRef C c    0.00 -0.01   0.002                0   0   0   0
-'''
-
-def build_all_mols ( context, molcomp_text, moldef_text=None, build_as_3D=True, include_rotation=True ):
+def build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True ):
 
   if build_as_3D:
-    print ( "\n\nBuilding as 3D" )
+    checked_print ( "\n\nBuilding as 3D" )
   else:
-    print ( "\n\nBuilding as 2D" )
+    checked_print ( "\n\nBuilding as 2D" )
 
   molmaker = context.scene.mcell.molmaker
 
-  molcomp_list = read_molcomp_data_MolComp ( molcomp_text )
-
-  # Use the default cases to start
-  if build_as_3D:
-    set_component_positions_3D ( molcomp_list )
-  else:
-    set_component_positions_2D ( molcomp_list )
-
-  if moldef_text == None:
-    # Try reading from a file
-    if molmaker.comp_loc_text_name in bpy.data.texts:
-      # There is a component location definition text
-      print ( "Read component definition text named " + molmaker.comp_loc_text_name )
-      # Read the component definitions
-      moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
-
-  if moldef_text != None:
-    # There is a component location definition text
-
-    # Set the has_coords flag to false on each component of each molecule
-    for mc in molcomp_list:
-      if mc['ftype'] == 'm':
-        mc['coords'] = [0,0,0]
-        mc['has_coords'] = False
-      else:
-        mc['has_coords'] = False
-
-    # Read the component definitions
-    ldata = moldef_text
-    comploc_lines = [ l.strip() for l in ldata.split('\n') if len(l.strip()) > 0 ]
-    comploc_lines = [ l for l in comploc_lines if not l.startswith('#') ]
-
-    mol_comp_loc_dict = {}
-    for cll in comploc_lines:
-      cl_parts = [ p.strip() for p in cll.split() if len(p.strip()) > 0 ]
-      cl_type      = cl_parts[0]
-      cl_mol_name  = cl_parts[1]
-      cl_comp_name = cl_parts[2]
-      cl_x         = float(cl_parts[3])
-      cl_y         = float(cl_parts[4])
-      cl_z         = float(cl_parts[5])
-      cl_refx      = float(cl_parts[6])
-      cl_refy      = float(cl_parts[7])
-      cl_refz      = float(cl_parts[8])
-      if not build_as_3D:
-        print ( "Setting z to zero for " + cl_mol_name + "." + cl_comp_name )
-        cl_z       = 0.0
-        cl_refz    = 0.0
-
-      if not (cl_mol_name in mol_comp_loc_dict):
-        # Make a list for this mol name
-        mol_comp_loc_dict[cl_mol_name] = []
-      # Append the current component definition to the list for this molecule
-      mol_comp_loc_dict[cl_mol_name].append ( { 'cname':cl_comp_name, 'coords':[cl_x, cl_y, cl_z], 'ref':[cl_refx, cl_refy, cl_refz], 'assigned':False } )
-
-    # Assign the component locations by molecule
-    for mc in molcomp_list:
-      # Only assign to components connected to molecules
-      if (mc['ftype']=='m') and (len(mc['peer_list']) > 0):
-        # Clear out the usage for this molecule in the component location table
-        for c in mol_comp_loc_dict[mc['name']]:
-          print ( " Clearing assigned for " + c['cname'] + " with coords: " + str(c['coords']) )
-          c['assigned'] = False
-        # Sweep through all the components for this molecule
-        print ( " Assigning coordinates to components in mol " + mc['name'] )
-        for pi in mc['peer_list']:
-          # Only assign to components that don't have coords
-          print ( "   Checking peer " + str(pi) )
-          if not molcomp_list[pi]['has_coords']:
-            # Sweep through the component name list looking for an unassigned match
-            for c in mol_comp_loc_dict[mc['name']]:
-              if not c['assigned']:
-                if c['cname'] == molcomp_list[pi]['name']:
-                  molcomp_list[pi]['coords'] = [ cc for cc in c['coords'] ]
-                  print ( "          Assigning coordinates: " + str(molcomp_list[pi]['coords']) )
-                  molcomp_list[pi]['has_coords'] = True
-                  c['assigned'] = True
-                  break
-
   bind_all_molecules ( molcomp_list, build_as_3D, include_rotation=molmaker.include_rotation )
 
-  print ( "======================================================================================" )
+  checked_print ( "======================================================================================" )
   dump_molcomp_list ( molcomp_list )
-  print ( "======================================================================================" )
+  checked_print ( "======================================================================================" )
 
   new_blender_mol_from_SphereCyl_data ( context, MolComp_to_SphereCyl ( molcomp_list, build_as_3D ), show_key_planes=molmaker.show_key_planes )
 
@@ -900,14 +917,18 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
 
   def execute(self, context):
-    print ( "Build Molecule 2D" )
+    checked_print ( "Build Molecule 2D" )
     molmaker = context.scene.mcell.molmaker
     moldef_text = None
     if molmaker.comp_loc_text_name in bpy.data.texts:
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
 
-    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=False, include_rotation=molmaker.include_rotation )
+    molcomp_list = read_molcomp_data_from_text ( fdata )
+    update_molcomp_list_from_defs ( context, molcomp_list, moldef_text, build_as_3D=False )
+
+    set_component_positions_2D ( molcomp_list )
+    build_all_mols ( context, molcomp_list, build_as_3D=False, include_rotation=molmaker.include_rotation )
     return {'FINISHED'}
 
 
@@ -919,13 +940,18 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
 
   def execute(self, context):
-    print ( "Build Molecule calculating new values from CellBlender" )
+    checked_print ( "Build Molecule calculating new values from CellBlender" )
     molmaker = context.scene.mcell.molmaker
     moldef_text = None
     if molmaker.comp_loc_text_name in bpy.data.texts:
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=True, include_rotation=molmaker.include_rotation )
+
+    molcomp_list = read_molcomp_data_from_text ( fdata )
+    update_molcomp_list_from_defs ( context, molcomp_list, moldef_text, build_as_3D=True )
+
+    set_component_positions_3D ( molcomp_list )
+    build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=molmaker.include_rotation )
     return {'FINISHED'}
 
 
@@ -947,6 +973,19 @@ def check_bond_index ( self, context ):
     this_mc_index += 1
 
 
+def redraw_mol ( self, context ):
+  mcell = context.scene.mcell
+  molmaker = mcell.molmaker
+  if molmaker.dynamic_rotation:
+    checked_print ( "Redrawing the molecule with:" )
+    checked_print ( "  self = " + str(self) )
+    checked_print ( "  context = " + str(context) )
+    if 'Mol Object' in context.scene.objects:
+      obj = context.scene.objects['Mol Object']
+      context.scene.objects.unlink ( obj )
+      bpy.data.objects.remove ( obj )
+    build_complex_from_cellblender ( context )
+
 
 class MolMakerFileNameProperty(bpy.types.PropertyGroup):
   name = StringProperty(name="Script")
@@ -960,7 +999,7 @@ class MolMakerMolCompProperty(bpy.types.PropertyGroup):
   graph_string = StringProperty(default="")
   peer_list = StringProperty(default="") # Comma-separated list of indexes
   key_list = StringProperty(default="")  # Comma-separated list of indexes
-  angle = FloatProperty()
+  angle = FloatProperty(name="Bond Angle", update=redraw_mol)
   bond_index = IntProperty(name="Bond Index", default=-1, update=check_bond_index)
   key_index = IntProperty(default=-1)
   alert_string = StringProperty(default="")
@@ -976,7 +1015,7 @@ class MolMaker_OT_refresh_mol_def(bpy.types.Operator):
     mcell = context.scene.mcell
     molmaker = mcell.molmaker
     parts = molmaker.molecule_definition.split(".")
-    print ( "Update the molecule/component list with " + str(parts) )
+    checked_print ( "Update the molecule/component list with " + str(parts) )
     while len(molmaker.molcomp_items) > 0:
       molmaker.molcomp_items.remove ( 0 )
     cur_mol_index = 0
@@ -1045,6 +1084,110 @@ class MolMaker_OT_chain_mols(bpy.types.Operator):
 
 
 
+def build_complex_from_cellblender ( context ):
+
+  checked_print ( "Build Molecule calculating new values from CellBlender" )
+
+  # Note that this assumes that the Molecules come first followed by components
+  mcell = context.scene.mcell
+  mcell_mols = mcell.molecules.molecule_list
+  molmaker = mcell.molmaker
+
+  mols_used = {}
+  molcomp_list = []
+
+  cur_mol_index = -1 # The Molecules must come before the components for this to work!!
+
+  # Build the molcomp list (without coordinates) from Blender's Molecule Structure Property List
+
+  for i in range(len(molmaker.molcomp_items)):
+    checked_print ( "Current Index = " + str(i) )
+
+    # Build the basic molcomp entry
+
+    m = molmaker.molcomp_items[i]
+    mc = {
+      'name': m.name,
+      'ftype':m.field_type,
+      'has_coords':m.has_coords,
+      'is_final':m.is_final,
+      'coords':[c for c in m.coords],
+      'graph_string':m.graph_string,
+      'peer_list':[int(s.strip()) for s in m.peer_list.split(',') if len(s.strip()) > 0],
+      'key_list':[int(s.strip()) for s in m.key_list.split(',') if len(s.strip()) > 0],
+      'bond_index': m.bond_index,
+      'angle': m.angle,
+    }
+
+    if m.field_type == 'm':
+      # Store this molecule name in the dictionary
+      cur_mol_index = i
+      mols_used[m.name] = True
+
+    if m.bond_index >= 0:
+      # This is a real bond (CellBlender uses -1 for unbonded components)
+      mc['peer_list'].append ( m.bond_index )
+
+    # Build the Angle References for any components
+
+    if m.field_type == 'c':
+      cur_comp_index = (i - cur_mol_index) - 1
+      comp = mcell_mols[molmaker.molcomp_items[cur_mol_index].name].component_list[cur_comp_index]
+      rot_index = comp.rot_index
+      if rot_index < 0:
+        print ( "Warning: This bond uses a component that has no reference!!" )
+      abs_rot_index = rot_index + cur_mol_index + 1
+      if rot_index >= 0:
+        mc['key_list'] = [ abs_rot_index ]
+        mc['angle'] = m.angle
+
+    molcomp_list.append ( mc )
+
+  # Update the molcomp list with actual coordinates from each molecule
+
+  # Start by building a molecule dictionary where each molecule has a list of components and their assignment status
+
+  mol_comp_loc_dict = {}
+  for mol_name in mols_used.keys():
+    mol_comp_loc_dict[mol_name] = []  # This will be a list of dictionaries for each component
+    cb_mol = mcell.molecules.molecule_list[mol_name]
+    for cb_comp in cb_mol.component_list:
+      mol_comp_loc_dict[mol_name].append ( { 'cname':cb_comp.component_name, 'coords':[cb_comp.loc_x.get_value(),cb_comp.loc_y.get_value(),cb_comp.loc_z.get_value()], 'assigned':False } )
+
+  # Assign the component locations by molecule with matching component names
+  # Keep track of which ones have already been assigned
+
+  for mc in molcomp_list:
+    # Only assign to components connected to molecules
+    if (mc['ftype']=='m') and (len(mc['peer_list']) > 0):
+      # Clear out the usage for this molecule in the component location table
+      for c in mol_comp_loc_dict[mc['name']]:
+        checked_print ( " Clearing assigned for " + c['cname'] + " with coords: " + str(c['coords']) )
+        c['assigned'] = False
+      # Sweep through all the components for this molecule
+      checked_print ( " Assigning coordinates to components in mol " + mc['name'] )
+      for peer_index in mc['peer_list']:
+        # Only assign to components that don't have coords
+        checked_print ( "   Checking peer " + str(peer_index) )
+        if not molcomp_list[peer_index]['has_coords']:
+          # Sweep through the component name list looking for an unassigned match
+          for c in mol_comp_loc_dict[mc['name']]:
+            if not c['assigned']:
+              if c['cname'] == molcomp_list[peer_index]['name']:
+                molcomp_list[peer_index]['coords'] = [ cc for cc in c['coords'] ]
+                checked_print ( "          Assigning coordinates: " + str(molcomp_list[peer_index]['coords']) )
+                molcomp_list[peer_index]['has_coords'] = True
+                c['assigned'] = True
+                break
+
+  # Finally build the molecules from the molcomp_list
+
+  build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True )
+
+  checked_print ( 'Built Blender model\n' )
+
+
+
 class MolMaker_OT_build_struct(bpy.types.Operator):
   bl_idname = "mol.rebuild_with_cb"
   bl_label = "Build Structure from CellBlender"
@@ -1052,78 +1195,7 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
 
   def execute(self, context):
-    print ( "Build Molecule calculating new values from CellBlender" )
-    # Note that this assumes that the Molecules come first followed by components
-    mcell = context.scene.mcell
-    mcell_mols = mcell.molecules.molecule_list
-    molmaker = mcell.molmaker
-    fdata = ""
-
-    mols_used = {}
-
-    cur_mol_index = -1 # The Molecules must come before the components for this to work!!
-
-    for i in range(len(molmaker.molcomp_items)):
-      print ( "Current Index = " + str(i) )
-      m = molmaker.molcomp_items[i]
-
-      # First build the Name and Location Fields
-
-      fdata += '[' + str(i) + '] = ' + m.name
-      if m.field_type == 'm':
-        cur_mol_index = i
-        fdata += ' (m)'
-        mols_used[m.name] = True # Store this molecule name in the dictionary
-      elif m.field_type == 'c':
-        fdata += ' (c)'
-      elif m.field_type == 'k':
-        fdata += ' (k)'
-      fdata += ' at (' + str(m.coords[0]) + ',' + str(m.coords[1]) + ',' + str(m.coords[2]) + ')'
-      peers = '' + m.peer_list
-      if m.bond_index >= 0:
-        if len(peers) > 0:
-          peers += ','
-        peers += str(m.bond_index)
-      fdata += ' with peers [' + peers + ']'
-
-      # Next build the Angle References for components
-
-      if m.field_type == 'c':
-        # mcell.molecules.molecule_list[mm.molcomp_items[0].name].component_list[0].rot_index
-        # mcell_mols[0].component_list[0].rot_index
-        print ( " Found a Component" )
-        print ( "  Current Mol Index = " + str(cur_mol_index) )
-        cur_comp_index = (i - cur_mol_index) - 1
-        print ( "  Current Relative Component Index = " + str(cur_comp_index) )
-        # print ( "  Current Mol Name = " + mcell_mols[molmaker.molcomp_items[cur_mol_index].name].name )
-        comp = mcell_mols[molmaker.molcomp_items[cur_mol_index].name].component_list[cur_comp_index]
-        rot_index = comp.rot_index
-        if rot_index < 0:
-          print ( "Warning: This bond uses a component that has no reference!!" )
-        print ( "  Relative Rot Index = " + str(rot_index) )
-        abs_rot_index = rot_index + cur_mol_index + 1
-        print ( "  Absolute Rot Index = " + str(abs_rot_index) )
-        # print ( "  Current Mol Name = " + mcell.molecules.molecule_list[molmaker.molcomp_items[cur_comp_index].name].name )
-        if rot_index >= 0:
-          # Include the reference angle for this bond
-          fdata += ' <' + str(abs_rot_index) + ',' + str(m.angle) + '>'
-
-      fdata += '\n'
-
-    print ( 'Built text model:\n' + fdata )
-      
-    moldef_txt = ""
-    for mol_name in mols_used.keys():
-      if mol_name in mcell_mols:
-        for comp in mcell_mols[mol_name].component_list:
-          moldef_txt += "XYZRef " + mol_name + " " + comp.component_name + "  " + str(comp.loc_x.get_value()) + " " + str(comp.loc_y.get_value()) + " " + str(comp.loc_z.get_value()) + " 0   0   0   0\n"
-
-    print ( 'Built location model:\n' + moldef_txt )
-
-    build_all_mols ( context, fdata, moldef_text=moldef_txt, build_as_3D=True, include_rotation=True )
-
-    print ( 'Built Blender model\n' )
-
+    build_complex_from_cellblender ( context )
     return {'FINISHED'}
 
 
@@ -1144,6 +1216,10 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   cellblender_colors = BoolProperty ( default=True )
   show_key_planes = BoolProperty ( default=True )
   include_rotation = BoolProperty ( default=True )
+  dynamic_rotation = BoolProperty ( default=False )
+  print_debug = BoolProperty ( default=False )
+
+  show_text_interface = BoolProperty ( default=False )
 
   def draw_layout ( self, context, layout ):
 
@@ -1193,32 +1269,41 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     col.prop ( self, 'show_key_planes', text="Show Key Planes" )
     col = row.column()
     col.prop ( self, 'include_rotation', text="Axial Rotation" )
+    row = layout.row()
+    col = row.column()
+    col.prop ( self, 'dynamic_rotation', text="Dynamic Rotation" )
+    col = row.column()
+    col.prop ( self, 'print_debug', text="Text Output" )
     col = row.column()
     col.operator ( "mol.rebuild_with_cb" )
 
-    row = layout.row()
-    row.label ( "=========================================" )
-    row = layout.row()
-    row.prop_search ( self, "molecule_text_name",
-                      self, "molecule_texts_list",
-                      text="Molecule Definition Text:", icon='TEXT' )
-    row.operator("mol.update_files", icon='FILE_REFRESH', text="")
-
-    row = layout.row()
-    row.prop_search ( self, "comp_loc_text_name",
-                      self, "comp_loc_texts_list",
-                      text="Component Location Text (opt):", icon='TEXT' )
-    row.operator("mol.update_files", icon='FILE_REFRESH', text="")
-
-
-    row = layout.row()
-    row.operator ( "mol.build_as_is" )
-    if 'mcell' in context.scene:
-      # CellBlender is installed, so allow this option
+    row = layout.row(align=True)
+    row.alignment = 'LEFT'
+    if not self.show_text_interface:
+      row.prop(self, "show_text_interface", icon='TRIA_RIGHT', text="Show Text Interface", emboss=False)
+    else:
+      row.prop(self, "show_text_interface", icon='TRIA_DOWN',  text="Show Text Interface", emboss=False)
       row = layout.row()
-      row.operator ( "mol.rebuild_two_d" )
+      row.prop_search ( self, "molecule_text_name",
+                        self, "molecule_texts_list",
+                        text="Molecule Definition Text:", icon='TEXT' )
+      row.operator("mol.update_files", icon='FILE_REFRESH', text="")
+
       row = layout.row()
-      row.operator ( "mol.rebuild_three_d" )
+      row.prop_search ( self, "comp_loc_text_name",
+                        self, "comp_loc_texts_list",
+                        text="Component Location Text (opt):", icon='TEXT' )
+      row.operator("mol.update_files", icon='FILE_REFRESH', text="")
+
+
+      row = layout.row()
+      row.operator ( "mol.build_as_is" )
+      if 'mcell' in context.scene:
+        # CellBlender is installed, so allow this option
+        row = layout.row()
+        row.operator ( "mol.rebuild_two_d" )
+        row = layout.row()
+        row.operator ( "mol.rebuild_three_d" )
 
 
   def draw_panel ( self, context, panel ):
@@ -1301,9 +1386,9 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
       # It didn't exist, so make it
       mol_mat = mats.new ( "MolMaker_key_plane" )
       color = mol_mat.diffuse_color
-      color[0] = 0
-      color[1] = 0.5
-      color[2] = 0.5
+      color[0] = 0.5
+      color[1] = 0.0
+      color[2] = 0.0
       mol_mat.specular_intensity = 0
       mol_mat.use_transparency = True
       mol_mat.alpha = 0.2
@@ -1360,14 +1445,14 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
   # Add the keys (as faces)
   if show_key_planes:
     for i in range(len(face_list)):
-      print ( "Adding a face" )
+      checked_print ( "Adding a face" )
       vlist = face_list[i]
 
       Vertices = []
       Faces = [[]]
       i = 0
       for vertex in vlist:
-        print ( "  Adding vertex at " + str(vertex) )
+        checked_print ( "  Adding vertex at " + str(vertex) )
         Vertices.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
         Faces[0].append ( i )
         i += 1
