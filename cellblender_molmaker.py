@@ -813,7 +813,7 @@ XYZRef C c    0.00  0.01  -0.002                0   0   0   0
 XYZRef C c    0.00 -0.01   0.002                0   0   0   0
 '''
 
-def build_all_mols ( context, molcomp_text, moldef_text=None, build_as_3D=True, include_rotation=True ):
+def build_all_mols ( context, molcomp_list, moldef_text=None, build_as_3D=True, include_rotation=True ):
 
   if build_as_3D:
     checked_print ( "\n\nBuilding as 3D" )
@@ -821,8 +821,6 @@ def build_all_mols ( context, molcomp_text, moldef_text=None, build_as_3D=True, 
     checked_print ( "\n\nBuilding as 2D" )
 
   molmaker = context.scene.mcell.molmaker
-
-  molcomp_list = read_molcomp_data_MolComp ( molcomp_text )
 
   # Use the default cases to start
   if build_as_3D:
@@ -925,7 +923,9 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
 
-    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=False, include_rotation=molmaker.include_rotation )
+    molcomp_list = read_molcomp_data_MolComp ( fdata )
+
+    build_all_mols ( context, molcomp_list, moldef_text=moldef_text, build_as_3D=False, include_rotation=molmaker.include_rotation )
     return {'FINISHED'}
 
 
@@ -943,7 +943,10 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
     if molmaker.comp_loc_text_name in bpy.data.texts:
       moldef_text = bpy.data.texts[molmaker.comp_loc_text_name].as_string()
     fdata = bpy.data.texts[molmaker.molecule_text_name].as_string()
-    build_all_mols ( context, fdata, moldef_text=moldef_text, build_as_3D=True, include_rotation=molmaker.include_rotation )
+
+    molcomp_list = read_molcomp_data_MolComp ( fdata )
+
+    build_all_mols ( context, molcomp_list, moldef_text=moldef_text, build_as_3D=True, include_rotation=molmaker.include_rotation )
     return {'FINISHED'}
 
 
@@ -1144,7 +1147,9 @@ def build_complex_from_cellblender ( context ):
 
   checked_print ( 'Built location model:\n' + moldef_txt )
 
-  build_all_mols ( context, fdata, moldef_text=moldef_txt, build_as_3D=True, include_rotation=True )
+  molcomp_list = read_molcomp_data_MolComp ( fdata )
+
+  build_all_mols ( context, molcomp_list, moldef_text=moldef_txt, build_as_3D=True, include_rotation=True )
 
   checked_print ( 'Built Blender model\n' )
 
