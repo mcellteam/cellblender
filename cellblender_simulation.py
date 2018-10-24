@@ -741,6 +741,20 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
         mcell_processes_str = str(run_sim.mcell_processes)
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
         ext_path = os.path.dirname(os.path.realpath(mcell_binary))
+
+        # Set environment variable for the shared library path
+        my_env = os.environ.copy()
+        if (sys.platform == 'darwin'):
+          if my_env.get('DYLD_LIBRARY_PATH'):
+            my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib') + os.pathsep + my_env['DYLD_LIBRARY_PATH']
+          else:
+            my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+        else:
+          if my_env.get('LD_LIBRARY_PATH'):
+            my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib') + os.pathsep + my_env['LD_LIBRARY_PATH']
+          else:
+            my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
         status = ""
@@ -908,13 +922,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       if bionetgen_mode:
                           # execute mdlr2mdl.py to generate MDL from MDLR
 
-                          my_env = {}
-                          if (sys.platform == 'darwin'):
-                            my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
-                          else:
-                            my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
-
-                          mdlr_cmd = os.path.join ( ext_path, 'mcell', 'mdlr2mdl.py' )
+                          mdlr_cmd = os.path.join ( ext_path, 'mdlr2mdl.py' )
                           mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
                           wd = run_cmd[1]
                           print ( "\n\nConverting MDLR to MDL by running " + str(mdlr_args) + " from " + str(wd) )
@@ -939,12 +947,6 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           proc = cellblender.simulation_queue.add_task(cellblender.python_path, mcellr_args, run_cmd[1], make_texts, env=my_env)
                           print ( 100 * "@" )
                       else:
-
-                          my_env = {}
-                          if (sys.platform == 'darwin'):
-                            my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
-                          else:
-                            my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
 
                           mdl_filename = '%s.main.mdl' % (run_cmd[2])
                           mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
@@ -1250,6 +1252,20 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
         ext_path = os.path.dirname(os.path.realpath(mcell_binary))
 
+        # Set environment variable for the shared library path
+        my_env = os.environ.copy()
+        if (sys.platform == 'darwin'):
+          if my_env.get('DYLD_LIBRARY_PATH'):
+            my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib') + os.pathsep + my_env['DYLD_LIBRARY_PATH']
+          else:
+            my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+        else:
+          if my_env.get('LD_LIBRARY_PATH'):
+            my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib') + os.pathsep + my_env['LD_LIBRARY_PATH']
+          else:
+            my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+
+
         start_seed = int(run_sim.start_seed.get_value())
         end_seed = int(run_sim.end_seed.get_value())
         mcell_processes = run_sim.mcell_processes
@@ -1268,12 +1284,6 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                     mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
-
-                my_env = {}
-                if (sys.platform == 'darwin'):
-                  my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
-                else:
-                  my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
 
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
                 if (os.path.exists(react_dir) and
