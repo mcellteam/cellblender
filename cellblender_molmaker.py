@@ -981,9 +981,22 @@ def redraw_mol ( self, context ):
     checked_print ( "  self = " + str(self) )
     checked_print ( "  context = " + str(context) )
     if 'Mol Object' in context.scene.objects:
+      # The following may not have deleted everything since there was progressive slowing:
+
+      #obj = context.scene.objects['Mol Object']
+      #context.scene.objects.unlink ( obj )
+      #bpy.data.objects.remove ( obj )
+
+      # Try this:
+      bpy.ops.object.select_all ( action = 'DESELECT' )
       obj = context.scene.objects['Mol Object']
-      context.scene.objects.unlink ( obj )
-      bpy.data.objects.remove ( obj )
+      obj.select = True
+      bpy.ops.object.delete()
+
+      # Still shows progressive slowing ... maybe add a purge to clear datablocks
+      # save and re-open the file to clean up the data blocks
+      #bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
+      #bpy.ops.wm.open_mainfile(filepath=bpy.data.filepath)
     build_complex_from_cellblender ( context )
 
 
@@ -1182,7 +1195,7 @@ def build_complex_from_cellblender ( context ):
 
   # Finally build the molecules from the molcomp_list
 
-  build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True )
+  build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=molmaker.include_rotation )
 
   checked_print ( 'Built Blender model\n' )
 
@@ -1198,7 +1211,17 @@ class MolMaker_OT_build_struct(bpy.types.Operator):
     build_complex_from_cellblender ( context )
     return {'FINISHED'}
 
+class MolMaker_OT_purge_by_reopen(bpy.types.Operator):
+  bl_idname = "mol.purge_by_reopen"
+  bl_label = "Purge by Re-Open"
+  bl_description = "Purge datablocks by reopening"
+  bl_options = {'REGISTER', 'UNDO'}
 
+  def execute(self, context):
+    # save and re-open the file to clean up the data blocks
+    bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
+    bpy.ops.wm.open_mainfile(filepath=bpy.data.filepath)
+    return {'FINISHED'}
 
 
 
@@ -1267,13 +1290,16 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     col.prop ( self, 'cellblender_colors', text="CellBlender Colors" )
     col = row.column()
     col.prop ( self, 'show_key_planes', text="Show Key Planes" )
+    row = layout.row()
     col = row.column()
     col.prop ( self, 'include_rotation', text="Axial Rotation" )
-    row = layout.row()
     col = row.column()
     col.prop ( self, 'dynamic_rotation', text="Dynamic Rotation" )
     col = row.column()
     col.prop ( self, 'print_debug', text="Text Output" )
+    row = layout.row()
+    col = row.column()
+    col.operator ( "mol.purge_by_reopen" )
     col = row.column()
     col.operator ( "mol.rebuild_with_cb" )
 
