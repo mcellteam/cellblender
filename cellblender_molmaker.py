@@ -532,11 +532,11 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
   # Ensure that the dot product is a legal argument for the "acos" function:
   if norm_dot_prod >  1:
-    checked_print ( "Numerical Warning: normalized dot product was greater than 1" )
+    print ( "Numerical Warning: normalized dot product " + str( ) + " was greater than 1" )
     norm_dot_prod =  1
   if norm_dot_prod < -1:
+    print ( "Numerical Warning: normalized dot product " + str(norm_dot_prod) + " was less than 11" )
     norm_dot_prod = -1
-    checked_print ( "Numerical Warning: normalized dot product was less than -1" )
 
   ##### fprintf ( stdout, "norm_dot_prod = %g\n", norm_dot_prod );
   angle = math.acos ( norm_dot_prod )
@@ -601,7 +601,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
         uy = xpy / axis_length
         uz = xpz / axis_length
 
-        if True:  # Build the rotation matrix directly
+        if False:  # Build the rotation matrix directly
 
           # Build a 3D rotation matrix
           omca = 1 - ca
@@ -752,8 +752,10 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
     # Ensure that the dot product is a legal argument for the "acos" function:
     if norm_dot_prod >  1:
+      print ( "Numerical Warning: normalized dot product " + str(norm_dot_prod) + " was greater than 1" )
       norm_dot_prod =  1
     if norm_dot_prod < -1:
+      print ( "Numerical Warning: normalized dot product " + str(norm_dot_prod) + " was less than -1" )
       norm_dot_prod = -1
 
     cur_rot_angle = math.acos ( norm_dot_prod )
@@ -767,11 +769,41 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     uz = var_rot_unit[2]
     ca = math.cos(composite_rot_angle)
     sa = math.sin(composite_rot_angle)
-    omca = 1 - ca
 
-    R = [ [ca + (ux*ux*omca), (ux*uy*omca) - (uz*sa), (ux*uz*omca) + (uy*sa)],
-          [(uy*ux*omca) + (uz*sa), ca + (uy*uy*omca), (uy*uz*omca) - (ux*sa)],
-          [(uz*ux*omca) - (uy*sa), (uz*uy*omca) + (ux*sa), ca + (uz*uz*omca)] ]
+    R = None
+
+    if False:  # Build the rotation matrix directly
+
+      omca = 1 - ca
+
+      R = [ [ca + (ux*ux*omca), (ux*uy*omca) - (uz*sa), (ux*uz*omca) + (uy*sa)],
+            [(uy*ux*omca) + (uz*sa), ca + (uy*uy*omca), (uy*uz*omca) - (ux*sa)],
+            [(uz*ux*omca) - (uy*sa), (uz*uy*omca) + (ux*sa), ca + (uz*uz*omca)] ]
+
+    else:  # Build the rotation matrix from a quaternion
+
+      s2 = math.sin(composite_rot_angle/2)
+      c2 = math.cos(composite_rot_angle/2)
+
+      q  = [ c2,  s2*ux,  s2*uy,  s2*uz ]
+      # qconj = [ c2, -s2*ux, -s2*uy, -s2*uz ]
+
+      # Create convenience variables for components and squares
+
+      qr = q[0]
+      qi = q[1]
+      qj = q[2]
+      qk = q[3]
+
+      qi2 = qi * qi
+      qj2 = qj * qj
+      qk2 = qk * qk
+
+      # Create the rotation matrix itself from the quaternion
+
+      R = [ [     1-(2*(qj2+qk2)), 2*((qi*qj)-(qk*qr)), 2*((qi*qk)+(qj*qr)) ],
+            [ 2*((qi*qj)+(qk*qr)),     1-(2*(qi2+qk2)), 2*((qj*qk)-(qi*qr)) ],
+            [ 2*((qi*qk)-(qj*qr)), 2*((qj*qk)+(qi*qr)),     1-(2*(qi2+qj2)) ] ]
 
     # Apply the rotation matrix after subtracting the molecule center location from all components and keys
     for ci in range ( len(mc[var_mol_index]['peer_list']) ):
@@ -889,6 +921,16 @@ def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
                 #for (int vmici=0; vmici<molcomp_array[vmi].num_peers; vmici++) {
                 for vmici in range(len(molcomp_array[vmi]['peer_list'])):
                   molcomp_array[molcomp_array[vmi]['peer_list'][vmici]]['is_final'] = True
+
+                context = bpy.context
+                mcell = context.scene.mcell
+                molmaker = mcell.molmaker
+                old_debug = molmaker.print_debug
+                molmaker.print_debug = True
+                checked_print ( "======================================================================================" )
+                dump_molcomp_list ( molcomp_array )
+                checked_print ( "======================================================================================" )
+                molmaker.print_debug = old_debug
 
 
 def build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True ):
