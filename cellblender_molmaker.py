@@ -1299,6 +1299,89 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
   show_text_interface = BoolProperty ( default=False )
 
+
+  def build_data_model_from_properties ( self ):
+    mm_dict = {}
+    mm_dict['data_model_version'] = "DM_2018_10_26_1310"
+    mm_dict['molecule_definition'] = self.molecule_definition
+    mm_dict['molecule_text_name'] = self.molecule_text_name
+    mm_dict['comp_loc_text_name'] = self.comp_loc_text_name
+    mm_dict['make_materials'] = self.make_materials
+    mm_dict['cellblender_colors'] = self.cellblender_colors
+    mm_dict['show_key_planes'] = self.show_key_planes
+    mm_dict['include_rotation'] = self.include_rotation
+    mm_dict['dynamic_rotation'] = self.dynamic_rotation
+    mm_dict['print_debug'] = self.print_debug
+    mm_dict['show_text_interface'] = self.show_text_interface
+
+    mm_dict['molcomp_list'] = []
+    for i in range(len(self.molcomp_items)):
+      m = self.molcomp_items[i]
+      item = {}
+      item['name'] = m.name
+      item['field_type'] = m.field_type
+      item['has_coords'] = m.has_coords
+      item['is_final'] = m.is_final
+      item['coords'] = [ c for c in m.coords ]
+      item['graph_string'] = m.graph_string
+      item['peer_list'] = m.peer_list
+      item['key_list'] = m.key_list
+      item['angle'] = m.angle
+      item['bond_index'] = m.bond_index
+      item['key_index'] = m.key_index
+      item['alert_string'] = m.alert_string
+      mm_dict['molcomp_list'].append ( item )
+    return mm_dict
+
+  @staticmethod
+  def upgrade_data_model ( dm ):
+    # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+    print ( "------------------------->>> Upgrading MCellMoleculeProperty Data Model" )
+
+    # Check that the upgraded data model version matches the version for this property group
+    if dm['data_model_version'] != "DM_2018_10_26_1310":
+        data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMolMakerPropertyGroup data model " + str(dm['data_model_version']) + " to current version." )
+        return None
+
+    return dm
+
+  def build_properties_from_data_model ( self, context, dm_dict ):
+    # Check that the data model version matches the version for this property group
+    if dm_dict['data_model_version'] != "DM_2018_10_26_1310":
+        data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMolMakerPropertyGroup data model " + str(dm['data_model_version']) + " to current version." )
+    # Now convert the updated Data Model into CellBlender Properties
+    self.molecule_definition = dm_dict['molecule_definition']
+    self.molecule_text_name = dm_dict['molecule_text_name']
+    self.comp_loc_text_name = dm_dict['comp_loc_text_name']
+    self.make_materials = dm_dict['make_materials']
+    self.cellblender_colors = dm_dict['cellblender_colors']
+    self.show_key_planes = dm_dict['show_key_planes']
+    self.include_rotation = dm_dict['include_rotation']
+    self.dynamic_rotation = dm_dict['dynamic_rotation']
+    self.print_debug = dm_dict['print_debug']
+    self.show_text_interface = dm_dict['show_text_interface']
+
+    # Remove all the old items
+    while len(self.molcomp_items) > 0:
+      self.molcomp_items.remove ( 0 )
+
+    # Add all the new items
+    for item in dm_dict['molcomp_list']:
+      new_mol = self.molcomp_items.add()
+      new_mol.name = item['name']
+      new_mol.field_type = item['field_type']
+      new_mol.has_coords = item['has_coords']
+      new_mol.is_final = item['is_final']
+      new_mol.coords = [ c for c in item['coords'] ]
+      new_mol.graph_string = item['graph_string']
+      new_mol.peer_list = item['peer_list']
+      new_mol.key_list = item['key_list']
+      new_mol.angle = item['angle']
+      new_mol.bond_index = item['bond_index']
+      new_mol.key_index = item['key_index']
+      new_mol.alert_string = item['alert_string']
+
+
   def draw_layout ( self, context, layout ):
 
     mcell = context.scene.mcell

@@ -1093,6 +1093,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             disp_dict['emit'] = bpy.data.materials[mat_name].emit
             disp_dict['scale'] = self.scale
         m_dict['display'] = disp_dict
+
         return m_dict
 
 
@@ -1251,7 +1252,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             if "emit" in disp_dict:
                 mat_name = "mol_" + self.name+"_mat"
                 bpy.data.materials[mat_name].emit = disp_dict['emit']
-
 
 
     def check_properties_after_building ( self, context ):
@@ -2132,6 +2132,10 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         for m in self.molecule_list:
             mol_list.append ( m.build_data_model_from_properties() )
         mol_dm['molecule_list'] = mol_list
+
+        molmaker = bpy.context.scene.mcell.molmaker
+        mol_dm['molmaker'] = molmaker.build_data_model_from_properties()
+
         return mol_dm
 
     @staticmethod
@@ -2150,6 +2154,11 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             for item in dm["molecule_list"]:
                 if MCellMoleculeProperty.upgrade_data_model ( item ) == None:
                     return None
+
+        if "molmaker" in dm:
+          molmaker = bpy.context.scene.mcell.molmaker
+          molmaker.upgrade_data_model ( dm['molmaker'] )
+
         return dm
 
 
@@ -2177,6 +2186,11 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             for m in dm["molecule_list"]:
                 self.add_molecule(context)
                 self.molecule_list[self.active_mol_index].build_properties_from_data_model(context,m)
+
+        if "molmaker" in dm:
+          molmaker = bpy.context.scene.mcell.molmaker
+          molmaker.build_properties_from_data_model ( context, dm['molmaker'] )
+
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
