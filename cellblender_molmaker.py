@@ -860,6 +860,22 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
 
 def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
+
+  context = bpy.context
+  mcell = context.scene.mcell
+  molmaker = mcell.molmaker
+
+  old_debug = molmaker.print_debug
+  molmaker.print_debug = True
+  checked_print ( "======================================================================================" )
+  checked_print ( "===================================== bind_all_molecules =============================" )
+  checked_print ( "======================================================================================" )
+  dump_molcomp_list ( molcomp_array )
+  checked_print ( "======================================================================================" )
+  molmaker.print_debug = old_debug
+
+
+
   # Compute positions for all molecules/components in a molcomp_array
   num_parts = len(molcomp_array)
 
@@ -922,9 +938,6 @@ def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
                 for vmici in range(len(molcomp_array[vmi]['peer_list'])):
                   molcomp_array[molcomp_array[vmi]['peer_list'][vmici]]['is_final'] = True
 
-                context = bpy.context
-                mcell = context.scene.mcell
-                molmaker = mcell.molmaker
                 old_debug = molmaker.print_debug
                 molmaker.print_debug = True
                 checked_print ( "======================================================================================" )
