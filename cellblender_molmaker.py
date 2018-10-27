@@ -689,24 +689,26 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     checked_print ( "Final Rotation:" )
     checked_print ( "  Fixed mol " + str(fixed_mol_index) + " binding to Var mol " + str(var_mol_index) )
     checked_print ( "  Fixed component " + str(fixed_comp_index) + " binding to Var component " + str(var_comp_index) )
+
     fixed_key_index = int(mc[fixed_comp_index]['key_list'][0])
     var_key_index = int(mc[var_comp_index]['key_list'][0])
+
     checked_print ( "  Fixed component key: " + str(fixed_key_index) + ", Var component key: " + str(var_key_index) )
-    fixed_angle = mc[fixed_comp_index]['angle']
-    var_angle = mc[var_comp_index]['angle']
-    checked_print ( "  Fixed angle = " + str(fixed_angle) + ", Var angle = " + str(var_angle) )
+
+    fixed_req_bond_angle = mc[fixed_comp_index]['angle']
+    var_req_bond_angle = mc[var_comp_index]['angle']
+
+    checked_print ( "  Fixed angle = " + str(fixed_req_bond_angle) + ", Var angle = " + str(var_req_bond_angle) )
 
     # fixed_vcomp will be the vector from the fixed molecule to the fixed component
     fixed_vcomp = []
     for i in range(3):
       fixed_vcomp.append ( mc[fixed_comp_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
-    checked_print ( "  Fixed vcomp = " + str(fixed_vcomp) )
 
     # var_vcomp will be the vector from the var molecule to the var component
     var_vcomp = []
     for i in range(3):
       var_vcomp.append ( mc[var_comp_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
-
 
     # fixed_vkey will be the vector from the fixed molecule to the fixed key
     fixed_vkey = []
@@ -718,6 +720,10 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     for i in range(3):
       var_vkey.append ( mc[var_key_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
 
+    checked_print ( "  Fixed vcomp = " + str(fixed_vcomp) )
+    checked_print ( "  Var   vcomp = " + str(var_vcomp) )
+    checked_print ( "  Fixed vkey  = " + str(fixed_vkey) )
+    checked_print ( "  Var vkey    = " + str(var_vkey) )
 
     # Use the cross product to get the normal to the fixed molecule-component-key plane
     fixed_normal = [ (fixed_vcomp[1] * fixed_vkey[2]) - (fixed_vcomp[2] * fixed_vkey[1]),
@@ -729,35 +735,19 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
                    (var_vcomp[2] * var_vkey[0]) - (var_vcomp[0] * var_vkey[2]),
                    (var_vcomp[0] * var_vkey[1]) - (var_vcomp[1] * var_vkey[0]) ]
 
-
+    # Get the magnitudes of the two vectors for normalization
     fixed_norm_mag = math.sqrt ( (fixed_normal[0]*fixed_normal[0]) + (fixed_normal[1]*fixed_normal[1]) + (fixed_normal[2]*fixed_normal[2]) )
     var_norm_mag   = math.sqrt ( (  var_normal[0]*  var_normal[0]) + (  var_normal[1]*  var_normal[1]) + (  var_normal[2]*  var_normal[2]) )
 
-    checked_print ( "  Fixed vkey = " + str(fixed_vkey) )
 
-
-    #fixed_vcomp_mag = math.sqrt ( (fixed_vcomp[0]*fixed_vcomp[0]) + (fixed_vcomp[1]*fixed_vcomp[1]) + (fixed_vcomp[2]*fixed_vcomp[2]) )
-    #fixed_vkey_mag = math.sqrt ( (fixed_vkey[0]*fixed_vkey[0]) + (fixed_vkey[1]*fixed_vkey[1]) + (fixed_vkey[2]*fixed_vkey[2]) )
-
-
-    # fixed_normal = [ cp / ( fixed_vcomp_mag * fixed_vkey_mag ) for cp in fixed_normal ]
+    # Calculate unit vectors
     fixed_unit = [ cp / fixed_norm_mag for cp in fixed_normal ]
+    var_unit   = [ cp / var_norm_mag   for cp in var_normal   ]
 
     checked_print ( "  Fixed unit = " + str(fixed_unit) )
-
-    var_vcomp_mag = math.sqrt ( (var_vcomp[0]*var_vcomp[0]) + (var_vcomp[1]*var_vcomp[1]) + (var_vcomp[2]*var_vcomp[2]) )
-    #var_vkey_mag = math.sqrt ( (var_vkey[0]*var_vkey[0]) + (var_vkey[1]*var_vkey[1]) + (var_vkey[2]*var_vkey[2]) )
-
-
-    # var_normal = [ cp / ( var_vcomp_mag * var_vkey_mag ) for cp in var_normal ]
-    var_unit = [ cp / var_norm_mag for cp in var_normal ]
-
     checked_print ( "  Var unit = " + str(var_unit) )
 
-
     norm_dot_prod = (fixed_unit[0] * var_unit[0]) + (fixed_unit[1] * var_unit[1]) + (fixed_unit[2] * var_unit[2])
-
-    checked_print ( "  Dot product between fixed and var is " + str(norm_dot_prod) )
 
     # Ensure that the dot product is a legal argument for the "acos" function:
     if norm_dot_prod >  1:
@@ -767,15 +757,20 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
       print ( "Numerical Warning: normalized dot product " + str(norm_dot_prod) + " was less than -1" )
       norm_dot_prod = -1
 
-    cur_rot_angle = math.acos ( norm_dot_prod )
-    composite_rot_angle = math.pi + (var_angle-fixed_angle) + cur_rot_angle # The "math.pi" adds 180 degrees to make the components "line up"
+    checked_print ( "  Normalized Dot Product between fixed and var is " + str(norm_dot_prod) )
 
-    checked_print ( "  Fixed angle                is = " + str(180 * fixed_angle / math.pi) + " degrees" )
-    checked_print ( "  Var angle                  is = " + str(180 * var_angle / math.pi) + " degrees" )
-    checked_print ( "  Current angle between keys is = " + str(180 * cur_rot_angle / math.pi) + " degrees" )
+    # Compute the amount of rotation to bring the planes into alignment offset by the requested bond angles
+    cur_key_plane_angle = math.acos ( norm_dot_prod )
+    composite_rot_angle = math.pi + (var_req_bond_angle-fixed_req_bond_angle) + cur_key_plane_angle # The "math.pi" adds 180 degrees to make the components "line up"
+
+    checked_print ( "  Fixed angle                is = " + str(180 * fixed_req_bond_angle / math.pi) + " degrees" )
+    checked_print ( "  Var angle                  is = " + str(180 * var_req_bond_angle / math.pi) + " degrees" )
+    checked_print ( "  Current angle between keys is = " + str(180 * cur_key_plane_angle / math.pi) + " degrees" )
     checked_print ( "  Composite rotation angle   is = " + str(180 * composite_rot_angle / math.pi) + " degrees" )
 
     # Build a 3D rotation matrix along the axis of the molecule to the component
+    var_vcomp_mag = math.sqrt ( (var_vcomp[0]*var_vcomp[0]) + (var_vcomp[1]*var_vcomp[1]) + (var_vcomp[2]*var_vcomp[2]) )
+
     var_rot_unit = [ v / var_vcomp_mag for v in var_vcomp ]
     ux = var_rot_unit[0]
     uy = var_rot_unit[1]
