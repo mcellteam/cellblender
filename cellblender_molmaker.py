@@ -773,18 +773,18 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     ux = var_rot_unit[0]
     uy = var_rot_unit[1]
     uz = var_rot_unit[2]
-    ca = math.cos(composite_rot_angle)
-    sa = math.sin(composite_rot_angle)
 
     R = None
 
     if False:  # Build the rotation matrix directly
 
-      omca = 1 - ca
+      cca = math.cos(composite_rot_angle)
+      sca = math.sin(composite_rot_angle)
+      omcca = 1 - cca
 
-      R = [ [ca + (ux*ux*omca), (ux*uy*omca) - (uz*sa), (ux*uz*omca) + (uy*sa)],
-            [(uy*ux*omca) + (uz*sa), ca + (uy*uy*omca), (uy*uz*omca) - (ux*sa)],
-            [(uz*ux*omca) - (uy*sa), (uz*uy*omca) + (ux*sa), ca + (uz*uz*omca)] ]
+      R = [ [cca + (ux*ux*omcca), (ux*uy*omcca) - (uz*sca), (ux*uz*omcca) + (uy*sca)],
+            [(uy*ux*omcca) + (uz*sca), cca + (uy*uy*omcca), (uy*uz*omcca) - (ux*sca)],
+            [(uz*ux*omcca) - (uy*sca), (uz*uy*omcca) + (ux*sca), cca + (uz*uz*omcca)] ]
 
     else:  # Build the rotation matrix from a quaternion
 
