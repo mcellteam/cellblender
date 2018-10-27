@@ -700,11 +700,13 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     fixed_vcomp = []
     for i in range(3):
       fixed_vcomp.append ( mc[fixed_comp_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
+    checked_print ( "  Fixed vcomp = " + str(fixed_vcomp) )
 
     # fixed_vkey will be the vector from the fixed molecule to the fixed key
     fixed_vkey = []
     for i in range(3):
       fixed_vkey.append ( mc[fixed_key_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
+    checked_print ( "  Fixed vkey = " + str(fixed_vkey) )
 
     # Use the cross product to get the normal to the fixed key plane
     fixed_normal = [ (fixed_vcomp[1] * fixed_vkey[2]) - (fixed_vcomp[2] * fixed_vkey[1]),
@@ -726,7 +728,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     for i in range(3):
       var_vcomp.append ( mc[var_comp_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
 
-    # var_vcomp will be the vector from the var molecule to the var key
+    # var_vkey will be the vector from the var molecule to the var key
     var_vkey = []
     for i in range(3):
       var_vkey.append ( mc[var_key_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
@@ -759,8 +761,12 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
       norm_dot_prod = -1
 
     cur_rot_angle = math.acos ( norm_dot_prod )
-
     composite_rot_angle = math.pi + (var_angle-fixed_angle) + cur_rot_angle # The "math.pi" adds 180 degrees to make the components "line up"
+
+    checked_print ( "  Fixed angle                is = " + str(180 * fixed_angle / math.pi) + " degrees" )
+    checked_print ( "  Var angle                  is = " + str(180 * var_angle / math.pi) + " degrees" )
+    checked_print ( "  Current angle between keys is = " + str(180 * cur_rot_angle / math.pi) + " degrees" )
+    checked_print ( "  Composite rotation angle   is = " + str(180 * composite_rot_angle / math.pi) + " degrees" )
 
     # Build a 3D rotation matrix along the axis of the molecule to the component
     var_rot_unit = [ v / var_vcomp_mag for v in var_vcomp ]
@@ -805,25 +811,27 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
             [ 2*((qi*qj)+(qk*qr)),     1-(2*(qi2+qk2)), 2*((qj*qk)-(qi*qr)) ],
             [ 2*((qi*qk)-(qj*qr)), 2*((qj*qk)+(qi*qr)),     1-(2*(qi2+qj2)) ] ]
 
-    # Apply the rotation matrix after subtracting the molecule center location from all components and keys
-    for ci in range ( len(mc[var_mol_index]['peer_list']) ):
-      ##### fprintf ( stdout, "  Component %s before is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
-      x = mc[mc[var_mol_index]['peer_list'][ci]]['coords'][0] - mc[var_mol_index]['coords'][0]
-      y = mc[mc[var_mol_index]['peer_list'][ci]]['coords'][1] - mc[var_mol_index]['coords'][1]
-      z = mc[mc[var_mol_index]['peer_list'][ci]]['coords'][2] - mc[var_mol_index]['coords'][2]
-      mc[mc[var_mol_index]['peer_list'][ci]]['coords'][0] = (R[0][0]*x) + (R[0][1]*y) + (R[0][2]*z) + mc[var_mol_index]['coords'][0]
-      mc[mc[var_mol_index]['peer_list'][ci]]['coords'][1] = (R[1][0]*x) + (R[1][1]*y) + (R[1][2]*z) + mc[var_mol_index]['coords'][1]
-      mc[mc[var_mol_index]['peer_list'][ci]]['coords'][2] = (R[2][0]*x) + (R[2][1]*y) + (R[2][2]*z) + mc[var_mol_index]['coords'][2]
-      ##### fprintf ( stdout, "  Component %s after  is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
-    for ci in range ( len(mc[var_mol_index]['key_list']) ):
-      ##### fprintf ( stdout, "  Component %s before is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
-      x = mc[mc[var_mol_index]['key_list'][ci]]['coords'][0] - mc[var_mol_index]['coords'][0]
-      y = mc[mc[var_mol_index]['key_list'][ci]]['coords'][1] - mc[var_mol_index]['coords'][1]
-      z = mc[mc[var_mol_index]['key_list'][ci]]['coords'][2] - mc[var_mol_index]['coords'][2]
-      mc[mc[var_mol_index]['key_list'][ci]]['coords'][0] = (R[0][0]*x) + (R[0][1]*y) + (R[0][2]*z) + mc[var_mol_index]['coords'][0]
-      mc[mc[var_mol_index]['key_list'][ci]]['coords'][1] = (R[1][0]*x) + (R[1][1]*y) + (R[1][2]*z) + mc[var_mol_index]['coords'][1]
-      mc[mc[var_mol_index]['key_list'][ci]]['coords'][2] = (R[2][0]*x) + (R[2][1]*y) + (R[2][2]*z) + mc[var_mol_index]['coords'][2]
-      ##### fprintf ( stdout, "  Component %s after  is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
+    if (not bpy.context.scene.mcell.molmaker.skip_a2bo_rotation) or (fixed_comp_index != 12) or (var_comp_index != 15):
+
+        # Apply the rotation matrix after subtracting the molecule center location from all components and keys
+        for ci in range ( len(mc[var_mol_index]['peer_list']) ):
+          ##### fprintf ( stdout, "  Component %s before is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
+          x = mc[mc[var_mol_index]['peer_list'][ci]]['coords'][0] - mc[var_mol_index]['coords'][0]
+          y = mc[mc[var_mol_index]['peer_list'][ci]]['coords'][1] - mc[var_mol_index]['coords'][1]
+          z = mc[mc[var_mol_index]['peer_list'][ci]]['coords'][2] - mc[var_mol_index]['coords'][2]
+          mc[mc[var_mol_index]['peer_list'][ci]]['coords'][0] = (R[0][0]*x) + (R[0][1]*y) + (R[0][2]*z) + mc[var_mol_index]['coords'][0]
+          mc[mc[var_mol_index]['peer_list'][ci]]['coords'][1] = (R[1][0]*x) + (R[1][1]*y) + (R[1][2]*z) + mc[var_mol_index]['coords'][1]
+          mc[mc[var_mol_index]['peer_list'][ci]]['coords'][2] = (R[2][0]*x) + (R[2][1]*y) + (R[2][2]*z) + mc[var_mol_index]['coords'][2]
+          ##### fprintf ( stdout, "  Component %s after  is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
+        for ci in range ( len(mc[var_mol_index]['key_list']) ):
+          ##### fprintf ( stdout, "  Component %s before is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
+          x = mc[mc[var_mol_index]['key_list'][ci]]['coords'][0] - mc[var_mol_index]['coords'][0]
+          y = mc[mc[var_mol_index]['key_list'][ci]]['coords'][1] - mc[var_mol_index]['coords'][1]
+          z = mc[mc[var_mol_index]['key_list'][ci]]['coords'][2] - mc[var_mol_index]['coords'][2]
+          mc[mc[var_mol_index]['key_list'][ci]]['coords'][0] = (R[0][0]*x) + (R[0][1]*y) + (R[0][2]*z) + mc[var_mol_index]['coords'][0]
+          mc[mc[var_mol_index]['key_list'][ci]]['coords'][1] = (R[1][0]*x) + (R[1][1]*y) + (R[1][2]*z) + mc[var_mol_index]['coords'][1]
+          mc[mc[var_mol_index]['key_list'][ci]]['coords'][2] = (R[2][0]*x) + (R[2][1]*y) + (R[2][2]*z) + mc[var_mol_index]['coords'][2]
+          ##### fprintf ( stdout, "  Component %s after  is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
 
 
   ##### dump_molcomp_array(mc,num_parts);
@@ -1300,6 +1308,9 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   show_text_interface = BoolProperty ( default=False )
 
 
+  skip_a2bo_rotation = BoolProperty ( default=False )
+
+
   def build_data_model_from_properties ( self ):
     mm_dict = {}
     mm_dict['data_model_version'] = "DM_2018_10_26_1310"
@@ -1435,6 +1446,12 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     col.prop ( self, 'dynamic_rotation', text="Dynamic Rotation" )
     col = row.column()
     col.prop ( self, 'print_debug', text="Text Output" )
+
+    row = layout.row()
+    col = row.column()
+    col.prop ( self, 'skip_a2bo_rotation', text="skip_a2bo_rotation" )
+
+
     row = layout.row()
     col = row.column()
     col.operator ( "mol.purge_by_reopen" )
@@ -1609,14 +1626,14 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
   # Add the keys (as faces)
   if show_key_planes:
     for i in range(len(face_list)):
-      checked_print ( "Adding a face" )
+      # checked_print ( "Adding a face" )
       vlist = face_list[i]
 
       Vertices = []
       Faces = [[]]
       i = 0
       for vertex in vlist:
-        checked_print ( "  Adding vertex at " + str(vertex) )
+        # checked_print ( "  Adding vertex at " + str(vertex) )
         Vertices.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
         Faces[0].append ( i )
         i += 1
