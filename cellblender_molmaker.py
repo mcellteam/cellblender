@@ -678,7 +678,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
       ##### fprintf ( stdout, "  Component %s after  is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
 
 
-  # Now the molecules are aligned as they would be except for rotation along their bonding axis
+  # Now the molecules are aligned as they should be except for rotation along their bonding axis
 
   if build_as_3D and include_rotation:
 
@@ -702,45 +702,52 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
       fixed_vcomp.append ( mc[fixed_comp_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
     checked_print ( "  Fixed vcomp = " + str(fixed_vcomp) )
 
-    # fixed_vkey will be the vector from the fixed molecule to the fixed key
-    fixed_vkey = []
-    for i in range(3):
-      fixed_vkey.append ( mc[fixed_key_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
-    checked_print ( "  Fixed vkey = " + str(fixed_vkey) )
-
-    # Use the cross product to get the normal to the fixed key plane
-    fixed_normal = [ (fixed_vcomp[1] * fixed_vkey[2]) - (fixed_vcomp[2] * fixed_vkey[1]),
-                     (fixed_vcomp[2] * fixed_vkey[0]) - (fixed_vcomp[0] * fixed_vkey[2]),
-                     (fixed_vcomp[0] * fixed_vkey[1]) - (fixed_vcomp[1] * fixed_vkey[0]) ]
-
-    #fixed_vcomp_mag = math.sqrt ( (fixed_vcomp[0]*fixed_vcomp[0]) + (fixed_vcomp[1]*fixed_vcomp[1]) + (fixed_vcomp[2]*fixed_vcomp[2]) )
-    #fixed_vkey_mag = math.sqrt ( (fixed_vkey[0]*fixed_vkey[0]) + (fixed_vkey[1]*fixed_vkey[1]) + (fixed_vkey[2]*fixed_vkey[2]) )
-
-    fixed_norm_mag = math.sqrt ( (fixed_normal[0]*fixed_normal[0]) + (fixed_normal[1]*fixed_normal[1]) + (fixed_normal[2]*fixed_normal[2]) )
-
-    # fixed_normal = [ cp / ( fixed_vcomp_mag * fixed_vkey_mag ) for cp in fixed_normal ]
-    fixed_unit = [ cp / fixed_norm_mag for cp in fixed_normal ]
-
-    checked_print ( "  Fixed unit = " + str(fixed_unit) )
-
     # var_vcomp will be the vector from the var molecule to the var component
     var_vcomp = []
     for i in range(3):
       var_vcomp.append ( mc[var_comp_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
+
+
+    # fixed_vkey will be the vector from the fixed molecule to the fixed key
+    fixed_vkey = []
+    for i in range(3):
+      fixed_vkey.append ( mc[fixed_key_index]['coords'][i] - mc[fixed_mol_index]['coords'][i] )
 
     # var_vkey will be the vector from the var molecule to the var key
     var_vkey = []
     for i in range(3):
       var_vkey.append ( mc[var_key_index]['coords'][i] - mc[var_mol_index]['coords'][i] )
 
+
+    # Use the cross product to get the normal to the fixed molecule-component-key plane
+    fixed_normal = [ (fixed_vcomp[1] * fixed_vkey[2]) - (fixed_vcomp[2] * fixed_vkey[1]),
+                     (fixed_vcomp[2] * fixed_vkey[0]) - (fixed_vcomp[0] * fixed_vkey[2]),
+                     (fixed_vcomp[0] * fixed_vkey[1]) - (fixed_vcomp[1] * fixed_vkey[0]) ]
+
+    # Use the cross product to get the normal to the variable molecule-component-key plane
     var_normal = [ (var_vcomp[1] * var_vkey[2]) - (var_vcomp[2] * var_vkey[1]),
                    (var_vcomp[2] * var_vkey[0]) - (var_vcomp[0] * var_vkey[2]),
                    (var_vcomp[0] * var_vkey[1]) - (var_vcomp[1] * var_vkey[0]) ]
 
+
+    fixed_norm_mag = math.sqrt ( (fixed_normal[0]*fixed_normal[0]) + (fixed_normal[1]*fixed_normal[1]) + (fixed_normal[2]*fixed_normal[2]) )
+    var_norm_mag   = math.sqrt ( (  var_normal[0]*  var_normal[0]) + (  var_normal[1]*  var_normal[1]) + (  var_normal[2]*  var_normal[2]) )
+
+    checked_print ( "  Fixed vkey = " + str(fixed_vkey) )
+
+
+    #fixed_vcomp_mag = math.sqrt ( (fixed_vcomp[0]*fixed_vcomp[0]) + (fixed_vcomp[1]*fixed_vcomp[1]) + (fixed_vcomp[2]*fixed_vcomp[2]) )
+    #fixed_vkey_mag = math.sqrt ( (fixed_vkey[0]*fixed_vkey[0]) + (fixed_vkey[1]*fixed_vkey[1]) + (fixed_vkey[2]*fixed_vkey[2]) )
+
+
+    # fixed_normal = [ cp / ( fixed_vcomp_mag * fixed_vkey_mag ) for cp in fixed_normal ]
+    fixed_unit = [ cp / fixed_norm_mag for cp in fixed_normal ]
+
+    checked_print ( "  Fixed unit = " + str(fixed_unit) )
+
     var_vcomp_mag = math.sqrt ( (var_vcomp[0]*var_vcomp[0]) + (var_vcomp[1]*var_vcomp[1]) + (var_vcomp[2]*var_vcomp[2]) )
     #var_vkey_mag = math.sqrt ( (var_vkey[0]*var_vkey[0]) + (var_vkey[1]*var_vkey[1]) + (var_vkey[2]*var_vkey[2]) )
 
-    var_norm_mag = math.sqrt ( (var_normal[0]*var_normal[0]) + (var_normal[1]*var_normal[1]) + (var_normal[2]*var_normal[2]) )
 
     # var_normal = [ cp / ( var_vcomp_mag * var_vkey_mag ) for cp in var_normal ]
     var_unit = [ cp / var_norm_mag for cp in var_normal ]
