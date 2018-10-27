@@ -761,6 +761,20 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
     # Compute the amount of rotation to bring the planes into alignment offset by the requested bond angles
     cur_key_plane_angle = math.acos ( norm_dot_prod )
+
+    print ( "Current key plane angle = " + str(180*cur_key_plane_angle/math.pi) )
+
+    cross_prod = [ (fixed_unit[1] * var_unit[2]) - (fixed_unit[2] * var_unit[1]),
+                   (fixed_unit[2] * var_unit[0]) - (fixed_unit[0] * var_unit[2]),
+                   (fixed_unit[0] * var_unit[1]) - (fixed_unit[1] * var_unit[0]) ]
+
+    dot_cross_rot = (cross_prod[0] * var_vcomp[0]) + (cross_prod[1] * var_vcomp[1]) + (cross_prod[2] * var_vcomp[2])
+    if dot_cross_rot > 0:
+      cur_key_plane_angle = (2*math.pi) - cur_key_plane_angle
+
+    print ( "Current key plane angle = " + str(180*cur_key_plane_angle/math.pi) + ",  dot_cross_rot = " + str(dot_cross_rot) )
+
+
     composite_rot_angle = math.pi + (var_req_bond_angle-fixed_req_bond_angle) + cur_key_plane_angle # The "math.pi" adds 180 degrees to make the components "line up"
 
     checked_print ( "  Fixed angle                is = " + str(180 * fixed_req_bond_angle / math.pi) + " degrees" )
@@ -877,7 +891,7 @@ def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
   molmaker = mcell.molmaker
 
   old_debug = molmaker.print_debug
-  molmaker.print_debug = True
+  ## molmaker.print_debug = True
   checked_print ( "======================================================================================" )
   checked_print ( "===================================== bind_all_molecules =============================" )
   checked_print ( "======================================================================================" )
@@ -950,7 +964,7 @@ def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
                   molcomp_array[molcomp_array[vmi]['peer_list'][vmici]]['is_final'] = True
 
                 old_debug = molmaker.print_debug
-                molmaker.print_debug = True
+                ## molmaker.print_debug = True
                 checked_print ( "======================================================================================" )
                 dump_molcomp_list ( molcomp_array )
                 checked_print ( "======================================================================================" )
