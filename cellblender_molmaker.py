@@ -811,7 +811,8 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
             [ 2*((qi*qj)+(qk*qr)),     1-(2*(qi2+qk2)), 2*((qj*qk)-(qi*qr)) ],
             [ 2*((qi*qk)-(qj*qr)), 2*((qj*qk)+(qi*qr)),     1-(2*(qi2+qj2)) ] ]
 
-    if (not bpy.context.scene.mcell.molmaker.skip_a2bo_rotation) or (fixed_comp_index != 12) or (var_comp_index != 15):
+    mm = bpy.context.scene.mcell.molmaker
+    if (not mm.skip_rotation) or (fixed_comp_index != mm.skip_fixed_comp_index) or (var_comp_index != mm.skip_var_comp_index):
 
         # Apply the rotation matrix after subtracting the molecule center location from all components and keys
         for ci in range ( len(mc[var_mol_index]['peer_list']) ):
@@ -1075,7 +1076,7 @@ class MolMakerMolCompProperty(bpy.types.PropertyGroup):
   graph_string = StringProperty(default="")
   peer_list = StringProperty(default="") # Comma-separated list of indexes
   key_list = StringProperty(default="")  # Comma-separated list of indexes
-  angle = FloatProperty(name="Bond Angle", update=redraw_mol)
+  angle = FloatProperty(name="Bond Angle", step=0.5, precision=3, update=redraw_mol)
   bond_index = IntProperty(name="Bond Index", default=-1, update=check_bond_index)
   key_index = IntProperty(default=-1)
   alert_string = StringProperty(default="")
@@ -1308,7 +1309,9 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   show_text_interface = BoolProperty ( default=False )
 
 
-  skip_a2bo_rotation = BoolProperty ( default=False )
+  skip_rotation = BoolProperty ( default=False )
+  skip_fixed_comp_index = IntProperty ( default=-1 )
+  skip_var_comp_index = IntProperty ( default=-1 )
 
 
   def build_data_model_from_properties ( self ):
@@ -1324,6 +1327,11 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     mm_dict['dynamic_rotation'] = self.dynamic_rotation
     mm_dict['print_debug'] = self.print_debug
     mm_dict['show_text_interface'] = self.show_text_interface
+
+    mm_dict['skip_rotation'] = self.skip_rotation
+    mm_dict['skip_fixed_comp_index'] = self.skip_fixed_comp_index
+    mm_dict['skip_var_comp_index'] = self.skip_var_comp_index
+
 
     mm_dict['molcomp_list'] = []
     for i in range(len(self.molcomp_items)):
@@ -1371,6 +1379,11 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     self.dynamic_rotation = dm_dict['dynamic_rotation']
     self.print_debug = dm_dict['print_debug']
     self.show_text_interface = dm_dict['show_text_interface']
+
+    if 'skip_rotation' in dm_dict: self.skip_rotation = dm_dict['skip_rotation']
+    if 'skip_fixed_comp_index' in dm_dict: self.skip_fixed_comp_index = dm_dict['skip_fixed_comp_index']
+    if 'skip_var_comp_index' in dm_dict: self.skip_var_comp_index = dm_dict['skip_var_comp_index']
+
 
     # Remove all the old items
     while len(self.molcomp_items) > 0:
@@ -1449,8 +1462,12 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
     row = layout.row()
     col = row.column()
-    col.prop ( self, 'skip_a2bo_rotation', text="skip_a2bo_rotation" )
-
+    col.prop ( self, 'skip_rotation', text="Skip Rotation" )
+    if self.skip_rotation:
+      col = row.column()
+      col.prop ( self, 'skip_fixed_comp_index', text="Fixed Comp #" )
+      col = row.column()
+      col.prop ( self, 'skip_var_comp_index', text="Var Comp #" )
 
     row = layout.row()
     col = row.column()
