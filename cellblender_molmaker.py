@@ -775,7 +775,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     checked_print ( "Current key plane angle = " + str(180*cur_key_plane_angle/math.pi) + ",  dot_cross_rot = " + str(dot_cross_rot) )
 
 
-    composite_rot_angle = math.pi + (var_req_bond_angle-fixed_req_bond_angle) + cur_key_plane_angle # The "math.pi" adds 180 degrees to make the components "line up"
+    composite_rot_angle = math.pi + (var_req_bond_angle+fixed_req_bond_angle) + cur_key_plane_angle # The "math.pi" adds 180 degrees to make the components "line up"
 
     checked_print ( "  Fixed angle                is = " + str(180 * fixed_req_bond_angle / math.pi) + " degrees" )
     checked_print ( "  Var angle                  is = " + str(180 * var_req_bond_angle / math.pi) + " degrees" )
