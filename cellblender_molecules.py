@@ -352,6 +352,28 @@ class MCELL_OT_mol_comp_nostick(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_mol_auto_key(bpy.types.Operator):
+    bl_idname = "mcell.mol_auto_key"
+    bl_label = "Auto Key"
+    bl_description = "Automatically Key the Components"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        self.report({'INFO'}, "Auto keyed")
+        print ( "Auto keying components to first key" )
+        mols = context.scene.mcell.molecules
+        this_mol = mols.molecule_list[mols.active_mol_index]
+        cl = this_mol.component_list
+        # Create a list of ONLY the actual keys
+        key_only_list = [ i for i in range(len(cl)) if cl[i].is_key == True ]
+        if len(key_only_list) > 0:
+          comp_only_list = [ i for i in range(len(cl)) if cl[i].is_key == False ]
+          for i in comp_only_list:
+            if cl[i].rot_index < 0:
+              cl[i].rot_index = key_only_list[0]
+        return {'FINISHED'}
+
+
 
 # Callbacks for all Property updates appear to require global (non-member) functions.
 # This is circumvented by simply calling the associated member function passed as self:
@@ -602,13 +624,10 @@ class MCell_OT_molecule_2D_Circ(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        print ( "Recalculating Molecule Component Geometry in 3D" )
-        ps = context.scene.mcell.parameter_system
-        mols = context.scene.mcell.molecules
-        this_mol = mols.molecule_list[mols.active_mol_index]
-
         # Arrange the components evenly spaced on a sphere
 
+        print ( "Recalculating Molecule Component Geometry in 3D" )
+        ps = context.scene.mcell.parameter_system
         mols = context.scene.mcell.molecules
         this_mol = mols.molecule_list[mols.active_mol_index]
 
@@ -633,13 +652,10 @@ class MCell_OT_molecule_3D_Sp(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        print ( "Recalculating Molecule Component Geometry in 3D" )
-        ps = context.scene.mcell.parameter_system
-        mols = context.scene.mcell.molecules
-        this_mol = mols.molecule_list[mols.active_mol_index]
-
         # Arrange the components evenly spaced on a sphere
 
+        print ( "Recalculating Molecule Component Geometry in 3D" )
+        ps = context.scene.mcell.parameter_system
         mols = context.scene.mcell.molecules
         this_mol = mols.molecule_list[mols.active_mol_index]
 
@@ -1375,6 +1391,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 subcol = col.column(align=True)
                 subcol.operator("mcell.mol_comp_stick", icon='RESTRICT_VIEW_OFF', text="")
                 subcol.operator("mcell.mol_comp_nostick", icon='RESTRICT_VIEW_ON', text="")
+                subcol = col.column(align=True)
+                subcol.operator("mcell.mol_auto_key", icon='KEY_HLT', text="")  # or KEY_DEHLT
 
                 if self.component_list:
                     comp = self.component_list[self.active_component_index]
