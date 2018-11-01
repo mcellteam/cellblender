@@ -982,6 +982,27 @@ def build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=T
 
   bind_all_molecules ( molcomp_list, build_as_3D, include_rotation=molmaker.include_rotation )
 
+  if molmaker.average_coincident:
+    i = 0
+    for mc in molcomp_list:
+      # Only average components connected to molecules
+      if (mc['ftype']=='c') and (len(mc['peer_list']) > 1):
+        j = mc['peer_list'][1]
+        print ( "Average components " + str(i) + " and " + str(j) )
+        print ( " Component: " + str([ n for n in mc.keys()]) )
+        print ( "  Peer List: " + str(mc['peer_list']) + ", Coords: " + str(mc['coords']) )
+        x = (molcomp_list[i]['coords'][0] + molcomp_list[j]['coords'][0]) / 2
+        y = (molcomp_list[i]['coords'][1] + molcomp_list[j]['coords'][1]) / 2
+        z = (molcomp_list[i]['coords'][2] + molcomp_list[j]['coords'][2]) / 2
+        molcomp_list[i]['coords'][0] = x
+        molcomp_list[j]['coords'][0] = x
+        molcomp_list[i]['coords'][1] = y
+        molcomp_list[j]['coords'][1] = y
+        molcomp_list[i]['coords'][2] = z
+        molcomp_list[j]['coords'][2] = z
+
+      i += 1
+
   checked_print ( "======================================================================================" )
   dump_molcomp_list ( molcomp_list )
   checked_print ( "======================================================================================" )
@@ -1318,6 +1339,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   make_materials = BoolProperty ( default=True )
   cellblender_colors = BoolProperty ( default=True )
   show_key_planes = BoolProperty ( default=True )
+  average_coincident = BoolProperty ( default=False )
   include_rotation = BoolProperty ( default=True )
   dynamic_rotation = BoolProperty ( default=False )
   print_debug = BoolProperty ( default=False )
@@ -1332,13 +1354,14 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
   def build_data_model_from_properties ( self ):
     mm_dict = {}
-    mm_dict['data_model_version'] = "DM_2018_10_26_1310"
+    mm_dict['data_model_version'] = "DM_2018_10_31_1510"
     mm_dict['molecule_definition'] = self.molecule_definition
     mm_dict['molecule_text_name'] = self.molecule_text_name
     mm_dict['comp_loc_text_name'] = self.comp_loc_text_name
     mm_dict['make_materials'] = self.make_materials
     mm_dict['cellblender_colors'] = self.cellblender_colors
     mm_dict['show_key_planes'] = self.show_key_planes
+    mm_dict['average_coincident'] = self.average_coincident
     mm_dict['include_rotation'] = self.include_rotation
     mm_dict['dynamic_rotation'] = self.dynamic_rotation
     mm_dict['print_debug'] = self.print_debug
@@ -1371,10 +1394,18 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   @staticmethod
   def upgrade_data_model ( dm ):
     # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
-    print ( "------------------------->>> Upgrading MCellMoleculeProperty Data Model" )
+    print ( "------------------------->>> Upgrading MCellMolMakerProperty Data Model" )
+    if not ('data_model_version' in dm):
+        # Make changes to move from unversioned to DM_2014_10_24_1638
+        dm['data_model_version'] = "DM_2018_10_26_1310"
 
     # Check that the upgraded data model version matches the version for this property group
-    if dm['data_model_version'] != "DM_2018_10_26_1310":
+    if dm['data_model_version'] == "DM_2018_10_26_1310":
+        # Add the average_coincident flag
+        dm['average_coincident'] = False
+        dm['data_model_version'] = "DM_2018_10_31_1510"
+        return None
+    if dm['data_model_version'] != "DM_2018_10_31_1510":
         data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMolMakerPropertyGroup data model " + str(dm['data_model_version']) + " to current version." )
         return None
 
@@ -1382,7 +1413,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
   def build_properties_from_data_model ( self, context, dm_dict ):
     # Check that the data model version matches the version for this property group
-    if dm_dict['data_model_version'] != "DM_2018_10_26_1310":
+    if dm_dict['data_model_version'] != "DM_2018_10_31_1510":
         data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMolMakerPropertyGroup data model " + str(dm['data_model_version']) + " to current version." )
     # Now convert the updated Data Model into CellBlender Properties
     self.molecule_definition = dm_dict['molecule_definition']
@@ -1390,7 +1421,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     self.comp_loc_text_name = dm_dict['comp_loc_text_name']
     self.make_materials = dm_dict['make_materials']
     self.cellblender_colors = dm_dict['cellblender_colors']
-    self.show_key_planes = dm_dict['show_key_planes']
+    self.average_coincident = dm_dict['average_coincident']
     self.include_rotation = dm_dict['include_rotation']
     self.dynamic_rotation = dm_dict['dynamic_rotation']
     self.print_debug = dm_dict['print_debug']
@@ -1468,6 +1499,8 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     col.prop ( self, 'cellblender_colors', text="CellBlender Colors" )
     col = row.column()
     col.prop ( self, 'show_key_planes', text="Show Key Planes" )
+    col = row.column()
+    col.prop ( self, 'average_coincident', text="Average Coincident" )
     row = layout.row()
     col = row.column()
     col.prop ( self, 'include_rotation', text="Axial Rotation" )
