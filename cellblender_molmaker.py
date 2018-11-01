@@ -601,7 +601,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
         uy = xpy / axis_length
         uz = xpz / axis_length
 
-        if False:  # Build the rotation matrix directly
+        if True:  # Build the rotation matrix directly
 
           # Build a 3D rotation matrix
           omca = 1 - ca
@@ -792,7 +792,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
     R = None
 
-    if False:  # Build the rotation matrix directly
+    if True:  # Build the rotation matrix directly
 
       cca = math.cos(composite_rot_angle)
       sca = math.sin(composite_rot_angle)
