@@ -606,26 +606,35 @@ try:
               for m in mlist:
                 f.write ( "  %s" % m['mol_name'] )
                 if "bngl_component_list" in m:
-                  # This had previously written out ALL components
+                  # This code had previously written out ALL components since there were no "angle reference key" components
                   # However, there are now "key" components that are not yet recognized as such by subsequent code
-                  # For now, create a substitute list named "fake_m" to use for producing this output
-                  # To fix this later, change "fake_m" back to "m" and write the keys in proper syntax
-                  fake_m = {}
-                  fake_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if c['is_key'] == False ]
+                  # For now, create a substitute list named "no_key_m" to use for producing this output
+                  # To fix this later, change "no_key_m" back to "m" and write the keys in proper syntax
+                  no_key_m = {}
+                  no_key_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if c['is_key'] == False ]
                   f.write( "(" )
-                  num_components = len(fake_m['bngl_component_list'])
+                  num_components = len(no_key_m['bngl_component_list'])
                   if num_components > 0:
                     for ci in range(num_components):
-                      c = fake_m['bngl_component_list'][ci]
+                      c = no_key_m['bngl_component_list'][ci]
                       f.write( c['cname'] )
                       for state in c['cstates']:
                         f.write ( "~" + state )
                       if 'spatial_structure' in m:
                         if m['spatial_structure'] != "None":
                           # This molecule has spatial structure, so include it after the states
-                          f.write ( "{loc=[" + c['loc_x'] + "," + c['loc_y'] + "," + c['loc_z'] + "]" )
-                          f.write ( ",rot=[" + c['rot_x'] + "," + c['rot_y'] + "," + c['rot_z'] + "," + c['rot_ang'] + "]}" )
                           print ( " Writing out spatial structure for mol " + m['mol_name'] + ", component " + c['cname'] )
+                          f.write ( "{loc=[" + c['loc_x'] + "," + c['loc_y'] + "," + c['loc_z'] + "]" )
+                          if c['rot_index'] < 0:
+                            # This component doesn't use a rotation key at all. Assume that it has valid "rot_xyz" fields
+                            f.write ( ",rot=[" + c['rot_x'] + "," + c['rot_y'] + "," + c['rot_z'] + "," + c['rot_ang'] + "]}" )
+                          else:
+                            # This component uses a rotation key index, so pull the rotation axis from the key component's **LOCATION**
+                            ki = c['rot_index']   # This index (ki) is in the ORIGINAL "m" and NOT the "no_key_m" created without keys
+                            k = m['bngl_component_list'][ki] # Use the ki to fetch the original key component
+                            # When writing, the rotation values (rot_xyz) for the component are the LOCATION values of the key (loc_xyz)
+                            # However, the rotation angle is from the component itself (and not from the key)
+                            f.write ( ",rot=[" + k['loc_x'] + "," + k['loc_y'] + "," + k['loc_z'] + "," + c['rot_ang'] + "]}" )
                       if ci < num_components-1:
                         f.write ( "," )
                   f.write( ")" )
