@@ -725,12 +725,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     geom_type_enum = [
         ('None',   "Coincident", ""),
-        #('2DAuto', "2D Auto", ""),
-        #('3DAuto', "3D Auto", ""),
+        ('2DAuto', "- Unsupported -", ""),  # label was: "2D Auto"
+        ('3DAuto', "- Unsupported -", ""),  # label was: "3D Auto"
         ('XYZRef', "XYZ,AngleRef", ""),
-        #('XYZ',    "XYZ", ""),
-        #('XYZA',   "XYZ,A Specified", ""),
-        #('XYZVA',  "XYZ,V,A Specified", "")
+        ('XYZ',    "- Unsupported -", ""),  # label was: "XYZ"
+        ('XYZA',   "- Unsupported -", ""),  # label was: "XYZ,A Specified"
+        ('XYZVA',  "- Unsupported -", "")   # label was: "XYZ,V,A Specified"
         ]
     geom_type = EnumProperty(
         items=geom_type_enum, name="Geometry",
