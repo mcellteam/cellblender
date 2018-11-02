@@ -606,11 +606,17 @@ try:
               for m in mlist:
                 f.write ( "  %s" % m['mol_name'] )
                 if "bngl_component_list" in m:
+                  # This had previously written out ALL components
+                  # However, there are now "key" components that are not yet recognized as such by subsequent code
+                  # For now, create a substitute list named "fake_m" to use for producing this output
+                  # To fix this later, change "fake_m" back to "m" and write the keys in proper syntax
+                  fake_m = {}
+                  fake_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if c['is_key'] == False ]
                   f.write( "(" )
-                  num_components = len(m['bngl_component_list'])
+                  num_components = len(fake_m['bngl_component_list'])
                   if num_components > 0:
                     for ci in range(num_components):
-                      c = m['bngl_component_list'][ci]
+                      c = fake_m['bngl_component_list'][ci]
                       f.write( c['cname'] )
                       for state in c['cstates']:
                         f.write ( "~" + state )
