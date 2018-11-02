@@ -625,7 +625,7 @@ try:
                           # This molecule has spatial structure, so include it after the states
                           print ( " Writing out spatial structure for mol " + m['mol_name'] + ", component " + c['cname'] )
                           f.write ( "{loc=[" + c['loc_x'] + "," + c['loc_y'] + "," + c['loc_z'] + "]" )
-                          if c['rot_index'] < 0:
+                          if (m['spatial_structure']=="XYZVA") or (c['rot_index'] < 0):
                             # This component doesn't use a rotation key at all. Assume that it has valid "rot_xyz" fields
                             f.write ( ",rot=[" + c['rot_x'] + "," + c['rot_y'] + "," + c['rot_z'] + "," + c['rot_ang'] + "]}" )
                           else:

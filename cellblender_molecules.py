@@ -727,10 +727,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('None',   "Coincident", ""),
         ('2DAuto', "- Unsupported -", ""),  # label was: "2D Auto"
         ('3DAuto', "- Unsupported -", ""),  # label was: "3D Auto"
-        ('XYZRef', "XYZ,AngleRef", ""),
+        ('XYZRef', "XYZ,RotRef", ""),
         ('XYZ',    "- Unsupported -", ""),  # label was: "XYZ"
         ('XYZA',   "- Unsupported -", ""),  # label was: "XYZ,A Specified"
-        ('XYZVA',  "- Unsupported -", "")   # label was: "XYZ,V,A Specified"
+        ('XYZVA',  "XYZ,RotAxis", "")   # label was: "XYZ,V,A Specified"
         ]
     geom_type = EnumProperty(
         items=geom_type_enum, name="Geometry",
@@ -1377,6 +1377,27 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                   col = row.column()
                   col.label ( "Rot Ref" )
 
+                if self.geom_type == 'XYZVA':
+                  row = box.row()
+                  col = row.column()
+                  col.label ( "Name" )
+                  col = row.column()
+                  col.label ( "States" )
+                  col = row.column()
+                  col.label ( "Loc: x" )
+                  col = row.column()
+                  col.label ( "Loc: y" )
+                  col = row.column()
+                  col.label ( "Loc: z" )
+                  col = row.column()
+                  col.label ( "Rot: x" )
+                  col = row.column()
+                  col.label ( "Rot: y" )
+                  col = row.column()
+                  col.label ( "Rot: z" )
+                  col = row.column()
+                  col.label ( "Angle" )
+
                 row = box.row()
                 col = row.column()
                 col.template_list("MCell_UL_check_component", "define_molecules",
@@ -1391,8 +1412,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 subcol = col.column(align=True)
                 subcol.operator("mcell.mol_comp_stick", icon='RESTRICT_VIEW_OFF', text="")
                 subcol.operator("mcell.mol_comp_nostick", icon='RESTRICT_VIEW_ON', text="")
-                subcol = col.column(align=True)
-                subcol.operator("mcell.mol_auto_key", icon='KEY_HLT', text="")  # or KEY_DEHLT
+                if self.geom_type == 'XYZRef':
+                  # Only draw the mol_auto_key when appropriate
+                  subcol = col.column(align=True)
+                  subcol.operator("mcell.mol_auto_key", icon='KEY_HLT', text="")  # or KEY_DEHLT
 
                 if self.component_list:
                     comp = self.component_list[self.active_component_index]
@@ -1829,7 +1852,7 @@ class MCell_UL_check_component(bpy.types.UIList):
           if item.is_key:
             label = str(index) + ": (Rotation Key)"
           col.prop (item, 'is_key', text=label, icon='NONE')
-        else:
+        elif data.geom_type != 'XYZVA':
           col.label(text='Component / States:', icon='NONE')
 
         col = layout.column()
@@ -1958,8 +1981,8 @@ class MCell_UL_check_component(bpy.types.UIList):
 
             ps = context.scene.mcell.parameter_system
 
-            col = layout.column()
-            col.label(text='loc [x,y,z]', icon='NONE')
+            #col = layout.column()
+            #col.label(text='loc [x,y,z]', icon='NONE')
 
             col = layout.column()
             item.loc_x.draw_prop_only ( col, ps )
@@ -1968,8 +1991,8 @@ class MCell_UL_check_component(bpy.types.UIList):
             col = layout.column()
             item.loc_z.draw_prop_only ( col, ps )
 
-            col = layout.column()
-            col.label(text='rot [x,y,z,ang]', icon='NONE')
+            #col = layout.column()
+            #col.label(text='rot [x,y,z,ang]', icon='NONE')
 
             col = layout.column()
             item.rot_x.draw_prop_only ( col, ps )
