@@ -120,7 +120,7 @@ def try_to_import(python_path, required_modules):
 
     import_test = ''
     for module in required_modules:
-        import_test += 'import %s\n' % (module)
+        import_test += ('import %s' + os.linesep) % (module)
     
     cmd = [python_path, '-c', import_test] 
     process = subprocess.Popen(cmd, stderr=subprocess.PIPE)
