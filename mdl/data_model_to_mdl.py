@@ -706,18 +706,22 @@ try:
                 unsorted_objs = [ g for g in glist ]
                 sorted_objs = []
                 sorted_obj_names = []
-                while len(unsorted_objs) > 0:
+                any_change = True  # This flag is used to break out of an infinite loop in ill-defined situations
+                while (len(unsorted_objs) > 0) and any_change:
+                  any_change = False
                   for index in range(len(unsorted_objs)):
                     if output_detail > 10: print ( "  Sorting by parent: checking " + unsorted_objs[index]['name'] + " for parent " + unsorted_objs[index]['parent_object'] )
                     if len(unsorted_objs[index]['parent_object']) == 0:
                       # Move this object to the sorted list because it has no parent
                       sorted_obj_names.append ( unsorted_objs[index]['name'])
                       sorted_objs.append ( unsorted_objs.pop(index) )
+                      any_change = True
                       break
                     elif unsorted_objs[index]['parent_object'] in sorted_obj_names:
                       # Move this object to the sorted list because its parent is already in the list
                       sorted_obj_names.append ( unsorted_objs[index]['name'])
                       sorted_objs.append ( unsorted_objs.pop(index) )
+                      any_change = True
                       break
 
                 for g in sorted_objs:
