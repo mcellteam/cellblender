@@ -1,7 +1,7 @@
 simple_chain_mcell3r_dm = {
   'api_version' : 0,
   'blender_version' : [2, 79, 0],
-  'cellblender_source_sha1' : "3439e532c3fcbbffe5131602baeacd148601d56c",
+  'cellblender_source_sha1' : "d2cdc2f0410eb6907a8e216dce5e7ca310845c12",
   'cellblender_version' : "0.1.54",
   'data_model_version' : "DM_2017_06_23_1300",
   'define_molecules' : {
@@ -90,7 +90,7 @@ simple_chain_mcell3r_dm = {
           'key_index' : -1,
           'key_list' : "",
           'name' : "M",
-          'peer_list' : "1,2,3,4"
+          'peer_list' : "1,2,3"
         },
         {
           'alert_string' : "",
@@ -108,22 +108,8 @@ simple_chain_mcell3r_dm = {
         },
         {
           'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 16,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "c",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "a",
-          'peer_list' : "0"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 6,
+          'angle' : 0.0,
+          'bond_index' : 5,
           'coords' : [0.0, 0.0, 0.0],
           'field_type' : "c",
           'graph_string' : "",
@@ -160,151 +146,11 @@ simple_chain_mcell3r_dm = {
           'key_index' : -1,
           'key_list' : "",
           'name' : "M",
-          'peer_list' : "6,7,8,9"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 3,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "c",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "l",
-          'peer_list' : "5"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 19,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "c",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "a",
-          'peer_list' : "5"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 11,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "c",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "r",
-          'peer_list' : "5"
+          'peer_list' : "5,6,7"
         },
         {
           'alert_string' : "",
           'angle' : 0.0,
-          'bond_index' : -1,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "k",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "k",
-          'peer_list' : "5"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.0,
-          'bond_index' : -1,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "m",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "M",
-          'peer_list' : "11,12,13,14"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 8,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "c",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "l",
-          'peer_list' : "10"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 22,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "c",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "a",
-          'peer_list' : "10"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.0,
-          'bond_index' : -1,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "c",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "r",
-          'peer_list' : "10"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.0,
-          'bond_index' : -1,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "k",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "k",
-          'peer_list' : "10"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.0,
-          'bond_index' : -1,
-          'coords' : [0.0, 0.0, 0.0],
-          'field_type' : "m",
-          'graph_string' : "",
-          'has_coords' : False,
-          'is_final' : False,
-          'key_index' : -1,
-          'key_list' : "",
-          'name' : "A",
-          'peer_list' : "16,17"
-        },
-        {
-          'alert_string' : "",
-          'angle' : 0.20000000298023224,
           'bond_index' : 2,
           'coords' : [0.0, 0.0, 0.0],
           'field_type' : "c",
@@ -313,8 +159,22 @@ simple_chain_mcell3r_dm = {
           'is_final' : False,
           'key_index' : -1,
           'key_list' : "",
-          'name' : "a",
-          'peer_list' : "15"
+          'name' : "l",
+          'peer_list' : "4"
+        },
+        {
+          'alert_string' : "",
+          'angle' : 0.0,
+          'bond_index' : 9,
+          'coords' : [0.0, 0.0, 0.0],
+          'field_type' : "c",
+          'graph_string' : "",
+          'has_coords' : False,
+          'is_final' : False,
+          'key_index' : -1,
+          'key_list' : "",
+          'name' : "r",
+          'peer_list' : "4"
         },
         {
           'alert_string' : "",
@@ -328,7 +188,7 @@ simple_chain_mcell3r_dm = {
           'key_index' : -1,
           'key_list' : "",
           'name' : "k",
-          'peer_list' : "15"
+          'peer_list' : "4"
         },
         {
           'alert_string' : "",
@@ -341,13 +201,13 @@ simple_chain_mcell3r_dm = {
           'is_final' : False,
           'key_index' : -1,
           'key_list' : "",
-          'name' : "A",
-          'peer_list' : "19,20"
+          'name' : "M",
+          'peer_list' : "9,10,11"
         },
         {
           'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 7,
+          'angle' : 0.0,
+          'bond_index' : 6,
           'coords' : [0.0, 0.0, 0.0],
           'field_type' : "c",
           'graph_string' : "",
@@ -355,8 +215,22 @@ simple_chain_mcell3r_dm = {
           'is_final' : False,
           'key_index' : -1,
           'key_list' : "",
-          'name' : "a",
-          'peer_list' : "18"
+          'name' : "l",
+          'peer_list' : "8"
+        },
+        {
+          'alert_string' : "",
+          'angle' : 0.0,
+          'bond_index' : 13,
+          'coords' : [0.0, 0.0, 0.0],
+          'field_type' : "c",
+          'graph_string' : "",
+          'has_coords' : False,
+          'is_final' : False,
+          'key_index' : -1,
+          'key_list' : "",
+          'name' : "r",
+          'peer_list' : "8"
         },
         {
           'alert_string' : "",
@@ -370,7 +244,7 @@ simple_chain_mcell3r_dm = {
           'key_index' : -1,
           'key_list' : "",
           'name' : "k",
-          'peer_list' : "18"
+          'peer_list' : "8"
         },
         {
           'alert_string' : "",
@@ -383,13 +257,13 @@ simple_chain_mcell3r_dm = {
           'is_final' : False,
           'key_index' : -1,
           'key_list' : "",
-          'name' : "A",
-          'peer_list' : "22,23"
+          'name' : "M",
+          'peer_list' : "13,14,15"
         },
         {
           'alert_string' : "",
-          'angle' : 0.20000000298023224,
-          'bond_index' : 12,
+          'angle' : 0.0,
+          'bond_index' : 10,
           'coords' : [0.0, 0.0, 0.0],
           'field_type' : "c",
           'graph_string' : "",
@@ -397,8 +271,22 @@ simple_chain_mcell3r_dm = {
           'is_final' : False,
           'key_index' : -1,
           'key_list' : "",
-          'name' : "a",
-          'peer_list' : "21"
+          'name' : "l",
+          'peer_list' : "12"
+        },
+        {
+          'alert_string' : "",
+          'angle' : 0.0,
+          'bond_index' : -1,
+          'coords' : [0.0, 0.0, 0.0],
+          'field_type' : "c",
+          'graph_string' : "",
+          'has_coords' : False,
+          'is_final' : False,
+          'key_index' : -1,
+          'key_list' : "",
+          'name' : "r",
+          'peer_list' : "12"
         },
         {
           'alert_string' : "",
@@ -412,11 +300,11 @@ simple_chain_mcell3r_dm = {
           'key_index' : -1,
           'key_list' : "",
           'name' : "k",
-          'peer_list' : "21"
+          'peer_list' : "12"
         }
       ],
-      'molecule_definition' : "M.M.M.A.A.A",
-      'molecule_text_name' : "mol_243_twist.mol",
+      'molecule_definition' : "M.M.M.M",
+      'molecule_text_name' : "",
       'print_debug' : True,
       'show_key_planes' : True,
       'show_text_interface' : True,
@@ -623,7 +511,7 @@ simple_chain_mcell3r_dm = {
   },
   'mol_viz' : {
     'active_seed_index' : 0,
-    'color_index' : 0,
+    'color_index' : 1,
     'color_list' : [
       [0.800000011920929, 0.0, 0.0],
       [0.0, 0.800000011920929, 0.0],
@@ -636,8 +524,8 @@ simple_chain_mcell3r_dm = {
     ],
     'data_model_version' : "DM_2015_04_13_1700",
     'file_dir' : "",
-    'file_index' : 1000,
-    'file_name' : "Scene.cellbin.1000.dat",
+    'file_index' : 972,
+    'file_name' : "Scene.cellbin.0972.dat",
     'file_num' : 1001,
     'file_start_index' : 0,
     'file_step_index' : 1,
@@ -815,7 +703,12 @@ simple_chain_mcell3r_dm = {
     'end_seed' : "1",
     'export_format' : "mcell_mdl_modular",
     'name' : "",
-    'processes_list' : [],
+    'processes_list' : [
+      {
+        'data_model_version' : "DM_2015_04_23_1753",
+        'name' : "PID: 14176, Seed: 1, 100%"
+      }
+    ],
     'run_limit' : "-1",
     'sim_engines' : [
       {
@@ -1151,8 +1044,6 @@ simple_chain_mcell3r_dm = {
     'step' : "5"
   }
 }
-
-
 
 
 
