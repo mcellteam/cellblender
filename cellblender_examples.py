@@ -179,6 +179,23 @@ class MCELL_OT_load_schain_mcell3r(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_scoil_mcell3r(bpy.types.Operator):
+    bl_idname = "mcell.load_scoil_mcell3r"
+    bl_label = "Simple Coil MCell Rules"
+    bl_description = "Loads a simple coil model utilizing MCell Rules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.simple_coil_mcell3r.simple_coil_mcell3r_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        bpy.ops.view3d.viewnumpad(type='TOP')
+        hide_manipulator ( hide=True )
+        return {'FINISHED'}
+
+
 class MCELL_OT_load_organelle(bpy.types.Operator):
     bl_idname = "mcell.load_organelle"
     bl_label = "Organelle Model"
@@ -707,6 +724,8 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_fceri_mcell3r")
             row = layout.row()
             row.operator("mcell.load_schain_mcell3r")
+            row = layout.row()
+            row.operator("mcell.load_scoil_mcell3r")
             row = layout.row()
             row.operator("mcell.load_mind_mine")
 
