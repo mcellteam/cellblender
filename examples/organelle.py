@@ -213,7 +213,7 @@ organelle_dm = {
        "as": "filename"
       },
       "Shared Path": {
-       "val": "/netapp/cnl/home/bobkuczewski/proj/Blender/downloads/Blender-2.79-CellBlender/2.79/scripts/addons/cellblender/extensions",
+       "val": "Blender-2.79-CellBlender/2.79/scripts/addons/cellblender/extensions",
        "icon": "FORCE_LENNARDJONES",
        "desc": "Shared Path",
        "as": "filename"
@@ -282,7 +282,7 @@ organelle_dm = {
        "desc": "Simulate using Ordinary Differential Equation Solver"
       },
       "Shared Path": {
-       "val": "/netapp/cnl/home/bobkuczewski/proj/Blender/downloads/Blender-2.79-CellBlender/2.79/scripts/addons/cellblender/sim_engines/cBNGL",
+       "val": "Blender-2.79-CellBlender/2.79/scripts/addons/cellblender/sim_engines/cBNGL",
        "icon": "FORCE_LENNARDJONES",
        "desc": "Shared Path",
        "as": "filename"

@@ -13,4 +13,5 @@ from . import direct_transport
 from . import delayed_transport
 from . import direct_transport_BNGL
 from . import fceri_mcell3r
+from . import simple_chain_mcell3r
 from . import organelle

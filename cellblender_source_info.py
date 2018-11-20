@@ -243,6 +243,7 @@ cellblender_info = {
         "examples"+os.sep+"organelle.py",
         "examples"+os.sep+"lv.py",
         "examples"+os.sep+"fceri_mcell3r.py",
+        "examples"+os.sep+"simple_chain_mcell3r.py",
         "examples"+os.sep+"ficks_laws.py",
         "examples"+os.sep+"mind_mine_system.py",
         "examples"+os.sep+"rat_nmj.py",
