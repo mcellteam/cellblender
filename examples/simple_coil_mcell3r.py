@@ -746,7 +746,7 @@ simple_coil_mcell3r_dm = {
         'count_location' : "World",
         'data_file_name' : "",
         'data_model_version' : "DM_2018_01_11_1330",
-        'description' : "Cound something (required by MCellR)",
+        'description' : "Count something (required by MCellR)",
         'mdl_file_prefix' : "Mol",
         'mdl_string' : "COUNT[A(a,b,c), WORLD]",
         'molecule_name' : "",
