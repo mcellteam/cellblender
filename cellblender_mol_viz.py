@@ -267,7 +267,9 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         mol_file_list = []
 
         if mol_file_dir != '':
-          mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
+          mol_file_list = [ f for f in glob.glob(os.path.join(mol_file_dir, "*")) if not f.endswith(os.sep + "viz_bngl") ]
+          print ( "Read found " + str(len(mol_file_list)) + " files" )
+          print ( "Last file is " + mol_file_list[len(mol_file_list)-1] )
           mol_file_list.sort()
 
         if mol_file_list:
@@ -371,7 +373,8 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
 
         mcell.mol_viz.mol_file_dir = mol_file_dir
 
-        mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
+        mol_file_list = [ f for f in glob.glob(os.path.join(mol_file_dir, "*")) if not f.endswith(os.sep + "viz_bngl") ]
+        print ( "Select found " + str(len(mol_file_list)) + " files" )
         mol_file_list.sort()
 
         # Reset mol_file_list and mol_viz_seed_list to empty
