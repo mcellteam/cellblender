@@ -130,7 +130,8 @@ def check_reaction(self, context):
     # Clean up rxn.reactants only if necessary to avoid infinite recursion.
     reactants = rxn.reactants.replace(" ", "")
     #### The following line (intended to separate reactants) adds spaces around "+" in BNGL reactions which is not allowed
-    #### reactants = reactants.replace("+", " + ")
+    if not mcell.cellblender_preferences.bionetgen_mode:
+        reactants = reactants.replace("+", " + ")
 
     if mcell.cellblender_preferences.bionetgen_mode:
         # Perform BioNetGen Reaction Reformatting
@@ -145,7 +146,9 @@ def check_reaction(self, context):
     # Clean up rxn.products only if necessary to avoid infinite recursion.
     products = rxn.products.replace(" ", "")
     #### The following line (intended to separate products) adds spaces around "+" in BNGL reactions which is not allowed
-    #### products = products.replace("+", " + ")
+    if not mcell.cellblender_preferences.bionetgen_mode:
+        products = products.replace("+", " + ")
+
     if products != rxn.products:
         rxn.products = products
 
