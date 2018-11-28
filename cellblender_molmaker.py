@@ -1057,6 +1057,153 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
 
 
 
+class MolMaker_OT_to_nauty(bpy.types.Operator):
+  bl_idname = "mol.to_nauty"
+  bl_label = "To NAUTY"
+  bl_description = "Build a NAUTY string from a BNGL string"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self, context):
+    print ( "Build a NAUTY string from a BNGL string" )
+    molmaker = context.scene.mcell.molmaker
+    return {'FINISHED'}
+
+
+class MolMaker_OT_to_bngl(bpy.types.Operator):
+  bl_idname = "mol.to_bngl"
+  bl_label = "To BNGL"
+  bl_description = "Build a BNGL string from a NAUTY string"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self, context):
+    print ( "Build a BNGL string from a NAUTY string" )
+    molmaker = context.scene.mcell.molmaker
+    ns = molmaker.nauty_string
+    print ( "Original NAUTY string: " + ns )
+
+    # Start by making a list of dictionaries to work with
+    molcomp_list = [ {'s':mc.strip(),'t':mc.strip()[0]} for mc in ns.split(',') if len(mc) > 0 ]
+
+
+    # Extract the names
+    for item in molcomp_list:
+        name = item['s'].split(':')[1]
+        if '~' in name:
+            name = name[0:name.find('~')]
+        if '@' in name:
+            name = name[0:name.find('@')]
+        if '!' in name:
+            name = name[0:name.find('!')]
+        item['name'] = name
+
+
+    # Extract the peers
+    for item in molcomp_list:
+        peers = []
+        s = '' + item['s']
+        while '!' in s:
+            s = s[1+s.find('!'):]
+            n = ''
+            i = 0
+            while (i<len(s)) and (s[i] in '0123456789'):
+                n = n + s[i]
+                i = i + 1
+            peers.append ( int(n) )
+        item['peers'] = peers
+
+
+    # Extract the states
+    for item in molcomp_list:
+        states = []
+        s = '' + item['s']
+        if '~' in s:
+            # print ( "~~~~~~~~" )
+            ss = s[s.find('~'):s.find('!')]
+            while '~' in ss:
+                # print ( "ss = " + ss )  # Should always lead with a ~
+                ss = ss[1+ss.find('~'):] # Should not lead with a ~
+                # print ( "  ss = " + ss )
+                state = ''
+                if '~' in ss:
+                    state = ss[0:ss.find('~')]
+                    ss = ss[ss.find('~'):]
+                else:
+                    state = ss
+                    ss = ''
+                if state != 'NO_STATE':
+                    states.append ( state )
+        item['states'] = states
+
+
+    #Extract the compartments (objects)
+    for item in molcomp_list:
+        s = '' + item['s']
+        if '@' in s:
+            # print ( "@@@@@@@@" )
+            ss = s[s.find('@'):]
+            # print ( "ss = " + ss )
+            if '!' in ss:
+                ss = ss[0:ss.find('!')]
+            # print ( "  " + ss )
+            item['obj'] = ss
+        else:
+            item['obj'] = ""
+
+
+    #Assign the bond numbers
+    nbn = 1
+    for item in molcomp_list:
+        if item['t'] == 'c':
+            if len(item['peers']) == 2:
+                if not ('bnum' in item):
+                    item['bnum'] = nbn
+                    molcomp_list[item['peers'][1]]['bnum'] = nbn
+                    nbn = nbn + 1
+
+
+    #Finally build the BNGL string
+    bngl = ""
+    for item in molcomp_list:
+        if item['t'] == 'm':
+            if len(bngl) > 0:
+                bngl += '.'
+            bngl += item['name']
+            if len(item['peers']) > 0:
+                bngl += "("
+                for p in range(len(item['peers'])):
+                    peer_num = item['peers'][p]
+                    peer = molcomp_list[peer_num]
+                    if p > 0:
+                        bngl += ','
+                    bngl += peer['name']
+                    if len(peer['states']) > 0:
+                        for s in peer['states']:
+                            bngl += "~" + s
+                    if 'bnum' in peer:
+                        bngl += "!" + str(peer['bnum'])
+                bngl += ")"
+
+
+    # Print the molcomp_list
+    print ( "" )
+    print ( "Full Molecule/Component (MolComp) List:" )
+    for li in molcomp_list:
+        print ( "  " + str(li) )
+
+    # Print the final BNGL string
+    print ( "" )
+    print ( "Final BNGL:" )
+    print ( "  " + bngl )
+    print ( "" )
+
+    molmaker.bngl_string = bngl
+
+    return {'FINISHED'}
+
+
+
+
+
 def check_bond_index ( self, context ):
   mcell = context.scene.mcell
   molmaker = mcell.molmaker
@@ -1345,12 +1492,19 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   print_debug = BoolProperty ( default=False )
 
   show_text_interface = BoolProperty ( default=False )
+  show_string_interface = BoolProperty ( default=True )
 
 
   skip_rotation = BoolProperty ( default=False )
   skip_fixed_comp_index = IntProperty ( default=-1 )
   skip_var_comp_index = IntProperty ( default=-1 )
 
+  # c:a~NO_STATE!3,c:b~NO_STATE!3,c:c~NO_STATE!3,m:A@CP!0!1!2
+  # c:a~NO_STATE!7,c:a~NO_STATE!6!5,c:b~NO_STATE!7,c:b~NO_STATE!6,c:c~NO_STATE!6,c:c~NO_STATE!7!1,m:A@CP!1!3!4,m:A@CP!0!2!5,
+  # c:a~NO_STATE!7,c:a~NO_STATE!6!5,c:b~NO_STATE!7,c:b~NO_STATE!6,c:c~NO_STATE!6,c:c~NO_STATE!7!1,m:A@CP!1!3!4,m:A@CP!0!2!5, c:a~NO_STATE!7,c:a~NO_STATE!6!5,c:b~NO_STATE!7,c:b~NO_STATE!6,c:c~NO_STATE!6,c:c~NO_STATE!7!1,m:A@CP!1!3!4,m:A@CP!0!2!5,
+  nauty_string = StringProperty ( name = "NAUTY", default="c:a~x!19,c:a~st~y!16!11,c:a~NO_STATE!15!12,c:a~NO_STATE!17!13,c:a~NO_STATE!18!14,c:b~www!16,c:b~NO_STATE!15,c:b~NO_STATE!17,c:b~NO_STATE!18,c:b~NO_STATE!19,c:c~NO_STATE!16,c:c~NO_STATE!15!1,c:c~NO_STATE!17!2,c:c~NO_STATE!18!3,c:c~yyy!19!4,m:A@CP!2!6!11,m:A@CP!1!5!10,m:A@CP!3!7!12,m:A@CP!4!8!13,m:A@CP!0!9!14,",
+                                  description="NAUTY String as defined by MCellR" )
+  bngl_string  = StringProperty ( name = "BNGL", description="BNGL String as defined by BioNetGen" )
 
   def build_data_model_from_properties ( self ):
     mm_dict = {}
@@ -1546,11 +1700,29 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
       row = layout.row()
       row.operator ( "mol.build_as_is" )
       if 'mcell' in context.scene:
-        # CellBlender is installed, so allow this option
+        # CellBlender is installed, so allow these options which use CellBlender molecule definitions
         row = layout.row()
         row.operator ( "mol.rebuild_two_d" )
         row = layout.row()
         row.operator ( "mol.rebuild_three_d" )
+
+      row = layout.row()
+      if not self.show_string_interface:
+        row.prop(self, "show_string_interface", icon='TRIA_RIGHT', text="Show String Interface", emboss=False)
+      else:
+        row.prop(self, "show_string_interface", icon='TRIA_DOWN',  text="Show String Interface", emboss=False)
+        row = layout.row()
+        row.prop(self, "nauty_string")
+        row = layout.row()
+        col = row.column()
+        col.operator("mol.to_bngl", icon='TRIA_DOWN', text="NAUTY -> BNGL")
+        #col = row.column()
+        #col.operator("mol.to_nauty", icon='TRIA_UP', text="BNGL -> NAUTY")
+        row = layout.row()
+        row.prop(self, "bngl_string")
+
+
+
 
 
   def draw_panel ( self, context, panel ):
