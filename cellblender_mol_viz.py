@@ -823,8 +823,25 @@ def mol_viz_file_dump(filepath):
 
 def mol_viz_file_read(mcell_prop, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
+
+    mcell = mcell_prop  # Why is this here?
+
+    if mcell.mol_viz.use_custom_mol_code and ("custom_mol_viz.py" in bpy.data.texts):
+      # print ( "Using Custom Mol Code from \"custom_mol_viz.py\"" )
+      # Store the filepath for this frame in a place where it can be found
+      mcell.mol_viz.frame_file_name = filepath
+      
+      #source_code = bpy.data.texts["custom_mol_viz.py"].as_string()
+      
+      # Convert the text to code (this might be done earlier when the file is selected)
+      code = compile ( bpy.data.texts["custom_mol_viz.py"].as_string(), "<string>", 'exec' )
+      
+      # Execute the code
+      exec ( code )
+
+      return
+
     dup_check = False
-    mcell = mcell_prop
     try:
 
 #        begin = resource.getrusage(resource.RUSAGE_SELF)[0]
@@ -1226,6 +1243,12 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         description="Toggle the option to manually load viz data.",
         update=mol_viz_toggle_manual_select)
 
+    use_custom_mol_code = BoolProperty(
+        name="Use custom_mol_viz.py", default=False,
+        description="Use a custom program to read and display molecules.") # May want to use an update to compile
+
+    frame_file_name = StringProperty(description="Place to store the file name")
+
     #mol_viz_sweep_list = CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
     choices_list = CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
 
@@ -1497,6 +1520,9 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             if self.manual_select_viz_dir == True:
               if len(mcell.mol_viz.mol_viz_list) > 0:
                 row.prop(self,"molecule_read_in", icon = 'IMPORT')                
+
+            row = layout.row()
+            row.prop(self,"use_custom_mol_code")
 
             row = layout.row()
             if self.manual_select_viz_dir:
