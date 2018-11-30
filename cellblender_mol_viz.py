@@ -1036,9 +1036,14 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
                 # Add and set values of vertices at positions of molecules
+                # This uses vertices.add(), but where are the old vertices removed?
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
                 mol_pos_mesh.vertices.foreach_set("co", mol_pos)
                 mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
+
+                if mcell.cellblender_preferences.debug_level > 100:
+
+                  __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
                 # Save the molecule's visibility state, so it can be restored later
                 mol_obj = objs.get(mol_name)

@@ -451,8 +451,8 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         update=save_preferences)
 
     debug_level = IntProperty(
-        name="Debug Level", default=0, min=0, max=100,
-        description="Amount of debug information to print: 0 to 100")
+        name="Debug Level", default=0, min=0, max=101,
+        description="Amount of debug information to print: 0 to 100 (greater at your own risk)")
     
     bionetgen_mode = BoolProperty(
         name="BioNetGen Language Mode", default=False,
@@ -611,6 +611,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                 row.prop(mcell.cellblender_preferences, "lockout_export")
 
                 row = box.row()
+                if mcell.cellblender_preferences.debug_level > 100:
+                  row.alert = True
+                else:
+                  row.alert = False
                 row.prop(mcell.cellblender_preferences, "debug_level")
 
                 row = box.row()
