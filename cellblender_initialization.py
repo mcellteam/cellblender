@@ -610,7 +610,18 @@ surfaces or only for those in the volume. OFF is the default."""
 read by MCell, export ASCII formatted data. The default is OFF."""
                 ps.draw_prop_with_help ( box, "Export all molecules as ASCII", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
                 
-                helptext = "Command Line Parameters - \nThese options are passed directly to the program.\n Use -h to get help from MCell to console or text overlay."
+                helptext = "Command Line Parameters - \n" \
+                           "These options are passed directly to the program.\n" \
+                           "Use -h to print MCell's help to console or text overlay.\n" \
+                           "Visualization options (-z) are defined in viz_output.c.\n" \
+                           "\n" \
+                           "  0x01=All_components_share_name\n" \
+                           "  0x02=All_components_by_global_name\n" \
+                           "  0x03=All_components_by_mol_comp_name\n" \
+                           "  0x10=Generate_Text_BNGL_Viz_Files\n" \
+                           "  0x20=Generate_JSON_BNGL_Viz_Files\n" \
+                           "\n" \
+                           "Debug output with -d # (between 0 and 100)"
                 ps.draw_prop_with_help ( box, "Command Options", mcell.initialization, "command_options", "command_options_show_help", self.command_options_show_help, helptext )
 
             else:
