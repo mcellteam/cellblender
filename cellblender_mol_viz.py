@@ -821,25 +821,24 @@ def mol_viz_file_dump(filepath):
 
 
 
-def mol_viz_file_read(mcell_prop, filepath):
+def mol_viz_file_read(mcell, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
 
-    mcell = mcell_prop  # Why is this here?
+    mv = mcell.mol_viz
+    if (mv.viz_code in ['custom','both']) and (mv.internal_viz_file_name in bpy.data.texts):
 
-    if mcell.mol_viz.use_custom_mol_code and ("custom_mol_viz.py" in bpy.data.texts):
-      # print ( "Using Custom Mol Code from \"custom_mol_viz.py\"" )
-      # Store the filepath for this frame in a place where it can be found
-      mcell.mol_viz.frame_file_name = filepath
-      
-      #source_code = bpy.data.texts["custom_mol_viz.py"].as_string()
-      
-      # Convert the text to code (this might be done earlier when the file is selected)
-      code = compile ( bpy.data.texts["custom_mol_viz.py"].as_string(), "<string>", 'exec' )
-      
-      # Execute the code
-      exec ( code )
+        # Store the filepath for this frame in a place where it can be used by the custom code
+        mcell.mol_viz.frame_file_name = filepath
 
-      return
+        # Convert the text to code (this might be done earlier when the file is selected)
+        code = compile ( bpy.data.texts[mv.internal_viz_file_name].as_string(), "<string>", 'exec' )
+
+        # Execute the code
+        exec ( code )
+
+        if mv.viz_code == 'custom':
+            return
+
 
     dup_check = False
     try:
@@ -1203,6 +1202,36 @@ def select_test_case_callback(self, context):
 class DynamicChoicePropGroup(bpy.types.PropertyGroup):
     enum_choice = EnumProperty( name="Parameter Value", description="Dynamic List of Choices.", items=generate_choices_callback, update=select_test_case_callback )
 
+def update_available_viz_scripts ( mol_viz ):
+
+    # Delete current scripts list
+    while mol_viz.internal_viz_scripts_list:
+      mol_viz.internal_viz_scripts_list.remove(0)
+
+    # Find the current internal scripts
+    for txt in bpy.data.texts:
+       # print ( "\n" + txt.name + "\n" + txt.as_string() + "\n" )
+       if txt.name[-3:] == ".py":
+          mol_viz.internal_viz_scripts_list.add()
+          index = len(mol_viz.internal_viz_scripts_list)-1
+          mol_viz.internal_viz_scripts_list[index].name = txt.name
+
+
+class MCELL_OT_viz_script_refresh(bpy.types.Operator):
+    bl_idname = "mcell.viz_script_refresh"
+    bl_label = "Refresh Files"
+    bl_description = "Refresh the list of available script files"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mv = context.scene.mcell.mol_viz
+        # check_scripting(self, context)
+        update_available_viz_scripts ( mv )
+        return {'FINISHED'}
+
+
+class VizScriptProperty(bpy.types.PropertyGroup):
+    name = StringProperty(name="Script")
 
 class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
     """ Property group for for molecule visualization.
@@ -1248,9 +1277,17 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         description="Toggle the option to manually load viz data.",
         update=mol_viz_toggle_manual_select)
 
-    use_custom_mol_code = BoolProperty(
-        name="Use custom_mol_viz.py", default=False,
-        description="Use a custom program to read and display molecules.") # May want to use an update to compile
+    internal_viz_file_name = StringProperty ( name = "Internal Viz Program" )
+    internal_viz_scripts_list = CollectionProperty(type=VizScriptProperty, name="Viz Internal Scripts")
+
+    viz_code_enum = [
+        ('standard',  "Standard Visualization", ""),
+        ('custom',    "Custom Visualization", ""),
+        ('both',      "Both Standard and Custom",  "")]
+    viz_code = bpy.props.EnumProperty (
+        items=viz_code_enum, name="Visualization Code",
+        default='standard',
+        description="Visualization Processing Code Selection" )
 
     frame_file_name = StringProperty(description="Place to store the file name")
 
@@ -1527,7 +1564,14 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
                 row.prop(self,"molecule_read_in", icon = 'IMPORT')                
 
             row = layout.row()
-            row.prop(self,"use_custom_mol_code")
+            row.prop(self,"viz_code", text="")
+            if self.viz_code in [ 'custom', 'both' ]:
+              row = layout.row()
+              row.prop_search ( self, "internal_viz_file_name",
+                                context.scene.mcell.mol_viz, "internal_viz_scripts_list",
+                                text="File:", icon='TEXT' )
+              row.operator("mcell.viz_script_refresh", icon='FILE_REFRESH', text="")
+
 
             row = layout.row()
             if self.manual_select_viz_dir:
@@ -1535,8 +1579,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             else:
                 row.operator("mcell.read_viz_data", icon='IMPORT')
             row = layout.row()
-            row.label(text="Molecule Viz Directory: " + self.mol_file_dir,
-                      icon='FILE_FOLDER')
+            row.label(text="Molecule Viz Directory: " + self.mol_file_dir,icon='FILE_FOLDER')
             row = layout.row()
             if not self.manual_select_viz_dir:
                 row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
@@ -1545,8 +1588,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
 
             row = layout.row()
-            row.label(text="Current Molecule File: "+self.mol_file_name,
-                      icon='FILE')
+            row.label(text="Current Molecule File: "+self.mol_file_name,icon='FILE')
 # Disabled to explore UI slowdown behavior of Plot Panel and run options subpanel when mol_file_list is large
 #            row = layout.row()
 #            row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
