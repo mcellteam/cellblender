@@ -618,6 +618,7 @@ read by MCell, export ASCII formatted data. The default is OFF."""
                            "  0x01=All_components_share_name\n" \
                            "  0x02=All_components_by_global_name\n" \
                            "  0x03=All_components_by_mol_comp_name\n" \
+                           "  0x08=Force_output_of_proxy_molecules\n" \
                            "  0x10=Generate_Text_BNGL_Viz_Files\n" \
                            "  0x20=Generate_JSON_BNGL_Viz_Files\n" \
                            "\n" \

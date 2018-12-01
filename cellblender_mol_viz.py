@@ -1068,12 +1068,14 @@ def mol_viz_file_read(mcell, filepath):
                 # Restore the visibility state
                 mol_obj.hide = hide
 
+                """
                 if mol_obj:
                     if (mol_name == "mol_volume_proxy") or (mol_name == "mol_surface_proxy"):
                         if mcell.cellblender_preferences.bionetgen_mode and not mcell.cellblender_preferences.show_mcellr_proxies:
                             mol_obj.hide = True
                         else:
                             mol_obj.hide = False
+                """
 
 
 #        utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
