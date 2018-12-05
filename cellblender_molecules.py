@@ -57,6 +57,12 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
                       FloatProperty, FloatVectorProperty, IntProperty, \
                       IntVectorProperty, PointerProperty, StringProperty
 from bpy.app.handlers import persistent
+
+# These 3 imports are for the text overlays
+import blf
+from mathutils import Matrix, Vector
+from bpy_extras.view3d_utils import location_3d_to_region_2d
+
 import math
 import mathutils
 
@@ -75,10 +81,22 @@ from . import cellblender_preferences
 
 from . import cellblender_glyphs
 
+class MCELL_MolLabelProps(bpy.types.PropertyGroup):
+    enabled = bpy.props.BoolProperty(default=False)
+
+    loc_x = bpy.props.IntProperty(name='LocX', default=0)
+    loc_y = bpy.props.IntProperty(name='LocY', default=0)
+
+    show_mol_labels = bpy.props.BoolProperty(name="", default=True)
+
 
 # We use per module class registration/unregistration
 def register():
+    print ( "cellblender_molecules.py.register() called" )
     bpy.utils.register_module(__name__)
+    bpy.types.WindowManager.display_mol_labels = bpy.props.PointerProperty(type=MCELL_MolLabelProps)
+    MCELL_OT_mol_show_text.handle_remove(bpy.context)
+    del bpy.types.WindowManager.display_mol_labels
 
 
 def unregister():
@@ -493,6 +511,99 @@ class MCELL_OT_mol_shade_smooth(bpy.types.Operator):
                 cellblender_utils.preserve_selection_use_operator(
                         bpy.ops.object.shade_smooth, obj)
         return {'FINISHED'}
+
+
+def draw_text(context, vector, text):
+    loc_x, loc_y = location_3d_to_region_2d (
+        context.region,
+        context.space_data.region_3d,
+        vector)
+
+    blf.position(0, loc_x, loc_y, 0)
+    blf.draw(0, text)
+
+
+def draw_labels_callback(self, context):
+    dm = context.window_manager.display_mol_labels
+    if dm.show_mol_labels:
+      if context.window_manager.display_mol_labels.enabled:
+          for obj in context.scene.objects:
+            if obj.name.startswith ( 'mol_' ):
+              if not obj.name.endswith ( '_shape' ):
+                mode = obj.mode
+                texts = []
+                mo = obj
+                if type(mo.data) == bpy.types.Mesh:
+                  texts.append ( (obj.name[4:],[]) )
+                  verts = mo.data.vertices
+                  for v in verts:
+                    draw_text ( context, v.co, obj.name[4:] )
+
+
+class MCELL_OT_mol_show_text(bpy.types.Operator):
+    """Display mol labels"""
+    bl_idname = "mcell.mol_show_text"
+    bl_label = "Show Text"
+    bl_description = "Display a text representation of the molecule (name or BNGL string)"
+    bl_options = {'REGISTER'}
+
+    """
+    def execute(self, context):
+        mols = context.scene.mcell.molecules
+        if len(mols.molecule_list) > 0:
+            mol = mols.molecule_list[mols.active_mol_index]
+            if mol:
+                shape_name = 'mol_' + mol.name + '_shape'
+                obj = bpy.data.objects[shape_name]
+                pass
+        return {'FINISHED'}
+    """
+
+    _handle = None
+
+    def modal(self, context, event):
+        context.area.tag_redraw()
+        if not context.window_manager.display_mol_labels.enabled:
+            # MCELL_OT_mol_show_text.handle_remove(context)
+            return {'CANCELLED'}
+        return {'PASS_THROUGH'}
+
+    @staticmethod
+    def handle_add(self, context):
+        MCELL_OT_mol_show_text._handle = bpy.types.SpaceView3D.draw_handler_add(
+            draw_labels_callback,
+            (self, context),
+            'WINDOW', 'POST_PIXEL')
+
+    @staticmethod
+    def handle_remove(context):
+        _handle = MCELL_OT_mol_show_text._handle
+        if _handle != None:
+            bpy.types.SpaceView3D.draw_handler_remove(_handle, 'WINDOW')
+        MCELL_OT_mol_show_text._handle = None
+
+    def cancel(self, context):
+        if context.window_manager.display_mol_labels.enabled:
+            MCELL_OT_mol_show_text.handle_remove(context)
+            context.window_manager.display_mol_labels.enabled = False
+        return {'CANCELLED'}
+
+    def invoke(self, context, event):
+        if context.window_manager.display_mol_labels.enabled == False:
+            context.window_manager.display_mol_labels.enabled = True
+            context.window_manager.modal_handler_add(self)
+            MCELL_OT_mol_show_text.handle_add(self, context)
+
+            return {'RUNNING_MODAL'}
+        else:
+            context.window_manager.display_mol_labels.enabled = False
+            MCELL_OT_mol_show_text.handle_remove(context)
+
+            return {'CANCELLED'}
+
+        return {'CANCELLED'}
+
+
 
 
 import os
@@ -1455,6 +1566,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col.operator ('mcell.mol_shade_smooth')
                 col = row.column()
                 col.operator ('mcell.mol_shade_flat')
+                col = row.column()
+                col.operator ('mcell.mol_show_text')
 
                 # Allow the user to set what layer(s) the molecule appears on
                 mol = molecules.molecule_list[molecules.active_mol_index]
@@ -2296,4 +2409,8 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
+
+#
+#if __name__ == "__main__":
+#    register()
 
