@@ -356,6 +356,53 @@ class MCELL_OT_print_gen_parameters(bpy.types.Operator):
 
 
 
+class MCELL_OT_print_par_expressions(bpy.types.Operator):
+    bl_idname = "mcell.print_par_expressions"
+    bl_label = "Print Parameter Expressions"
+    bl_description = "Print All General Parameters as Expressions"
+    #bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER' }
+
+    def execute(self, context):
+        #global global_params
+        mcell = context.scene.mcell
+        ps = mcell.parameter_system
+        # ps.init_parameter_system()
+
+        for par in ps.general_parameter_list:
+          par_id = par.par_id
+          id_par = ps['gp_dict'][par_id]
+
+          is_swept = False
+          if ('sweep_expr' in id_par) and ('sweep_enabled' in id_par):
+            if id_par['sweep_enabled']:
+              is_swept = True
+
+          icon = ""
+          if 'status' in id_par:
+            status = id_par['status']
+            if 'undef' in status:
+                icon="x "
+            elif 'loop' in status:
+                icon="o "
+
+          disp = id_par['name'] + " = "
+          if is_swept:
+            disp += id_par['sweep_expr']
+            disp += "    => " + str(ps.runs_in_sweep(id_par['sweep_expr'])) + " runs"
+          else:
+            disp += id_par['expr']
+            if 'value' in id_par:
+              disp += " = " + str(id_par['value'])
+            else:
+              disp += " = ??"
+
+          print ( icon + disp )
+
+        return {'FINISHED'}
+
+
+
 class MCELL_OT_print_pan_parameters(bpy.types.Operator):
     bl_idname = "mcell.print_pan_parameters"
     bl_label = "Print Panel Parameters"
@@ -2567,8 +2614,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             row.prop(self, "param_label_fraction", text="Parameter Label Fraction")
 
             row = box.row()
-            row.prop(self, "export_as_expressions", text="Export Parameters as Expressions")
-
+            col = row.column()
+            col.prop(self, "export_as_expressions", text="Export Parameters as Expressions")
+            col = row.column()
+            col.operator("mcell.print_par_expressions", text="Print Expressions")
 
             if not self.show_debugging:
                 row = box.row()
