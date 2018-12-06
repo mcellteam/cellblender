@@ -203,7 +203,7 @@ def remove_handler ( handler_list, handler_function ):
 # We use per module class registration/unregistration
 def register():
     print ( "Registering CellBlender with Blender version = " + str(bpy.app.version) )
-    bpy.utils.register_module(__name__)
+    bpy.utils.register_module(__name__, verbose=False)
 
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
@@ -370,11 +370,19 @@ def register():
     # Register atexit function to shutdown simulation queue before quitting Blender
     atexit.register(simulation_queue.shutdown)
 
+    # Molecule Labels
+    bpy.types.WindowManager.display_mol_labels = bpy.props.PointerProperty(type=cellblender_molecules.MCELL_MolLabelProps)
+
     print("CellBlender Registered")
 
 
 
 def unregister():
+
+    # Molecule Labels
+    cellblender_molecules.MCELL_OT_mol_show_text.handle_remove(bpy.context)
+    del bpy.types.WindowManager.display_mol_labels
+
     remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_objects.frame_change_handler )
     remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_mol_viz.frame_change_handler )
     remove_handler ( bpy.app.handlers.load_pre,         cellblender_main.report_load_pre )

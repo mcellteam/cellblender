@@ -89,19 +89,20 @@ class MCELL_MolLabelProps(bpy.types.PropertyGroup):
 
     show_mol_labels = bpy.props.BoolProperty(name="", default=True)
 
-
+print ( "Mols imported for Tom commented with " + __name__ )
 # We use per module class registration/unregistration
+"""
 def register():
     print ( "cellblender_molecules.py.register() called" )
     bpy.utils.register_module(__name__)
     bpy.types.WindowManager.display_mol_labels = bpy.props.PointerProperty(type=MCELL_MolLabelProps)
-    MCELL_OT_mol_show_text.handle_remove(bpy.context)
-    del bpy.types.WindowManager.display_mol_labels
 
 
 def unregister():
     bpy.utils.unregister_module(__name__)
-
+    MCELL_OT_mol_show_text.handle_remove(bpy.context)
+    del bpy.types.WindowManager.display_mol_labels
+"""
 
 def set_molecule_glyph ( context, glyph_name ):
 
