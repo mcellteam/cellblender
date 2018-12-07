@@ -515,6 +515,25 @@ class MCELL_OT_mol_shade_smooth(bpy.types.Operator):
 
 
 def draw_text(context, vector, text):
+    if context == None:
+      print ( "draw_text: context is None" )
+      return
+    if vector == None:
+      print ( "draw_text: vector is None" )
+      return
+    if text == None:
+      print ( "draw_text: text is None" )
+      return
+
+    if context.region == None:
+      print ( "draw_text: context.region is None" )
+      return
+    if context.space_data == None:
+      print ( "draw_text: context.space_data is None" )
+      return
+    if context.space_data.region_3d == None:
+      print ( "draw_text: context.space_data.region_3d is None" )
+      return
     loc_x, loc_y = location_3d_to_region_2d (
         context.region,
         context.space_data.region_3d,
