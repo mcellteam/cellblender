@@ -1599,7 +1599,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col = row.column()
                 col.operator ('mcell.mol_shade_flat')
                 col = row.column()
-                col.operator ('mcell.mol_show_text')
+                if bpy.context.window_manager.display_mol_labels.enabled:
+                    col.operator ('mcell.mol_show_text', text="Hide Text")
+                else:
+                    col.operator ('mcell.mol_show_text', text="Show Text")
 
                 # Allow the user to set what layer(s) the molecule appears on
                 mol = molecules.molecule_list[molecules.active_mol_index]
