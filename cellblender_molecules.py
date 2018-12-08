@@ -544,9 +544,21 @@ def draw_text(context, vector, text):
 
 
 def draw_labels_callback(self, context):
-    dm = context.window_manager.display_mol_labels
-    if dm.show_mol_labels:
+    disp_mol_labels = context.window_manager.display_mol_labels
+    if disp_mol_labels.show_mol_labels:
       if context.window_manager.display_mol_labels.enabled:
+        if 'molecule_labels' in context.scene.objects:
+          # Add labels from the molecule_labels data
+          ml_obj = context.scene.objects['molecule_labels']
+          for i in range(len(ml_obj['mol_labels_index'])):
+            t = ml_obj['mol_labels_index'][i]
+            x = ml_obj['mol_labels_x'][i]
+            y = ml_obj['mol_labels_y'][i]
+            z = ml_obj['mol_labels_z'][i]
+            draw_text ( context, [x,y,z], ml_obj['mol_labels_bngl'][t] )
+
+        else:
+          # Add labels to each molecule by molecule name
           for obj in context.scene.objects:
             if obj.name.startswith ( 'mol_' ):
               if not obj.name.endswith ( '_shape' ):
