@@ -550,24 +550,24 @@ def draw_labels_callback(self, context):
         if 'molecule_labels' in context.scene.objects:
           # Add labels from the molecule_labels data
           ml_obj = context.scene.objects['molecule_labels']
-          for i in range(len(ml_obj['mol_labels_index'])):
-            t = ml_obj['mol_labels_index'][i]
-            x = ml_obj['mol_labels_x'][i]
-            y = ml_obj['mol_labels_y'][i]
-            z = ml_obj['mol_labels_z'][i]
-            draw_text ( context, [x,y,z], ml_obj['mol_labels_bngl'][t] )
-
+          ml_obj_labels_index = ml_obj['mol_labels_index']
+          ml_obj_labels_x = ml_obj['mol_labels_x']
+          ml_obj_labels_y = ml_obj['mol_labels_y']
+          ml_obj_labels_z = ml_obj['mol_labels_z']
+          ml_obj_labels_bngl = ml_obj['mol_labels_bngl']
+          for i in range(len(ml_obj_labels_index)):
+            t = ml_obj_labels_index[i]
+            x = ml_obj_labels_x[i]
+            y = ml_obj_labels_y[i]
+            z = ml_obj_labels_z[i]
+            draw_text ( context, [x,y,z], ml_obj_labels_bngl[t] )
         else:
           # Add labels to each molecule by molecule name
           for obj in context.scene.objects:
             if obj.name.startswith ( 'mol_' ):
               if not obj.name.endswith ( '_shape' ):
-                mode = obj.mode
-                texts = []
-                mo = obj
-                if type(mo.data) == bpy.types.Mesh:
-                  texts.append ( (obj.name[4:],[]) )
-                  verts = mo.data.vertices
+                if type(obj.data) == bpy.types.Mesh:
+                  verts = obj.data.vertices
                   for v in verts:
                     draw_text ( context, v.co, obj.name[4:] )
 
