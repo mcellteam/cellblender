@@ -514,62 +514,42 @@ class MCELL_OT_mol_shade_smooth(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def draw_text(context, vector, text):
-    if context == None:
-      print ( "draw_text: context is None" )
-      return
-    if vector == None:
-      print ( "draw_text: vector is None" )
-      return
-    if text == None:
-      print ( "draw_text: text is None" )
-      return
-
-    if context.region == None:
-      print ( "draw_text: context.region is None" )
-      return
-    if context.space_data == None:
-      print ( "draw_text: context.space_data is None" )
-      return
-    if context.space_data.region_3d == None:
-      print ( "draw_text: context.space_data.region_3d is None" )
-      return
-    loc_x, loc_y = location_3d_to_region_2d (
-        context.region,
-        context.space_data.region_3d,
-        vector)
-
-    blf.position(0, loc_x, loc_y, 0)
-    blf.draw(0, text)
-
-
 def draw_labels_callback(self, context):
     disp_mol_labels = context.window_manager.display_mol_labels
     if disp_mol_labels.show_mol_labels:
       if context.window_manager.display_mol_labels.enabled:
-        if 'molecule_labels' in context.scene.objects:
-          # Add labels from the molecule_labels data
-          ml_obj = context.scene.objects['molecule_labels']
-          ml_obj_labels_index = ml_obj['mol_labels_index']
-          ml_obj_labels_x = ml_obj['mol_labels_x']
-          ml_obj_labels_y = ml_obj['mol_labels_y']
-          ml_obj_labels_z = ml_obj['mol_labels_z']
-          ml_obj_labels_bngl = ml_obj['mol_labels_bngl']
+        if context == None:
+          print ( "draw_labels_callback: context is None" )
+          return
+        if context.region == None:
+          print ( "draw_labels_callback: context.region is None" )
+          return
+        if context.space_data == None:
+          print ( "draw_labels_callback: context.space_data is None" )
+          return
+        if context.space_data.region_3d == None:
+          print ( "draw_labels_callback: context.space_data.region_3d is None" )
+          return
+
+        mv = context.scene.mcell.mol_viz
+        if 'mol_labels_index' in mv:
+          ml_obj_labels_index = mv['mol_labels_index']
+          ml_obj_labels_x = mv['mol_labels_x']
+          ml_obj_labels_y = mv['mol_labels_y']
+          ml_obj_labels_z = mv['mol_labels_z']
+          ml_obj_labels_bngl = mv['mol_labels_bngl']
           for i in range(len(ml_obj_labels_index)):
             t = ml_obj_labels_index[i]
             x = ml_obj_labels_x[i]
             y = ml_obj_labels_y[i]
             z = ml_obj_labels_z[i]
-            draw_text ( context, [x,y,z], ml_obj_labels_bngl[t] )
-        else:
-          # Add labels to each molecule by molecule name
-          for obj in context.scene.objects:
-            if obj.name.startswith ( 'mol_' ):
-              if not obj.name.endswith ( '_shape' ):
-                if type(obj.data) == bpy.types.Mesh:
-                  verts = obj.data.vertices
-                  for v in verts:
-                    draw_text ( context, v.co, obj.name[4:] )
+            if ml_obj_labels_bngl[t] != None:
+              screen_coords = location_3d_to_region_2d (context.region, context.space_data.region_3d, [x,y,z])
+              # Note that screen_coords can be None when an object is too close in perspective mode
+              if screen_coords != None:
+                loc_x, loc_y = screen_coords
+                blf.position(0, loc_x, loc_y, 0)
+                blf.draw(0, ml_obj_labels_bngl[t])
 
 
 class MCELL_OT_mol_show_text(bpy.types.Operator):
