@@ -347,9 +347,10 @@ def append_objects ( obj, inner_parent, outer_parent, dm_geom_obj_list, dm_model
 def read_data_model_from_bngl_text ( bngl_model_text ):
 
   # First split by lines to remove comments and whitespace on ends
-  lines = re.split(r'\n', bngl_model_text)
-  # lines = re.split ( r'\n', r'\n'.join(re.split(r'\r', bngl_model_text)) )
-  # lines = re.split ( '\n', '\n'.join(re.split('\r', bngl_model_text)) )
+  # lines = re.split(r'\n', bngl_model_text)
+  lines = r'\n'.join(re.split(r'\r', bngl_model_text))
+  lines = r' '.join(re.split(r'\t', lines))
+  lines = re.split('\n', lines)
   i = 0
   for i in range(len(lines)):
     l = lines[i]
@@ -357,7 +358,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
       lines[i] = l.split('#')[0].strip()
 
   # Remove any empty lines
-  lines = [ l for l in lines if len(l) > 0 ]
+  lines = [ l.strip() for l in lines if len(l.strip()) > 0 ]
 
   # Remove any lines after the "end model" tokens.
   # This might be done more efficiently below, but it might be more clear here
