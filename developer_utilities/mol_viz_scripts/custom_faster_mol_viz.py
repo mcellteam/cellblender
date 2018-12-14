@@ -43,7 +43,7 @@ json_string = mol_file.read()
 # Use the JSON library to load the molecules
 mols = json.loads ( json_string )
 
-print ( "\n\nFile contains an array of " + str(len(mols)) + " blocks" )
+#print ( "\n\nFile contains an array of " + str(len(mols)) + " blocks" )
 
 version = mols[0]
 templates = mols[1]
@@ -53,7 +53,7 @@ positions = [ i[1] for i in instances ]
 templates_bngl = []
 
 for t in templates:
-    # print ( "Template = " + str(t) )
+    #print ( "Template = " + str(t) )
     bngl_str = ""
     next_bond_num = 1
     bond_num_dict = {}
@@ -63,6 +63,7 @@ for t in templates:
             if len(bngl_str) != 0:
                 bngl_str += '.'  # Add the "." as needed between molecules
             bngl_str += m[1]  # Add the molecule name
+            # Optionally show the component expression
             if True and len(m[3]) > 0: # This molecule has components
                 cstr = ''
                 for c in m[3]: # Loop through the components
@@ -80,12 +81,12 @@ for t in templates:
                             bond_num_dict[t[c][3][1]] = next_bond_num
                             cstr += "!" + str(next_bond_num)
                             next_bond_num += 1
-                if True and len(cstr) > 0:
-                    bngl_str += '('
-                    bngl_str += cstr
-                    bngl_str += ')'
+                # Optionally show parts of the component expression
+                if True: bngl_str += '('
+                if True: bngl_str += cstr
+                if True: bngl_str += ')'
                 
-    print ( "BNGL = " + bngl_str )
+    #print ( "BNGL = " + bngl_str )
     templates_bngl.append ( bngl_str )
 
 mols_by_species = []
@@ -94,31 +95,22 @@ for s in range(len(templates)):
     next_species = [ i[1] for i in instances if i[0] == s ]
     mols_by_species.append ( next_species )
 
-print ( "Version = " + str(version) + 
-        ", Num templates = " + str(len(templates))  +
-        ", Num instances = " + str(len(instances))  + 
-        ", Num species = " + str(len(mols_by_species)) )
+#print ( "Version = " + str(version) +
+#        ", Num templates = " + str(len(templates))  +
+#        ", Num instances = " + str(len(instances))  +
+#        ", Num species = " + str(len(mols_by_species)) )
 
-for i in range ( len(mols_by_species) ):
-    print ( "   Species " + str(i) + " has " + str(len(mols_by_species[i])) + " instances" )
+#for i in range ( len(mols_by_species) ):
+#    print ( "   Species " + str(i) + " has " + str(len(mols_by_species[i])) + " instances" )
 
 
-mol_labels_obj = bpy.data.objects.get("molecule_labels")
-if not mol_labels_obj:
-    bpy.ops.object.add(type='MESH',location=[0, 0, 0])      # Create an "Empty" object in the Blender scene
-    ### Note, the following line seems to cause an exception in some contexts: 'Context' object has no attribute 'selected_objects'
-    mol_labels_obj = bpy.context.selected_objects[0]  # The newly added object will be selected
-    mol_labels_obj.name = "molecule_labels"                 # Name this empty object "molecules" 
-    mol_labels_obj.hide_select = True
-    mol_labels_obj.hide = True
+mv['mol_labels_bngl'] = templates_bngl
+mv['mol_labels_index'] = [ i[0] for i in instances ]
+mv['mol_labels_x'] = [ i[1][0] for i in instances ]
+mv['mol_labels_y'] = [ i[1][1] for i in instances ]
+mv['mol_labels_z'] = [ i[1][2] for i in instances ]
 
-mol_labels_obj['mol_labels_bngl'] = templates_bngl
-mol_labels_obj['mol_labels_index'] = [ i[0] for i in instances ]
-mol_labels_obj['mol_labels_x'] = [ i[1][0] for i in instances ]
-mol_labels_obj['mol_labels_y'] = [ i[1][1] for i in instances ]
-mol_labels_obj['mol_labels_z'] = [ i[1][2] for i in instances ]
 
-'''
 
 #for p in positions:
 #    print ( "   " + str(p) )
@@ -133,7 +125,7 @@ mol_orient = [random.uniform(-1.0, 1.0) for i in range(len(mol_pos))]
 """
 
 
-############## Previous processing ############
+############## Traditional Molecule Display (disable when using CellBlender's internal display) ############
 
 
 dup_check = False
@@ -360,4 +352,3 @@ except Exception as uex:
     print ( "\n***** Unexpected exception:" + str(uex) + "\n" )
     raise
 
-'''
