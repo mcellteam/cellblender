@@ -431,15 +431,22 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
       # Process parameters
       for line in block[1:-1]:
         # Pull MCellR special items out of the BNGL file (they appear to be coded as regular parameters such as ITERATIONS...)
+        print("++++++" + line)
         name_val = line.split()
         if name_val[0] in special_parameters.keys():
-          special_parameters[name_val[0]] = name_val[1]
+          if len(name_val) == 3:
+            special_parameters[name_val[0]] = name_val[2]
+          else:
+            special_parameters[name_val[0]] = name_val[1]
         else:
           # Note that taking this section out of the "else" would also include the special parameters in par_val_dict
           # It's not clear whether that is what should be done.
           par = {}
           par['par_name'] = name_val[0]
-          par['par_expression'] = ' '.join ( name_val[1:] )
+          if len(name_val) == 3:
+            par['par_expression'] = ' '.join ( name_val[2:] )
+          else:
+            par['par_expression'] = ' '.join ( name_val[1:] )
           par['par_description'] = ""
           par['par_units'] = ""
           par_list.append ( par )
@@ -983,7 +990,6 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
 
 def read_data_model_from_bngl_file ( bngl_file_name ):
-
   bngl_model_file = open ( bngl_file_name, 'r' )
   bngl_model_text = bngl_model_file.read()
   return read_data_model_from_bngl_text ( bngl_model_text )
