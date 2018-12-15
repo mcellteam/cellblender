@@ -825,13 +825,25 @@ def mol_viz_file_read(mcell, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
 
     mv = mcell.mol_viz
-    if (mv.viz_code in ['custom','both']) and (mv.internal_viz_file_name in bpy.data.texts):
+    if (mv.viz_code in ['custom','both']):
 
+      script_text = None
+
+      if mv.internal_viz_file_name in bpy.data.texts:
+        # It's an internal file
+        script_text = bpy.data.texts[mv.internal_viz_file_name].as_string()
+      elif mv.internal_viz_file_name.startswith ( os.path.sep ):
+        # It must be an external file starting with an os.sep (typically '/')
+        script_file = open ( os.path.join ( os.path.dirname(bpy.data.filepath), mv.internal_viz_file_name[1:] ), 'r' )
+        print ( "Reading script text from " + str(script_file) )
+        script_text = script_file.read()
+
+      if script_text != None:
         # Store the filepath for this frame in a place where it can be used by the custom code
         mcell.mol_viz.frame_file_name = filepath
 
         # Convert the text to code (this might be done earlier when the file is selected)
-        code = compile ( bpy.data.texts[mv.internal_viz_file_name].as_string(), "<string>", 'exec' )
+        code = compile ( script_text, "<string>", 'exec' )
 
         # Execute the code
         exec ( code )
@@ -1217,6 +1229,14 @@ def update_available_viz_scripts ( mol_viz ):
           mol_viz.internal_viz_scripts_list.add()
           index = len(mol_viz.internal_viz_scripts_list)-1
           mol_viz.internal_viz_scripts_list[index].name = txt.name
+
+    # Find the current external scripts
+    py_files = glob.glob (os.path.join ( os.path.dirname(bpy.data.filepath), "*.py" ) )
+    for txt in py_files:
+       # print ( "\n" + txt.name + "\n" + txt.as_string() + "\n" )
+       mol_viz.internal_viz_scripts_list.add()
+       index = len(mol_viz.internal_viz_scripts_list)-1
+       mol_viz.internal_viz_scripts_list[index].name = os.path.sep + os.path.basename(txt)
 
 
 class MCELL_OT_viz_script_refresh(bpy.types.Operator):
