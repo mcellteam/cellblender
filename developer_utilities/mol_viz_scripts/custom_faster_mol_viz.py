@@ -7,6 +7,13 @@
 #
 ############################################################################################################
 
+# Define behavior
+
+show_bound_mol_components = True
+show_unbound_mol_components = True
+show_mol_component_states = True
+
+
 # Import the required modules.
 # These are the same modules imported by cellblender_mol_viz.py.
 import bpy
@@ -64,7 +71,7 @@ for t in templates:
                 bngl_str += '.'  # Add the "." as needed between molecules
             bngl_str += m[1]  # Add the molecule name
             # Optionally show the component expression
-            if True and len(m[3]) > 0: # This molecule has components
+            if show_bound_mol_components and len(m[3]) > 0: # This molecule has components
                 cstr = ''
                 for c in m[3]: # Loop through the components
                     # print ( "c = " + str(c) )
@@ -81,10 +88,18 @@ for t in templates:
                             bond_num_dict[t[c][3][1]] = next_bond_num
                             cstr += "!" + str(next_bond_num)
                             next_bond_num += 1
-                # Optionally show parts of the component expression
-                if True: bngl_str += '('
-                if True: bngl_str += cstr
-                if True: bngl_str += ')'
+                    else:
+                        # This component isn't bound, so optionally add it
+                        if show_unbound_mol_components:
+                            if len(cstr) != 0:
+                                cstr += ','
+                            cstr += t[c][1]
+                    if show_mol_component_states:
+                        # Append the state information
+                        cstr += t[c][4]
+
+                # Append the component string
+                bngl_str += '(' + cstr + ')'
                 
     #print ( "BNGL = " + bngl_str )
     templates_bngl.append ( bngl_str )
