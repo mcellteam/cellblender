@@ -10,8 +10,12 @@
 #      a) ./configure --enable-optimizations --prefix=~/my_blender_dir/2.79/python
 
 #       or on Mac:
-
-#       ./configure --prefix=/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python --enable-shared --with-libs='/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libiconv.a /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libintl.a'
+#       
+#       first install libressl.2.2.7 into /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python
+#
+#       Also need libiconv and libintl.  Tom got these from MacPorts
+#
+#       ./configure --prefix=/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python --enable-shared --with-libs='/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libiconv.a /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libintl.a /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libssl.a /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libtls.a'
 
 #      b) make
 #      c) make install
