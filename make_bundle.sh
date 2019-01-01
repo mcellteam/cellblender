@@ -11,14 +11,18 @@
 
 #       or on Mac:
 #       
-#       first install libressl.2.2.7 into /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python
+#      a) first download source for gettext-0.19.8, libiconv-1.15, libressl-2.2.7
+#      b) configure each of these to install into /Users/bartol/src/cellblender_bundle_requirements/install_dir/
 #
-#       Also need libiconv and libintl.  Tom got these from MacPorts
+#      c) Next configure build of Python like this:
+#       
+#           setenv CFLAGS "-I/Users/bartol/src/cellblender_bundle_requirements/install_dir/include"
 #
-#       ./configure --prefix=/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python --enable-shared --with-libs='/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libiconv.a /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libintl.a /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libssl.a /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libtls.a'
-
-#      b) make
-#      c) make install
+#           ./configure --prefix=/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python --enable-shared --with-libs='/Users/bartol/src/cellblender_bundle_requirements/install_dir/lib/libiconv.a /Users/bartol/src/cellblender_bundle_requirements/install_dir/lib/libintl.a /Users/bartol/src/cellblender_bundle_requirements/install_dir/lib/libssl.a /Users/bartol/src/cellblender_bundle_requirements/install_dir/lib/libtls.a'
+#
+#      d) make
+#      e) make install
+#
 #  6) Install required Python modules into the new Blender Python, e.g.:
 #      a) ~/my_blender_dir/2.79/python/bin/python3.5 ~/my_blender_dir/2.79/python/bin/pip3.5 install requests
 #      b) ~/my_blender_dir/2.79/python/bin/python3.5 ~/my_blender_dir/2.79/python/bin/pip3.5 install numpy
