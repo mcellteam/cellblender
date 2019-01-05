@@ -400,10 +400,11 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                             candidate_file_list.sort()
                             #print("Candidate file list for %s:" % (file_name))
                             #print("  ", candidate_file_list)
-                            # Use the start_time.txt file to find files modified since MCell was started
-                            start_time = os.stat(os.path.join(project_files_path(), "start_time.txt")).st_mtime
-                            # This file is both in the list and newer than the run time for MCell
-                            candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
+                            if not mcell.rxn_output.ignore_start_time:
+                              # Use the start_time.txt file to find files modified since MCell was started
+                              start_time = os.stat(os.path.join(project_files_path(), "start_time.txt")).st_mtime
+                              # This file is both in the list and newer than the run time for MCell
+                              candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
 
                         print ( "Candidate list = " + str(candidate_file_list) )
 
@@ -864,6 +865,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         description="Generate All Plot Data Regardless of Current View Setting",
         default=True)
 
+
+    ignore_start_time = BoolProperty(
+        name="Ignore Start Time",
+        description="Ignore the start_time.txt file when plotting.",
+        default=False)
+
+
     def init_properties ( self, parameter_system ):
         self.rxn_step.init_ref (
             parameter_system, user_name="Step", 
@@ -1157,6 +1165,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             col = row.column()
             col.operator("mcell.plot_rxn_output_with_selected")
 
+
+            row = layout.row()
+            col = row.column()
+            col.prop ( self, "ignore_start_time" )
 
 
 
