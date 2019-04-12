@@ -197,18 +197,24 @@ def write_default_data_layout(project_dir, start, end):
     sweep_list_file.write ( "}\n" )
     sweep_list_file.close()
 
-
 def makedirs_exist_ok ( path_to_build, exist_ok=False ):
     # Needed for old python which doesn't have the exist_ok option!!!
     print ( " Make dirs for " + path_to_build )
     parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
-    # print ( "  Parts = " + str(parts) )
     full = ""
     if len(parts[0]) == 0:
+      # This happens with an absolute PosixPath
       full = os.sep
+    else:
+      # This may be a Windows drive or the start of a non-absolute path
+      if ":" in parts[0]:
+        # Assume a Windows drive
+        full = parts[0] + os.sep
+      else:
+        # This is a non-absolute path which will be handled naturally with full=""
+        pass
     for p in parts:
       full = os.path.join(full,p)
-      # print ( "   " + full )
       if not os.path.exists(full):
         os.makedirs ( full, exist_ok=True )
 
