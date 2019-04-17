@@ -851,6 +851,11 @@ try:
         mdlr_cmd = os.path.join ( mc_path, 'mdlr2mdl.py' )
         mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
         wd = output_data_dir
+        print ( "\n\n\n" )
+        print ( "mdlr_cmd = " + str(mdlr_cmd) )
+        print ( "mdlr_args = " + str(mdlr_args) )
+        print ( "wd = " + str(wd) )
+        print ( "Calling Popen" )
         p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
         p.wait()
         print ( "\n\n||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" )
