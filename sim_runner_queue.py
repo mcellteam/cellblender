@@ -98,9 +98,17 @@ class OutputQueue:
         t.start()
 
       if arg_in:
+        sys.stdout.write('run_proc in sim_runner_queue.py with args:\n')
         for arg in arg_in:
+          char_stream = ""
+          if type(arg) == type([]):
+            # Convert the list to a string (for now) by joining
+            char_stream = ' '.join ( arg )
+          else:
+            char_stream = arg
+          sys.stdout.write('  arg: ' + str(char_stream) + '\n')
 #          sys.stdout.write('run_proc sending: {0}\n'.format(arg).encode().decode())
-          proc.stdin.write('{0}\n'.format(arg).encode())
+          proc.stdin.write('{0}\n'.format(char_stream).encode())
           proc.stdin.flush()
       proc.wait()
 

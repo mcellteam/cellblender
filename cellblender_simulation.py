@@ -935,11 +935,19 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           print ( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" )
                           print ( "Done " + str(mdlr_args) + " from " + str(wd) )
 
-                          # Passing mcellr_args as a list seemed to cause problems ... try as a string instead ...
-                          # mcellr_args = [ os.path.join(ext_path, "mcell3r.py"), '-s', str(run_cmd[5]), '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ]
-                          mcellr_args = os.path.join(ext_path, "mcell3r.py") + ' -s ' + str(run_cmd[5]) + ' -r ' + 'Scene.mdlr_rules.xml' + ' -m ' + 'Scene.main.mdl'
-                          if len(mcell.initialization.command_options) > 0:
-                            mcellr_args = mcellr_args + " " + mcell.initialization.command_options
+                          mcellr_args = None
+                          if True:
+                            # TODO This is sending as a list (the new way)
+                            mcellr_args = [ os.path.join(ext_path, "mcell3r.py"), '-s', str(run_cmd[5]), '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ]
+                            if len(mcell.initialization.command_options) > 0:
+                              mcellr_args.append ( mcell.initialization.command_options.split() ) # Split by spaces
+                          else:
+                            # TODO This is sending as a string (the old way)
+                            # Passing mcellr_args as a list seemed to cause problems ... try as a string instead ...
+                            # mcellr_args = [ os.path.join(ext_path, "mcell3r.py"), '-s', str(run_cmd[5]), '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ]
+                            mcellr_args = os.path.join(ext_path, "mcell3r.py") + ' -s ' + str(run_cmd[5]) + ' -r ' + 'Scene.mdlr_rules.xml' + ' -m ' + 'Scene.main.mdl'
+                            if len(mcell.initialization.command_options) > 0:
+                              mcellr_args = mcellr_args + " " + mcell.initialization.command_options
 
                           make_texts = run_sim.save_text_logs
                           print ( 100 * "@" )
