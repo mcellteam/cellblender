@@ -55,9 +55,9 @@ if __name__ == '__main__':
 
   cmd_list = []
   if (cmd.strip()[0] == '"') and (cmd.strip()[-1] == '"'):
-    sys.stdout.write("\nUsing quoted command syntax\n")
+    sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd )
     # Using quoted command syntax, so remove quotes before adding
-    cmd_list = parse_quoted_args(cmd.strip())
+    cmd_list.extend ( parse_quoted_args(cmd.strip()) )
   else:
     sys.stdout.write("\nUsing string command syntax\n")
     # Just add the string as before
@@ -65,8 +65,9 @@ if __name__ == '__main__':
 
   if (args.strip()[0] == '"') and (args.strip()[-1] == '"'):
     sys.stdout.write("\nUsing quoted arg syntax\n")
+    cmd_list.extend ( parse_quoted_args ( args.strip() ) )
     # Using quoted arguments syntax (space separated list of strings), so remove quotes before adding
-    cmd_list.append ( cmd.strip()[1:-1] )
+    # cmd_list.append ( cmd.strip()[1:-1] )
   else:
     sys.stdout.write("\nUsing string arg syntax\n")
     # Just add the strings split by spaces as before

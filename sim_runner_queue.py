@@ -102,9 +102,15 @@ class OutputQueue:
         for arg in arg_in:
           char_stream = ""
           if type(arg) == type([]):
+            # Convert the list to quoted argument format
+            for a in arg:
+              char_stream += '"' + a + '" '
+            if len(char_stream) > 0:
+              char_stream = char_stream[0:-1]
             # Convert the list to a string (for now) by joining
-            char_stream = ' '.join ( arg )
+            # char_stream = ' '.join ( arg )
           else:
+            # Use previous string format
             char_stream = arg
           sys.stdout.write('  arg: ' + str(char_stream) + '\n')
 #          sys.stdout.write('run_proc sending: {0}\n'.format(arg).encode().decode())

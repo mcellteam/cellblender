@@ -952,7 +952,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           make_texts = run_sim.save_text_logs
                           print ( 100 * "@" )
                           print ( "Add Task:" + cellblender.python_path + " args:" + str(mcellr_args) + " wd:" + str(run_cmd[1]) + " txt:" + str(make_texts) )
-                          proc = cellblender.simulation_queue.add_task(cellblender.python_path, mcellr_args, run_cmd[1], make_texts, env=my_env)
+                          proc = cellblender.simulation_queue.add_task([cellblender.python_path], mcellr_args, run_cmd[1], make_texts, env=my_env)
                           print ( 100 * "@" )
                       else:
 
