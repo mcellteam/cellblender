@@ -46,6 +46,7 @@ class EXTERNAL_OT_parameter_add(bpy.types.Operator):
         jfile = accessFile(filePath,self)       
         par_list = jfile['par_list']
         index = -1
+        mcell.parameter_system.init_properties()
         for key in par_list:
             index += 1
 
