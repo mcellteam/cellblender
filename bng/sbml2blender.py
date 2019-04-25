@@ -103,9 +103,6 @@ def parseSBMLSpatialArrayData(text, shape=None, compressed=False, dtype=float):
         shape = [shape[0], length(data) // shape[0]]
     data2 = []
     for i in range(shape[0]):
-        # data2.append([data[j] for j in range(i * shape[1], (i+1) * shape[1])])
-        # data2.append(data[i * shape[1]:(i+1) * shape[1]])
-        # data2.append([dtype(data[j]) for j in range(i * shape[1], (i+1) * shape[1])])
         data2.append(tuple([dtype(data[j]) for j in range(i * shape[1], (i+1) * shape[1])]))
     return data2
 
