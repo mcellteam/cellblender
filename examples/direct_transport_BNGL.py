@@ -8,12 +8,6 @@ direct_transport_bngl_dm = {
     'data_model_version' : "DM_2014_10_24_1638",
     'molecule_list' : [
       {
-        'bngl_component_list' : [
-          {
-            'cname' : "v",
-            'cstates' : []
-          }
-        ],
         'custom_space_step' : "",
         'custom_time_step' : "",
         'data_model_version' : "DM_2017_06_19_1960",
@@ -32,12 +26,6 @@ direct_transport_bngl_dm = {
         'target_only' : False
       },
       {
-        'bngl_component_list' : [
-          {
-            'cname' : "s",
-            'cstates' : []
-          }
-        ],
         'custom_space_step' : "",
         'custom_time_step' : "",
         'data_model_version' : "DM_2017_06_19_1960",
@@ -54,30 +42,6 @@ direct_transport_bngl_dm = {
         'mol_name' : "S",
         'mol_type' : "2D",
         'target_only' : False
-      },
-      {
-        'bngl_component_list' : [
-          {
-            'cname' : "r",
-            'cstates' : []
-          }
-        ],
-        'custom_space_step' : "",
-        'custom_time_step' : "",
-        'data_model_version' : "DM_2017_06_19_1960",
-        'diffusion_constant' : "2e-6",
-        'display' : {
-          'color' : [0.0, 1.0, 1.0],
-          'emit' : 2.0,
-          'glyph' : "Cube",
-          'scale' : 3.0
-        },
-        'export_viz' : False,
-        'maximum_step_length' : "",
-        'mol_bngl_label' : "",
-        'mol_name' : "R",
-        'mol_type' : "3D",
-        'target_only' : False
       }
     ]
   },
@@ -88,9 +52,9 @@ direct_transport_bngl_dm = {
         'bkwd_rate' : "",
         'data_model_version' : "DM_2014_10_24_1638",
         'fwd_rate' : "reaction_rate",
-        'name' : "V(v)@Cube + S(s)@Membrane -> S(s)@Membrane + V(v)@World",
-        'products' : "S(s)@Membrane + V(v)@World",
-        'reactants' : "V(v)@Cube + S(s)@Membrane",
+        'name' : "V@Cube + S@Membrane -> S@Membrane + V@World",
+        'products' : "S@Membrane + V@World",
+        'reactants' : "V@Cube + S@Membrane",
         'rxn_name' : "",
         'rxn_type' : "irreversible",
         'variable_rate' : "",
@@ -255,18 +219,18 @@ direct_transport_bngl_dm = {
     'material_dict' : {
       'Cube_mat' : {
         'diffuse_color' : {
-          'a' : 0.20000000298023224,
-          'b' : 0.800000011920929,
-          'g' : 0.800000011920929,
-          'r' : 0.800000011920929
+          'a' : 0.2,
+          'b' : 0.8,
+          'g' : 0.8,
+          'r' : 0.8
         }
       },
       'World_mat' : {
         'diffuse_color' : {
-          'a' : 0.05000000074505806,
-          'b' : 0.800000011920929,
-          'g' : 0.800000011920929,
-          'r' : 0.800000011920929
+          'a' : 0.05,
+          'b' : 0.8,
+          'g' : 0.8,
+          'r' : 0.8
         }
       }
     }
@@ -318,12 +282,12 @@ direct_transport_bngl_dm = {
     'active_seed_index' : 0,
     'color_index' : 2,
     'color_list' : [
-      [0.800000011920929, 0.0, 0.0],
-      [0.0, 0.800000011920929, 0.0],
-      [0.0, 0.0, 0.800000011920929],
-      [0.0, 0.800000011920929, 0.800000011920929],
-      [0.800000011920929, 0.0, 0.800000011920929],
-      [0.800000011920929, 0.800000011920929, 0.0],
+      [0.8, 0.0, 0.0],
+      [0.0, 0.8, 0.0],
+      [0.0, 0.0, 0.8],
+      [0.0, 0.8, 0.8],
+      [0.8, 0.0, 0.8],
+      [0.8, 0.8, 0.0],
       [1.0, 1.0, 1.0],
       [0.0, 0.0, 0.0]
     ],
@@ -348,9 +312,9 @@ direct_transport_bngl_dm = {
         'par_expression' : "1e9",
         'par_name' : "reaction_rate",
         'par_units' : "",
-        'sweep_enabled' : False,
+        'sweep_enabled' : False
       }
-    ],
+    ]
   },
   'reaction_data_output' : {
     'always_generate' : True,
@@ -366,9 +330,9 @@ direct_transport_bngl_dm = {
         'data_file_name' : "",
         'data_model_version' : "DM_2016_03_15_1800",
         'mdl_file_prefix' : "v_world",
-        'mdl_string' : "COUNT[V(v), WORLD]",
+        'mdl_string' : "COUNT[V, WORLD]",
         'molecule_name' : "",
-        'name' : "MDL: COUNT[V(v), WORLD]",
+        'name' : "MDL: COUNT[V, WORLD]",
         'object_name' : "",
         'plotting_enabled' : True,
         'reaction_name' : "",
@@ -386,7 +350,7 @@ direct_transport_bngl_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "V(v)@Cube",
+        'molecule' : "V@Cube",
         'name' : "Release_Site_1",
         'object_expr' : "Cube",
         'orient' : "'",
@@ -404,7 +368,7 @@ direct_transport_bngl_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "S(s)@Membrane",
+        'molecule' : "S@Membrane",
         'name' : "Release_Site_2",
         'object_expr' : "Cube[Membrane]",
         'orient' : "'",
