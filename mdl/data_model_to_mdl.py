@@ -898,7 +898,12 @@ def requires_mcellr ( dm ):
     bionetgen_mode = False
     if ('mcell' in dm):
       mcell = dm['mcell']
-      if 'define_molecules' in mcell:
+      if 'model_language' in mcell:
+        # Use the explicit model_language since it is specified in the data model
+        if mcell['model_language'] == 'mcell3r':
+          bionetgen_mode = True
+      elif 'define_molecules' in mcell:
+        # If the model_language isn't explicitly given, then attempt to deduce it by components
         mols = mcell['define_molecules']
         if 'molecule_list' in mols:
           mlist = mols['molecule_list']
