@@ -20,14 +20,14 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
     bl_idname = "bng.import_data"  
     bl_label = "Import External Model"
     bl_description = "Import BioNetGen or SBML encoded reaction network information"
- 
+
     filename_ext = ".bngl,*.xml"
 
     filter_glob = StringProperty(
             default="*.bngl;*.xml",
             options={'HIDDEN'}
             )
-            
+
     add_to_model_objects = BoolProperty(
 	        name="Add to Model Objects",
 	        description="Automatically add all meshes to the Model Objects list",
@@ -37,7 +37,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         if hasattr(external_operators.accessFile,"info"):
             del external_operators.accessFile.info
-            
+
         if('.bngl') in self.filepath:
             bngfilepath = self.filepath         # bngl file path
             external_operators.filePath=findCellBlenderDirectory()+'bng{0}'.format(os.sep) + self.filepath.split(os.sep)[-1]
@@ -49,6 +49,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
             sbmlfilepath = self.filepath
             external_operators.filePath = sbmlfilepath
             # sbml file path
+            print ( "\nTrying to import an xml file\n" )
             #try:
             sbml_operators.execute_sbml2blender(sbmlfilepath,context,self.add_to_model_objects)
             #except:
@@ -87,9 +88,14 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
             xml_model_file = open ( self.filepath, 'r' )
             xml_model_text = xml_model_file.read()
 
-            # First verify that it contains compartments (cheat by assuming no spaces for now)
+            # First check to see if the file already contains spatial geometry
+            if "<spatial:geometry" in xml_model_text:
+                print ( "\nModel contains spatial geometry so do NOT build compartments\n\n" )
+                return {'FINISHED'}
+
+            # Verify that it contains compartments (cheat by assuming no spaces for now)
             if ("<listOfCompartments>" in xml_model_text) and ("</listOfCompartments>" in xml_model_text):
-                print ( "Model contains listOfCompartments" )
+                print ( "\nModel contains listOfCompartments without spatial geometry so build compartments\n" )
 
                 # Get the lines between the listOfCompartments tags
                 compartment_text = xml_model_text.split("<listOfCompartments>")[1].split("</listOfCompartments>")[0]
@@ -104,6 +110,9 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
                 # Remove any empty lines
                 lines = [ l.strip() for l in lines if len(l.strip()) > 0 ]
 
+                # Remove any lines that don't start with "<compartment"
+                lines = [ l for l in lines if l.startswith("<compartment") ]
+
                 for l in lines:
                     print ( "  Compartment line: " + l )
 
@@ -114,13 +123,16 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
                 for l in lines:
                     # Convert an xml compartment line of the form: 
                     #   <compartment id="EC" spatialDimensions="3" size="27"/>
-                    #   <compartmenread_data_model_from_bngl_textt id="PM" spatialDimensions="2" size="0.06" outside="EC"/>
+                    #   <compartment id="PM" spatialDimensions="2" size="0.06" outside="EC"/>
                     #   <compartment id="CP" spatialDimensions="3" size="0.1" outside="PM"/>
                     # into a CBNGL compartment line of the form:
                     #   Name Dim  Size    [Parent]
                     #    EC   3    27
                     #    PM   2  6*0.01      EC
                     #    CP   3    0.1       PM
+
+                    print ( " %%% Converting  " + l )
+
                     bngl_obj = {}
                     if 'id="' in l:
                         bngl_obj['id'] = l[l.find('id="')+4:].split('"')[0]

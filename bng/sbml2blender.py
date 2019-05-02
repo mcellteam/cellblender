@@ -128,14 +128,11 @@ def readSBMLFileParametricObject(filepath):
             faces = parseSBMLSpatialArrayData(faces, dtype=int)
             vertices = parseSBMLSpatialArrayData(vertices)
         
-            # <-<-<-<-<-<-<- HEAD
-            '''
             print("id: "       + id)
             
             print("faces: "    + faces)
             print("vertices: " + vertices)
-            '''
-            """
+
             if not faces or not vertices:
                 print ( 'this geometry file contains invalid polygon object entries' )
                 continue
@@ -160,9 +157,6 @@ def readSBMLFileParametricObject(filepath):
             vertices = temp
         
             objects += [[id, faces, vertices]]
-            """
-            # =-=-=-=-=-=-=-
-            objects += [[id, faces, vertices]]
     
     for parametricGeometry in root.iter(spatial_prefix + 'parametricGeometry'):
         spatialPoints = list(parametricGeometry.iterfind(spatial_prefix + 'spatialPoints'))[0]
@@ -177,7 +171,6 @@ def readSBMLFileParametricObject(filepath):
         
             objects += [[id, faces, vertices]]
     
-    # ->->->->->->-> master
     return objects
 
 # all objects in blender scene are deleted. Should leave empty blender scene.
