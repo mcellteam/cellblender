@@ -46,6 +46,18 @@ class EXTERNAL_OT_parameter_add(bpy.types.Operator):
         #jfile = json.load(filePointer) 
         jfile = accessFile(filePath,self)       
         par_list = jfile['par_list']
+        
+        # Begin code added by commit: 4595cd36870ead428083cc9671e68520bea8391d
+        index = -1
+        mcell.parameter_system.init_properties()
+        for key in par_list:
+            index += 1
+
+            par_name = str(key['name'])
+            par_value = str(key['value'])
+            par_unit = str(key['unit'])
+            par_type = str(key['type'])
+        # End code added by commit: 4595cd36870ead428083cc9671e68520bea8391d
 
         cell_par_list = []
         for key in par_list:

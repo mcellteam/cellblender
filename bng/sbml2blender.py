@@ -3,15 +3,18 @@ Spatial SBML importer
 Rohan Arepally
 Jose Juan Tapia
 Devin Sullivan
+Taraz Buck
 '''
 from collections import defaultdict
 from cellblender.cellblender_utils import preserve_selection_use_operator
  
 import sys
 import bpy
+import mathutils
 import os
 import xml.etree.ElementTree as ET
 import shutil
+import math
 
 
 # Read all of the CSG Object types in a SBML file 
@@ -25,27 +28,40 @@ def readSBMLFileCSGObject(filePath):
     root = tree.getroot()
     objects = []
     ns = {'spatial': 'http://www.sbml.org/sbml/level3/version1/spatial/version1'}
+    spatial_prefix = '{' + ns['spatial'] + '}'
     
-    for object in root.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgObject'):
-        id = object.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}id')
-        domainType = object.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}domainType')
-        for csgPrimitive in object.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgPrimitive'):
-            type        = csgPrimitive.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}primitiveType')
+    for object in root.iter(spatial_prefix + 'csgObject'):
+        id = object.get(spatial_prefix + 'id')
+        domainType = object.get(spatial_prefix + 'domainType')
+        for csgPrimitive in object.iter(spatial_prefix + 'csgPrimitive'):
+            type        = csgPrimitive.get(spatial_prefix + 'primitiveType')
         
-        for csgScale in object.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgScale'):
-            scaleX      = csgScale.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}scaleX')
-            scaleY      = csgScale.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}scaleY')
-            scaleZ      = csgScale.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}scaleZ')
+        for csgScale in object.iter(spatial_prefix + 'csgScale'):
+            scaleX      = csgScale.get(spatial_prefix + 'scaleX')
+            scaleY      = csgScale.get(spatial_prefix + 'scaleY')
+            scaleZ      = csgScale.get(spatial_prefix + 'scaleZ')
         
-        for csgRotation in object.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgRotation'):
-            rotateAxisX = csgRotation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}rotateAxisX')
-            rotateAxisY = csgRotation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}rotateAxisY')
-            rotateAxisZ = csgRotation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}rotateAxisZ')
+        for csgRotation in object.iter(spatial_prefix + 'csgRotation'):
+            rotateAxisX = csgRotation.get(spatial_prefix + 'rotateAxisX')
+            rotateAxisY = csgRotation.get(spatial_prefix + 'rotateAxisY')
+            rotateAxisZ = csgRotation.get(spatial_prefix + 'rotateAxisZ')
+            # Use specification release 0.93 (Draft), December 2018
+            rotateX = csgRotation.get(spatial_prefix + 'rotateX')
+            rotateY = csgRotation.get(spatial_prefix + 'rotateY')
+            rotateZ = csgRotation.get(spatial_prefix + 'rotateZ')
+            rotateAngleInRadians = csgRotation.get(spatial_prefix + 'rotateAngleInRadians')
+            if rotateAxisX is None and rotateX is not None:
+                # Axis-angle representation to rotation matrix
+                mat = mathutils.Matrix.Rotation(float(rotateAngleInRadians), 4, mathutils.Vector((float(rotateX), float(rotateY), float(rotateZ))))
+                eul = mat.to_euler('XYZ')
+                rotateAxisX = str(eul.x)
+                rotateAxisY = str(eul.y)
+                rotateAxisZ = str(eul.z)
         
-        for csgTranslation in object.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgTranslation'):
-            translateX  = csgTranslation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}translateX')
-            translateY  = csgTranslation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}translateY')
-            translateZ  = csgTranslation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}translateZ')
+        for csgTranslation in object.iter(spatial_prefix + 'csgTranslation'):
+            translateX  = csgTranslation.get(spatial_prefix + 'translateX')
+            translateY  = csgTranslation.get(spatial_prefix + 'translateY')
+            translateZ  = csgTranslation.get(spatial_prefix + 'translateZ')
 
         print("domainType: "  + domainType)
         '''
@@ -64,6 +80,32 @@ def readSBMLFileCSGObject(filePath):
         objects += [[id, type, scaleX, scaleY, scaleZ, rotateAxisX, rotateAxisY, rotateAxisZ,translateX, translateY, translateZ, domainType]]
     return objects
 
+# Parse SBML Spatial arrayData
+def parseSBMLSpatialArrayData(text, shape=None, compressed=False, dtype=float):
+    """
+    Only supports uncompressed 2D data
+    """
+    if compressed:
+        raise(NotImplementedError)
+    
+    semicolon_count = text.count(';')
+    if shape is None or (shape[0] is None and shape[1] is None):
+        if semicolon_count == 0:
+            raise(ValueError('shape is None and semicolon_count == 0'))
+        shape = [semicolon_count, None]
+    if shape[0] is None and semicolon_count > 0:
+        shape = [semicolon_count, shape[1]]
+    data = text.replace(';', ' ')
+    data = data.split()
+    if shape[0] is None and shape[1] is not None:
+        shape = [len(data) // shape[1], shape[1]]
+    elif shape[0] is not None and shape[1] is None:
+        shape = [shape[0], length(data) // shape[0]]
+    data2 = []
+    for i in range(shape[0]):
+        data2.append(tuple([dtype(data[j]) for j in range(i * shape[1], (i+1) * shape[1])]))
+    return data2
+
 # read parametric object data
 def readSBMLFileParametricObject(filepath):
     print("\n")
@@ -72,22 +114,28 @@ def readSBMLFileParametricObject(filepath):
     root = tree.getroot()
     objects = []
     ns = {'spatial': 'http://www.sbml.org/sbml/level3/version1/spatial/version1'}
+    spatial_prefix = '{' + ns['spatial'] + '}'
     
-    for object in root.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}ParametricObject'):
+    for object in root.iter(spatial_prefix + 'ParametricObject'):
         #id = object.get('spatialId') - old version D. Sullivan 10/25/14
-        id = object.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}id')
+        id = object.get(spatial_prefix + 'id')
         print("spid: "       + id)
 
-        for polygonObject in object.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}PolygonObject'):
-            faces        = polygonObject.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}faces')
-            vertices     = polygonObject.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}pointIndex')
+        for polygonObject in object.iter(spatial_prefix + 'PolygonObject'):
+            faces        = polygonObject.get(spatial_prefix + 'faces')
+            vertices     = polygonObject.get(spatial_prefix + 'pointIndex')
+            
+            faces = parseSBMLSpatialArrayData(faces, dtype=int)
+            vertices = parseSBMLSpatialArrayData(vertices)
         
+            # <-<-<-<-<-<-<- HEAD
             '''
             print("id: "       + id)
             
             print("faces: "    + faces)
             print("vertices: " + vertices)
-                '''
+            '''
+            """
             if not faces or not vertices:
                 print ( 'this geometry file contains invalid polygon object entries' )
                 continue
@@ -112,6 +160,24 @@ def readSBMLFileParametricObject(filepath):
             vertices = temp
         
             objects += [[id, faces, vertices]]
+            """
+            # =-=-=-=-=-=-=-
+            objects += [[id, faces, vertices]]
+    
+    for parametricGeometry in root.iter(spatial_prefix + 'parametricGeometry'):
+        spatialPoints = list(parametricGeometry.iterfind(spatial_prefix + 'spatialPoints'))[0]
+        listOfParametricObjects = list(parametricGeometry.iterfind(spatial_prefix + 'listOfParametricObjects'))[0]
+        vertices = parseSBMLSpatialArrayData(spatialPoints.text, [None, 3])
+        for parametricObject in listOfParametricObjects.iter(spatial_prefix + 'parametricObject'):
+            id = parametricObject.get(spatial_prefix + 'id')
+            polygonType = parametricObject.get(spatial_prefix + 'polygonType')
+            print("spid: " + id)
+            
+            faces = parseSBMLSpatialArrayData(parametricObject.text, (None, 4 if polygonType == 'quadrilateral' else 3), dtype=int)
+        
+            objects += [[id, faces, vertices]]
+    
+    # ->->->->->->-> master
     return objects
 
 # all objects in blender scene are deleted. Should leave empty blender scene.
@@ -148,13 +214,14 @@ def mesh_vol(mesh, t_mat):
 # a sphere with dimensions x,y,z is added to the blender scene
 def generateSphere(name, size, loc, rot):
     #pi = 3.1415
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, location=(float(loc[0]),float(loc[1]),float(loc[2])), \
-                                         rotation=(float(rot[0]),float(rot[1]),float(rot[2]) ))
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, location=(float(loc[0]),float(loc[1]),float(loc[2])))
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
     me = obj.data
     #obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
     obj.scale = (float(size[0]),float(size[1]),float(size[2]))
+    obj.rotation_mode = 'XYZ'
+    obj.rotation_euler = (float(rot[0]),float(rot[1]),float(rot[2]))
     obj.name = name
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
@@ -270,10 +337,11 @@ def common_prefix(strings):
 def sbml2blender(inputFilePath,addObjects):
     print("loading .xml file... " + inputFilePath)
     #extrapolate object data from SBML file
-    csgObjects  = readSBMLFileCSGObject(inputFilePath)
-    paramObject = readSBMLFileParametricObject(inputFilePath)
+    csgObjects   = readSBMLFileCSGObject(inputFilePath)
+    paramObjects = readSBMLFileParametricObject(inputFilePath)
     
-    print("length of objects: " + str(len(csgObjects)))
+    print("length of csgObjects: " + str(len(csgObjects)))
+    print("length of paramObjects: " + str(len(paramObjects)))
     #generates sphere or bounding box in Blender
     
     #track average endosome size
@@ -410,8 +478,8 @@ def sbml2blender(inputFilePath,addObjects):
    # print("The average endosome size is: " + str((sum_size/(n_size*1.0))))
    # print("The average endosome surface area is " + str((sum_surf/(n_surf*1.0))))
     
-    for csgobject in paramObject:
-        obj = generateMesh(csgobject)
+    for paramObject in paramObjects:
+        obj = generateMesh(paramObject)
         if addObjects:
             preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
 

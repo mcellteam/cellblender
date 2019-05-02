@@ -223,6 +223,7 @@ class SBML2JSON:
         from copy import deepcopy
         tree = treelib3.Tree()
         c2 = deepcopy(compartmentList)
+        dummyRootCount = 0
         while len(c2) > 0:
             removeList = []
             for element in c2:
@@ -232,9 +233,11 @@ class SBML2JSON:
                     except treelib3.tree.MultipleRootError:
                         #there's more than one top level element
                         tree2 = treelib3.Tree()
-                        tree2.create_node('dummyRoot','dummyRoot',data=3)
-                        tree2.paste('dummyRoot',tree)
-                        tree2.create_node(element,element,parent='dummyRoot',data=c2[element][0])
+                        dummyRootName = 'dummyRoot{0}'.format(dummyRootCount)
+                        dummyRootCount += 1
+                        tree2.create_node(dummyRootName,dummyRootName,data=3)
+                        tree2.paste(dummyRootName,tree)
+                        tree2.create_node(element,element,parent=dummyRootName,data=c2[element][0])
                         tree = tree2
                     removeList.append(element)
                 elif tree.contains(c2[element][2]):
