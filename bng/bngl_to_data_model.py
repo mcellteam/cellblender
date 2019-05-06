@@ -692,8 +692,8 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
   # Add the molecules list here since the vol/surf type is deduced from compatments and seed species (above)
 
-  default_vol_dc = "0.0"
-  default_surf_dc = "0.0"
+  default_vol_dc = "1e-6"
+  default_surf_dc = "1e-8"
 
   if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in par_expr_dict:
     default_vol_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_3D']
