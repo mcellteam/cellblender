@@ -65,6 +65,16 @@ class OutputQueue:
           except:
             pass
 
+  # Recursive function to flatten a list of lists into a single list
+  def flatten_list ( self, l, f ):
+      for i in l:
+          if type(i) == type([]):
+              self.flatten_list(i, f)
+          else:
+              print ( " item: " + str(i) )
+              f.append ( i )
+      print ( "flattened so far: " + str(f) )
+
 
   # In passthrough mode, set up threadworkers and queues to manage stdout and stderr of task and send command string and args to run_wrapper.py process
   # Otherwise just do proc.communicate() and capture stdout and stderr upon command completion (possibly broken functionality?)
@@ -98,12 +108,15 @@ class OutputQueue:
         t.start()
 
       if arg_in:
+        sys.stdout.write('run_proc in sim_runner_queue.py with arg_in = ' + str(arg_in) + '\n')
         sys.stdout.write('run_proc in sim_runner_queue.py with args:\n')
         for arg in arg_in:
           char_stream = ""
           if type(arg) == type([]):
             # Convert the list to quoted argument format
-            for a in arg:
+            flat_arg = []
+            self.flatten_list ( arg, flat_arg );
+            for a in flat_arg:
               char_stream += '"' + a + '" '
             if len(char_stream) > 0:
               char_stream = char_stream[0:-1]
