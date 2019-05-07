@@ -162,6 +162,21 @@ class MCELL_OT_load_fceri_mcell3r(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_lr_cbngl_mcell3r(bpy.types.Operator):
+    bl_idname = "mcell.load_lr_cbngl_mcell3r"
+    bl_label = "LR CBNGL MCell Rules"
+    bl_description = "Loads an LR CBNGL model utilizing MCell Rules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.lr_cbngl_mcell3r.lr_cbngl_mcell3r_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        view_all()
+        return {'FINISHED'}
+
+
 class MCELL_OT_load_schain_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_schain_mcell3r"
     bl_label = "Simple Chain MCell Rules"
@@ -722,6 +737,8 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_dir_tr_bngl")
             row = layout.row()
             row.operator("mcell.load_fceri_mcell3r")
+            row = layout.row()
+            row.operator("mcell.load_lr_cbngl_mcell3r")
             row = layout.row()
             row.operator("mcell.load_schain_mcell3r")
             row = layout.row()
