@@ -14,6 +14,7 @@ from . import delayed_transport
 from . import direct_transport_BNGL
 from . import fceri_mcell3r
 from . import lr_cbngl_mcell3r
+from . import tlbr_mcell3r
 from . import simple_chain_mcell3r
 from . import simple_coil_mcell3r
 from . import organelle

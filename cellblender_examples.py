@@ -172,7 +172,22 @@ class MCELL_OT_load_lr_cbngl_mcell3r(bpy.types.Operator):
 
         dm = {}
         dm['mcell'] = examples.lr_cbngl_mcell3r.lr_cbngl_mcell3r_dm
-        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        cellblender.replace_data_model(dm, geometry=True, scripts=False)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_tlbr_mcell3r(bpy.types.Operator):
+    bl_idname = "mcell.load_tlbr_mcell3r"
+    bl_label = "TLBR MCell Rules"
+    bl_description = "Loads a TLBR model utilizing MCell Rules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.tlbr_mcell3r.tlbr_mcell3r_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=False)
         view_all()
         return {'FINISHED'}
 
@@ -739,6 +754,8 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_fceri_mcell3r")
             row = layout.row()
             row.operator("mcell.load_lr_cbngl_mcell3r")
+            row = layout.row()
+            row.operator("mcell.load_tlbr_mcell3r")
             row = layout.row()
             row.operator("mcell.load_schain_mcell3r")
             row = layout.row()

@@ -257,6 +257,7 @@ cellblender_info = {
         "examples"+os.sep+"direct_transport_BNGL.py",
         "examples"+os.sep+"fceri_mcell3r.py",
         "examples"+os.sep+"lr_cbngl_mcell3r.py",
+        "examples"+os.sep+"tlbr_mcell3r.py",
         "examples"+os.sep+"simple_chain_mcell3r.py",
         "examples"+os.sep+"simple_coil_mcell3r.py",
         "examples"+os.sep+"mind_mine_system.py",
