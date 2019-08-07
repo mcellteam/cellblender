@@ -197,6 +197,16 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
         context.scene.mcell.molecules.add_molecule(context)
         return {'FINISHED'}
 
+class MCELL_OT_molecule_duplicate(bpy.types.Operator):
+    bl_idname = "mcell.molecule_duplicate"
+    bl_label = "Duplicate Molecule"
+    bl_description = "Duplicate the selected molecule type in the MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.scene.mcell.molecules.duplicate_molecule(context)
+        return {'FINISHED'}
+
 class MCELL_OT_molecule_remove(bpy.types.Operator):
     bl_idname = "mcell.molecule_remove"
     bl_label = "Remove Molecule"
@@ -427,7 +437,8 @@ def name_change_callback(self, context):
 
     self.old_name = self.name
 
-    #self.check_callback(context)
+    
+    self.check_callback(context)
     return
 
 
@@ -2259,7 +2270,42 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
                 elif self.dup_check == True:
                     self.dup_check = False
       
+    def duplicate_molecule ( self, context ):
+        mcell = context.scene.mcell
+        """ Add a new molecule to the list of molecules and set as the active molecule """
+        if (len(bpy.data.scenes['Scene'].mcell.molecules.molecule_list) > 0):
+            active_mol = self.molecule_list[self.active_mol_index]
+            new_mol = self.molecule_list.add()
+            new_mol.id = self.allocate_available_id()
+            new_mol.init_properties(context.scene.mcell.parameter_system)
+            dm = active_mol.build_data_model_from_properties()
+            new_mol.build_properties_from_data_model(context,dm)
+              # new_mol.initialize(context)
+            self.active_mol_index = len(self.molecule_list)-1
+        # elif mcell.mol_viz.molecule_read_in == True:
+        #     mcell.mol_viz.molecule_read_in = False
+        #     for x in range(len(bpy.data.objects['molecules'].children)): 
+        #         # new_mol.initialize(context)                
+        #         for i in range(len(self.molecule_list)):
+        #                 if self.molecule_list[i].name == bpy.data.objects['molecules'].children[x].name[4:]:
+        #                     self.dup_check = True                                                         
+        #         if self.dup_check == False:
+        #             new_mol = self.molecule_list.add()       
+        #             new_mol.init_properties(context.scene.mcell.parameter_system)
+        #             new_mol.remove_mol_data(context.scene.mcell)
+        #             self.active_mol_index = len(self.molecule_list)-1
+        #             self.molecule_list[self.active_mol_index].name = bpy.data.objects['molecules'].children[x].name[4:]
+        #         elif self.dup_check == True:
+        #             self.dup_check = False
 
+        # ps = context.scene.mcell.parameter_system
+        # self.diffusion_constant.clear_ref ( ps )
+        # self.custom_time_step.clear_ref ( ps )
+        # self.custom_space_step.clear_ref ( ps )
+        # self.maximum_step_length.clear_ref ( ps )
+        # self.remove_mol_data ( context )
+        # self.component_list.clear()
+        # self.active_component_index = 0
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
         if len(self.molecule_list) > 0:
@@ -2407,6 +2453,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             # Use subcolumns to group logically related buttons together
             subcol = col.column(align=True)
             subcol.operator("mcell.molecule_add", icon='ZOOMIN', text="")
+            subcol.operator("mcell.molecule_duplicate", icon='GROUP_BONE', text="")
             subcol.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
             subcol = col.column(align=True)
             subcol.operator("mcell.molecule_show_all", icon='RESTRICT_VIEW_OFF', text="")
