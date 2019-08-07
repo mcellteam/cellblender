@@ -2280,8 +2280,18 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             new_mol.init_properties(context.scene.mcell.parameter_system)
             dm = active_mol.build_data_model_from_properties()
             new_mol.build_properties_from_data_model(context,dm)
+            new_mol.name = active_mol.name +'_1'
               # new_mol.initialize(context)
             self.active_mol_index = len(self.molecule_list)-1
+            if bpy.data.scenes['Scene'].mcell.cellblender_preferences.bionetgen_mode:
+                comp_num = len(active_mol.component_list)
+                for i in range(0,comp_num):
+                    #bpy.ops.mcell.mol_comp_add()
+                    new_mol.component_list[i].component_name = active_mol.component_list[i].component_name
+                    new_mol.component_list[i].states_string = active_mol.component_list[i].states_string
+
+
+            
         # elif mcell.mol_viz.molecule_read_in == True:
         #     mcell.mol_viz.molecule_read_in = False
         #     for x in range(len(bpy.data.objects['molecules'].children)): 
@@ -2298,14 +2308,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         #         elif self.dup_check == True:
         #             self.dup_check = False
 
-        # ps = context.scene.mcell.parameter_system
-        # self.diffusion_constant.clear_ref ( ps )
-        # self.custom_time_step.clear_ref ( ps )
-        # self.custom_space_step.clear_ref ( ps )
-        # self.maximum_step_length.clear_ref ( ps )
-        # self.remove_mol_data ( context )
-        # self.component_list.clear()
-        # self.active_component_index = 0
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
         if len(self.molecule_list) > 0:
