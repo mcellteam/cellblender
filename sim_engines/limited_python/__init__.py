@@ -27,10 +27,19 @@ def reset():
 def blenders_python():
   global parameter_dictionary
   print ( "Finding Blender's Python" )
-  bl_py_path = os.__file__.split(os.sep)[0:-2]
-  bl_py_path.append ( 'bin' )
-  bl_py_path.append ( 'python' )
-  bl_py_path = os.sep.join(bl_py_path)
+  bl_py_path = None
+  if sys.platform.lower().startswith('win'):
+    # Construct the python command for Windows
+    bl_py_path = os.__file__.split(os.sep)[0:-2]
+    bl_py_path.append ( 'bin' )
+    bl_py_path.append ( 'python' )
+    bl_py_path = os.sep.join(bl_py_path)
+  else:
+    # Construct the python command for Linux
+    bl_py_path = os.__file__.split(os.sep)[0:-3]
+    bl_py_path.append ( 'bin' )
+    bl_py_path.append ( 'python3.5m' )
+    bl_py_path = os.sep.join(bl_py_path)
   print ( "Setting python command to " + str(bl_py_path) )
   parameter_dictionary['Python Command']['val'] = bl_py_path
 
