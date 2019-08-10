@@ -39,6 +39,8 @@ def run_commands ( commands ):
 
     sp_list = []
     for cmd in commands:
+        if parameter_dictionary['Print Commands']['val']:
+            print ( "cmd = \"" + str(cmd) + "\"" )
         command_list = []
         if type(cmd) == type('str'):
             # This command is a string, so just append it
@@ -52,7 +54,7 @@ def run_commands ( commands ):
                     # For some reason, the ' ' in the args may be creating a problem for "-seed 1"
                     # This isn't a problem in the Java or OpenGL runners, but it is here.
                     # So ... check for spaces and split into additional arguments
-                    if ' ' in arg:
+                    if False and (' ' in arg):
                       for s in arg.split(' '):
                         command_list.append ( s )
                     else:

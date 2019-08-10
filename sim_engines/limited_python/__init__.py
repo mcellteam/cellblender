@@ -21,8 +21,18 @@ def reset():
   global parameter_dictionary
   print ( "Reset was called" )
   parameter_dictionary['Output Detail (0-100)']['val'] = 20
-  parameter_dictionary['Python Path']['val'] = ""
+  parameter_dictionary['Python Command']['val'] = ""
   parameter_dictionary['Reaction Factor']['val'] = 1.0
+
+def blenders_python():
+  global parameter_dictionary
+  print ( "Finding Blender's Python" )
+  bl_py_path = os.__file__.split(os.sep)[0:-2]
+  bl_py_path.append ( 'bin' )
+  bl_py_path.append ( 'python' )
+  bl_py_path = os.sep.join(bl_py_path)
+  print ( "Setting python command to " + str(bl_py_path) )
+  parameter_dictionary['Python Command']['val'] = bl_py_path
 
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
@@ -31,6 +41,7 @@ parameter_dictionary = {
   'Python Command': {'val': "", 'as':'filename', 'desc':"Command to run Python (default is python)", 'icon':'SCRIPTWIN'},
   'Reaction Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
+  "Blender's Python": {'val': blenders_python, 'desc':"Set Python Command to Blender's Python"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
 
@@ -38,7 +49,7 @@ parameter_layout = [
   ['Python Command'],
   ['Output Detail (0-100)'],
   ['Reaction Factor'],
-  ['Print Information', 'Reset']
+  ["Blender's Python", 'Print Information', 'Reset']
 ]
 
 
