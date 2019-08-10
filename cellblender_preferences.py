@@ -297,6 +297,7 @@ class MCELL_OT_save_preferences(AddPresetBase, bpy.types.Operator):
         "scene.mcell.cellblender_preferences.invalid_policy",
         "scene.mcell.cellblender_preferences.show_sim_runner_options",
         "scene.mcell.cellblender_preferences.developer_mode",
+        "scene.mcell.cellblender_preferences.require_mcell",
         "scene.mcell.cellblender_preferences.debug_level",
     ]
 
@@ -321,6 +322,7 @@ class MCELL_OT_reset_preferences(bpy.types.Operator):
         mcell.cellblender_preferences.decouple_export_run = False
         mcell.cellblender_preferences.show_sim_runner_options = False
         mcell.cellblender_preferences.developer_mode = False
+        mcell.cellblender_preferences.require_mcell = True
         mcell.cellblender_preferences.debug_level = 0
 
         return {'FINISHED'}
@@ -501,6 +503,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
     show_sim_runner_options = BoolProperty(name="Show Alternate Simulation Runners", default=False)
 
     developer_mode = BoolProperty(name="Show Developer Options in Panels", default=False)
+    require_mcell = BoolProperty(name="Require MCell to Run", default=True)
 
     tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
     double_sided = BoolProperty(name="Show Double Sided Mesh Objects", default=False, update=set_double_sided_callback)
@@ -603,6 +606,9 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "developer_mode")
+
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "require_mcell")
 
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "show_sim_runner_options")

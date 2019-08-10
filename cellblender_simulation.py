@@ -2595,9 +2595,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             # Only allow the simulation to be run if both an MCell binary and a
             # project dir have been selected. There also needs to be a main mdl
             # file present.
-            if not cellblender_utils.get_mcell_path(mcell):
-                # Note that we should be able to export without requiring an MCell Binary,
-                #  but this code is a little messy as it is ... so this requirement remains.
+            if (not cellblender_utils.get_mcell_path(mcell)) and mcell.cellblender_preferences.require_mcell:
+                # The "require_mcell" preference is defaulted to true which will require a valid mcell path
                 row.label(text="Set an MCell binary in CellBlender - Preferences Panel", icon='ERROR')
             elif not os.path.dirname(bpy.data.filepath):
                 row.label(text="Open or save a .blend file to set the project directory", icon='ERROR')
