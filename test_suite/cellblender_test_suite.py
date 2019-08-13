@@ -2657,7 +2657,7 @@ class ShapedCylinder (plf_object):
 ###########################################################################################################
 ##   This is an example model used for all the SimRunner tests.
 
-def SimRunnerExample ( context, method="COMMAND", test_name=None ):
+def SimRunnerExample ( context, method="QUEUE", test_name=None ):
 
     cb_model = CellBlender_Model ( context, test_name )
 
@@ -2676,7 +2676,7 @@ def SimRunnerExample ( context, method="COMMAND", test_name=None ):
 
     cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
 
-    cb_model.compare_mdl_with_sha1 ( "80e484d45193d50b59affca4c38701fcfad90151", test_name=test_name )
+    cb_model.compare_mdl_with_sha1 ( "8263c1099a3d6d86640116a5f6ee6f5b4b663330", test_name=test_name )
 
     cb_model.refresh_molecules()
 
@@ -2693,25 +2693,25 @@ def SimRunnerExample ( context, method="COMMAND", test_name=None ):
 
 
 ###########################################################################################################
-group_name = "Sim Runner Tests"
-test_name = "Simulation Runner Command Test"
-operator_name = "cellblender_test.sim_runner_command"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+#group_name = "Sim Runner Tests"
+#test_name = "Simulation Runner Command Test"
+#operator_name = "cellblender_test.sim_runner_command"
+#next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class SimRunnerCommandTestOp(bpy.types.Operator):
-    bl_idname = operator_name
-    bl_label = test_name
-    self_test_name = test_name
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def execute(self, context):
-        global active_frame_change_handler
-        active_frame_change_handler = None
-        SimRunnerExample ( context, method="COMMAND", test_name=self.self_test_name )
-        return { 'FINISHED' }
+#class SimRunnerCommandTestOp(bpy.types.Operator):
+#    bl_idname = operator_name
+#    bl_label = test_name
+#    self_test_name = test_name
+#
+#    def invoke(self, context, event):
+#        self.execute ( context )
+#        return {'FINISHED'}
+#
+#    def execute(self, context):
+#        global active_frame_change_handler
+#        active_frame_change_handler = None
+#        SimRunnerExample ( context, method="COMMAND", test_name=self.self_test_name )
+#        return { 'FINISHED' }
 
 
 
@@ -2739,46 +2739,46 @@ class SimRunnerQueueTestOp(bpy.types.Operator):
 
 
 ###########################################################################################################
-group_name = "Sim Runner Tests"
-test_name = "Simulation Runner Java Test"
-operator_name = "cellblender_test.sim_runner_java"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+#group_name = "Sim Runner Tests"
+#test_name = "Simulation Runner Java Test"
+#operator_name = "cellblender_test.sim_runner_java"
+#next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class SimRunnerJavaTestOp(bpy.types.Operator):
-    bl_idname = operator_name
-    bl_label = test_name
-    self_test_name = test_name
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def execute(self, context):
-        global active_frame_change_handler
-        active_frame_change_handler = None
-        SimRunnerExample ( context, method="JAVA", test_name=self.self_test_name )
-        return { 'FINISHED' }
+#class SimRunnerJavaTestOp(bpy.types.Operator):
+#    bl_idname = operator_name
+#    bl_label = test_name
+#    self_test_name = test_name
+#
+#    def invoke(self, context, event):
+#        self.execute ( context )
+#        return {'FINISHED'}
+#
+#    def execute(self, context):
+#        global active_frame_change_handler
+#        active_frame_change_handler = None
+#        SimRunnerExample ( context, method="JAVA", test_name=self.self_test_name )
+#        return { 'FINISHED' }
 
 
 
 ###########################################################################################################
-group_name = "Sim Runner Tests"
-test_name = "Simulation Runner Open GL Test"
-operator_name = "cellblender_test.sim_runner_opengl"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+#group_name = "Sim Runner Tests"
+#test_name = "Simulation Runner Open GL Test"
+#operator_name = "cellblender_test.sim_runner_opengl"
+#next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class SimRunnerOpenGLTestOp(bpy.types.Operator):
-    bl_idname = operator_name
-    bl_label = test_name
-    self_test_name = test_name
+#class SimRunnerOpenGLTestOp(bpy.types.Operator):
+#    bl_idname = operator_name
+#    bl_label = test_name
+#    self_test_name = test_name
 
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
+#    def invoke(self, context, event):
+#        self.execute ( context )
+#        return {'FINISHED'}
 
-    def execute(self, context):
-        SimRunnerExample ( context, method="OPENGL", test_name=self.self_test_name )
-        return { 'FINISHED' }
+#    def execute(self, context):
+#        SimRunnerExample ( context, method="OPENGL", test_name=self.self_test_name )
+#        return { 'FINISHED' }
 
 
 
@@ -2820,7 +2820,7 @@ class SingleMoleculeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
         
-        cb_model.compare_mdl_with_sha1 ( "057807fc054cdf8368e326b4a94bd9d84dd79fd7", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "e686b50419ad1a94388bb5e922ef6a9b92346260", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -2881,7 +2881,7 @@ class DoubleSphereTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "76be56dd5a1d9f66a7329674f3abefa80842b31d", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "5029857613a93bad467d7e91451713ec4a2b78d7", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -2946,7 +2946,7 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ce8ace9fa65577efdd4e536d97dacd1571dce8f2", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "85028326cb23454b1c5f9a2b3b8e7316d51ffbc3", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3013,7 +3013,7 @@ class ReactionTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=20.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "0f17842dff980f0df746556ebc0aa5b80ee16173", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "e4498510e8d8a2c804707dfc314786d6ce558122", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3090,7 +3090,7 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "293920c4819afc77818ab0c241e666d5460a7854", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "9e4bc202f9cfb65a0575b15695a51917e666bd00", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3225,7 +3225,7 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "10776f6209bfad7c410875cf288a4863f64de528", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "0e8e59531032418691f245f668df968aca0ac7b6", test_name=self.self_test_name )
         
         cb_model.refresh_molecules()
 
@@ -3339,7 +3339,7 @@ class ParSys200pCntTestOp(bpy.types.Operator):
         active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context, self.self_test_name )
-        cb_model = ParSysTest ( cb_model, first='1', num_pars=200, num_back=1, mdl_hash="7275cb9bcdb67b9486e0bd60ed3c28d8b11e17b2", test_name=self.self_test_name )
+        cb_model = ParSysTest ( cb_model, first='1', num_pars=200, num_back=1, mdl_hash="348f796badcbcaf05562d772ef498c263ea0ed10", test_name=self.self_test_name )
 
         return { 'FINISHED' }
 
@@ -3366,7 +3366,7 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
 
         cb_model = CellBlender_Model ( context, self.self_test_name )
         if cb_model.using_id_params():
-            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=100, num_back=3, mdl_hash="a0b221cb0b11289962617f91410268b734e790aa", test_name=self.self_test_name )
+            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=100, num_back=3, mdl_hash="1e8dca080ab8ab213f9f0d381d05bd9cadb3dfc7", test_name=self.self_test_name )
         else:
             cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=100, num_back=3, mdl_hash="1be16b43f98f8a61617eb8450601a5deafccd3f3", test_name=self.self_test_name )
 
@@ -3395,7 +3395,7 @@ class ParSystem1000p3eTestOp(bpy.types.Operator):
 
         cb_model = CellBlender_Model ( context, self.self_test_name )
         if cb_model.using_id_params():
-            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=1000, num_back=3, mdl_hash="cdf6f34dde382128f1e8c040dac826b29249a7c2", test_name=self.self_test_name )
+            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=1000, num_back=3, mdl_hash="959a55e1de527d2a3e24518bb19e27b97a07057c", test_name=self.self_test_name )
         else:
             cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=1000, num_back=3, mdl_hash="fe97effc69d90e15c5a39b72aebfbbd660d3f707", test_name=self.self_test_name )
 
@@ -3451,7 +3451,7 @@ class GlyphTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "b2ed324f215c780ccaebdca9b54768123b6b8f8b", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "2551b6fe95415e7053cd40c02fe61844ee034bcd", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3512,7 +3512,7 @@ class CubeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d122c6de268d920ec3ddce99ca883b2dd1d07911", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "1d006610fe4a01735e92e0a07e3faae722383a3f", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3581,7 +3581,7 @@ class CubeSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=6.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "9fac09c08f4e8d41cdb9d176920924693a627c7e", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "ec58f3b5fbff36014d9cbf20ce2166bc7d750460", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3652,7 +3652,7 @@ class SphereSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=7.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "67318562a0e0ef094061c7c2d02ab5ac59a01559", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "423801fc511d12515dcd25f6336feca082d013b7", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3733,7 +3733,7 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "2d0bdffa35a9a7629c2241b321feef70f8647e70", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "5a0eb3b118623ce7ba3cd8db13b14dd426e01ff3", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3871,7 +3871,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "3fe7af313c5f01b47ddbd4fa0ea476c8f444c61c", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "63c08fa5300d6744d701b9d6d15c59ce89dacfe5", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3971,7 +3971,7 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='10000', time_step='1e-6', wait_time=50.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "a3a11faa9af3b31f5b67e1e851f3b77a095efa1a", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "9413bb5f46ac9479bbbc71b2af0cf21afa6d1648", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4046,7 +4046,7 @@ class GobletTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d720d94e42f383b06fc8e5c538f81e36fda343c4", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "6bd75c3193a22497a8eb6eb794130e8db98b4dec", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4423,7 +4423,7 @@ class MDLGeoImport(bpy.types.Operator):
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "1d015b7f6923107faa855a11f3d6dcb213c1e8e3", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "ddc8c38d8d53bdc3cc4bfee5461684b5a2da2127", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4904,7 +4904,7 @@ class DynTaperedCubeTest(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "2d3cc932c87d640353d2ac67f304b579b5c01003", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "c3a9d9fbd7f064bbf60a36bb895fdd992625f7de", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5058,7 +5058,7 @@ for f in ico.faces:
 
         cb_model.run_only ( wait_time=30.0, seed=2 )
 
-        cb_model.compare_mdl_with_sha1 ( "ee6efeeb70691430e3c740de70957af9a0c3c967", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "98fca76aa30e8f801c182f9bc5b0d4ae617ede60", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5131,7 +5131,7 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "af086eaa3a2f282e7374a53d89613ee2eaffaada", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "b35a4dc33ba608930b208c1b0f5951ce800e9ec8", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5225,7 +5225,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1500', time_step=dt, wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "9e4ad1971c570bc61f3f93fb7cc1948d7b0f0cd3", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "61639ba5586eb57aa327f80cff3922d5bd08fc06", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5359,7 +5359,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="44e9ee94b7b8dbbe03e69f34f9498df802b3d9a3", test_name=self.self_test_name, wait_time=15.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5beae6fabdb57b3245403491edfc2c32ebcb1f00", test_name=self.self_test_name, wait_time=15.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -5387,7 +5387,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="a66cbd57429d22025a55abeb25408023332c4f83", test_name=self.self_test_name, wait_time=60.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4ed241042418f86e99291ad285c1a6cde9e57427", test_name=self.self_test_name, wait_time=60.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -5516,7 +5516,7 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d835cada890d696fdac92054f21bf337e1031a3b", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "169ab78d07b4583655f55da36807efd9417290fd", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5665,7 +5665,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.8 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "d95df92a80fee0e4b8f806d412fa281f1b2bde35", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "ecd38f44858e26219dcea028a2956fed20d94c24", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5770,7 +5770,7 @@ class SimpleSynapseTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "48caeefeb06d4573d0d4f5d7a9283e226399256d", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "e86e25e48d7d85fee416ee384d05cbc4773c9c56", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
