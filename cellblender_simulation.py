@@ -2267,6 +2267,21 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     required_free_slots = IntProperty(default=1, description="Minimum free slots for selecting hosts")
     active_comp_index = IntProperty(name="Active Computer Index", default=0)
 
+    show_run_once_options = BoolProperty ( name='Run Once Options', default=False )
+    enable_run_once_script = BoolProperty ( name='Enable Run Once Script', default=False )
+
+    internal_external_enum = [
+        ('internal', "Internal", ""),
+        ("external", "External",  "")]
+    internal_external = bpy.props.EnumProperty(
+        items=internal_external_enum, name="Internal/External",
+        default='internal',
+        description="Choose location of file (internal text or external file).")
+
+
+    dm_run_once_internal_fn = StringProperty ( name = "Internal File Name" )
+    dm_run_once_external_fn = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+
     export_requested = BoolProperty(name="Export Requested", default=True)
     run_requested = BoolProperty(name="Run Requested", default=True)
 
@@ -2542,7 +2557,46 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             print ( "Runner Plugs to save" )
             #runner_manager.plug_modules = runner_manager.get_modules()
 
+    def draw_layout_run_once_dm_script ( self, context, layout ):
 
+        scripting = context.scene.mcell.scripting
+        #check_scripting(self, context)
+        #update_available_scripts ( scripting )
+
+        box = layout.box()
+        row = box.row()
+        row.alignment = 'LEFT'
+        if self.show_run_once_options:
+            col = row.column()
+            col.prop(self, "show_run_once_options", icon='TRIA_DOWN', text="", emboss=False)
+        else:
+            col = row.column()
+            col.prop(self, "show_run_once_options", icon='TRIA_RIGHT', text="", emboss=False)
+
+        col = row.column()
+        col.prop ( self, "enable_run_once_script", text="" )
+        col = row.row()
+
+        if (self.internal_external == "internal"):
+
+            col.prop_search ( self, "dm_run_once_internal_fn",
+                              context.scene.mcell.scripting, "internal_python_scripts_list",
+                              text="Upon Export", icon='TEXT' )
+
+            col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+        if (self.internal_external == "external"):
+
+            col.prop (        self, "dm_run_once_external_fn",
+                              text="Upon Export" )
+            col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+        if self.show_run_once_options:
+          row = box.row()
+          row.prop ( self, "internal_external", text="" )
+
+        # row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+        pass
 
     def draw_layout_queue(self, context, layout):
         mcell = context.scene.mcell
@@ -2589,6 +2643,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             #    col = row.column()
             #    col.operator ( "mcell.initialize_scripting" )
 
+            self.draw_layout_run_once_dm_script ( context, layout )
 
             row = layout.row()
 
