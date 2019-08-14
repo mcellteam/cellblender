@@ -850,7 +850,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 for run in range (num_sweep_runs):
                     sweep_path = "output_data"
                     for sw_item in sweep_list:
-                        sweep_path += "/" + sw_item['par_name'] + "_index_" + str(sw_item['current_index'])
+                        sweep_path += os.sep + sw_item['par_name'] + "_index_" + str(sw_item['current_index'])
                     print ( "Sweep path = " + sweep_path )
                     # Set the data model parameters to the current parameter settings
                     for par in dm['parameter_system']['model_parameters']:
