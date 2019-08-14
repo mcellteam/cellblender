@@ -817,6 +817,28 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 cellblender.simulation_queue.start(mcell_processes)
                 cellblender.simulation_queue.notify = True
 
+                if run_sim.enable_run_once_script:
+                    # Execute a run once during export data model script before getting the data model
+                    script_name = None
+
+                    if run_sim.internal_external == "internal":
+                        script_name = run_sim.dm_run_once_internal_fn
+
+                        print ( "Executing internal script" )
+                        if not script_name in bpy.data.texts:
+                            print ( "Error: Script \"" + script_name + "\" is not an internal script name. Try refreshing the scripts list." )
+                        else:
+                            # This version just runs the script
+                            script_text = bpy.data.texts[script_name].as_string()
+                            print ( 80*"=" )
+                            print ( script_text )
+                            print ( 80*"=" )
+                            exec ( script_text, locals() )
+
+                    elif run_sim.internal_external == "external":
+                        script_name = run_sim.dm_run_once_external_fn
+                        print ( "Executing external script \"" + str(script_name) + "\" ... not implemented yet!!" )
+
                 dm = None
                 if run_sim.export_requested:
                     # When exporting, the geometry data will be needed to write the MDL
