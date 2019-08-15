@@ -1,0 +1,7 @@
+/_mdlmesh_parser.so
+/mdllex.flex.c
+/mdlmesh_parser.py
+/mdlmesh_parser_wrap.c
+/mdlparse.bison.c
+/mdlparse.bison.h
+/mdlparse.bison.output

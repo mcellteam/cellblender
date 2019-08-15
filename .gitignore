@@ -21,3 +21,5 @@ bng/net.py
 cellblender.zip
 *.pyc
 *.swp
+/.project
+/.pydevproject

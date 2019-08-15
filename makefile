@@ -12,7 +12,7 @@ UNAME_S := $(shell uname -s)
 # For example, for a link pointing into a Linux bundle: ln -s ~/src/blender/Blender-2.78c-CellBlender-linux/2.78/scripts/addons/ ~/my_cellblender_link
 # For example, for a link pointing into a MacOSX bundle: ln -s /Applications/Blender-2.78c-CellBlender/blender.app/Contents/Resources/2.78/scripts/addons/ ~/my_cellblender_link
 
-INSTALL_DIR = ~/my_cellblender_link/
+INSTALL_DIR ?= ~/my_cellblender_link/
 
 # Linux:
 #INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
@@ -100,6 +100,6 @@ install: cellblender.zip
 	  unzip -o cellblender.zip -d $(INSTALL_DIR); \
 	fi
 	@echo ===========================================================
-	@cat $(INSTALL_DIR)cellblender/cellblender_id.py
+	@cat $(INSTALL_DIR)/cellblender/cellblender_id.py
 	@echo ===========================================================
 
