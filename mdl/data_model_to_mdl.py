@@ -871,6 +871,9 @@ def write_mdlr ( dm, file_name, scene_name='Scene' ):
     print ( "Calling Popen" )
     p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
     p.wait()
+    if p.returncode != 0:
+        print("Fatal error: mdlr2mdl.py failed with exit code " + str(p.returncode) + ".")
+        sys.exit(1)    
     print ( "\n\n||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" )
     print ( "\n\nProcess Finished from write_mdlr with:\n" + str(p.stdout.read().decode('utf-8')) + "\n\n" )
     print ( "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n\n" )
