@@ -862,6 +862,9 @@ def write_mdlr ( dm, file_name, scene_name='Scene' ):
         # .../cellblender/extensions/mcell/mdlr2mdl.py
         mdlr_cmd = os.path.join( os.path.dirname(os.path.dirname(mdlr_cmd)), '..', '..', '..', 'build_mcell', 'mdlr2mdl.py') 
     
+    if cellblender_python_path == 'python':
+    	cellblender_python_path = 'python3'  # we need to use python 3 in case we are not using any specific version
+    
     mdlr_args = [ cellblender_python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
     wd = output_data_dir
     print ( "\n\n\n" )
