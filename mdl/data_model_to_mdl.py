@@ -869,6 +869,7 @@ def write_mdlr ( dm, file_name, scene_name='Scene' ):
     print ( "mdlr_args = " + str(mdlr_args) )
     print ( "wd = " + str(wd) )
     print ( "Calling Popen" )
+    sys.stderr.write( "Running: " + str(mdlr_args))
     p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
     p.wait()
     if p.returncode != 0:
