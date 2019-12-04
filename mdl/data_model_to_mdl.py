@@ -500,32 +500,6 @@ try:
 
     def write_viz_out_mdlr3 ( vizout, mols, init, f ):
 
-<<<<<<< HEAD
-        ascii_mode = False
-        if init != None:
-          if 'export_all_ascii' in init:
-            ascii_mode = init['export_all_ascii']
-        wrote_mdl = True
-        f.write ( "VIZ_OUTPUT\n" )
-        f.write ( "{\n" )
-        if ascii_mode:
-          f.write ( "  MODE = ASCII\n" )
-        else:
-          f.write ( "  MODE = CELLBLENDER\n" )
-=======
-      ascii_mode = False
-      if init != None:
-        if 'export_all_ascii' in init:
-          ascii_mode = init['export_all_ascii']
-      wrote_mdl = True
-      f.write ( "VIZ_OUTPUT\n" )
-      f.write ( "{\n" )
-      if ascii_mode:
-        f.write ( "  MODE = ASCII\n" )
-      else:
-        f.write ( "  MODE = CELLBLENDER\n" )
->>>>>>> 8a022bd743a32f67d3bafd23717f776e288d9b4d
-
         mol_list_string = ""
 
         if vizout['export_all']:
