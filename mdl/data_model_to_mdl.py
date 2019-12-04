@@ -498,7 +498,19 @@ try:
               f.write ( "}\n")
               f.write ( "\n" );
 
-    def write_viz_out_mdlr3 ( vizout, mols, f ):
+    def write_viz_out_mdlr3 ( vizout, mols, init, f ):
+
+        ascii_mode = False
+        if init != None:
+          if 'export_all_ascii' in init:
+            ascii_mode = init['export_all_ascii']
+        wrote_mdl = True
+        f.write ( "VIZ_OUTPUT\n" )
+        f.write ( "{\n" )
+        if ascii_mode:
+          f.write ( "  MODE = ASCII\n" )
+        else:
+          f.write ( "  MODE = CELLBLENDER\n" )
 
         mol_list_string = ""
 
@@ -520,7 +532,10 @@ try:
         if len(mol_list_string) > 0:
           f.write ( "VIZ_OUTPUT\n" )
           f.write ( "{\n" )
-          f.write ( "  MODE = CELLBLENDER\n" )
+          if ascii_mode:
+            f.write ( "  MODE = ASCII\n" )
+          else:
+            f.write ( "  MODE = CELLBLENDER\n" )
           #TODO Note that the use of "Scene" here for file output is a temporary measure!!!!
           f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/Scene\"\n" )
           f.write ( "  MOLECULES\n" )
