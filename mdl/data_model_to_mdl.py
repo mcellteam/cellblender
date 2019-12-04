@@ -836,7 +836,7 @@ try:
 
         f = open ( os.path.join(output_data_dir,"Scene.viz_output.mdl"), 'w' )
         f.write ( 'sprintf(seed,"%05g",SEED)\n\n' )
-        write_viz_out_mdlr3(data_model['viz_output'], data_model['define_molecules'], f)
+        write_viz_out_mdlr3(data_model['viz_output'], data_model['define_molecules'], data_model['initialization'], f)
         f.close()
 
         fseed = data_model['simulation_control']['start_seed']
@@ -1209,7 +1209,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         out_file = f
         if not (modular_path is None):
           out_file = open ( os.path.join(modular_path,scene_name + '.viz_output.mdl'), 'w' )
-        actually_wrote = write_viz_out ( scene_name, vizout, mols, out_file )
+        actually_wrote = write_viz_out ( scene_name, vizout, mols, mcell['initialization'], out_file )
         if not (out_file == f):
           out_file.close()
           if actually_wrote:
@@ -2148,7 +2148,7 @@ def write_release_patterns ( pats, f ):
     return wrote_mdl
 
 
-def write_viz_out ( scene_name, vizout, mols, f ):
+def write_viz_out ( scene_name, vizout, mols, init, f ):
 
     wrote_mdl = False
 
@@ -2170,12 +2170,18 @@ def write_viz_out ( scene_name, vizout, mols, f ):
 
     # Write a visualization block only if needed
     if len(mol_list_string) > 0:
+      ascii_mode = False
+      if init != None:
+        if 'export_all_ascii' in init:
+          ascii_mode = init['export_all_ascii']
       wrote_mdl = True
       f.write ( "VIZ_OUTPUT\n" )
       f.write ( "{\n" )
-      f.write ( "  MODE = CELLBLENDER\n" )
-      #TODO Note that the use of "Scene" here for file output is a temporary measure!!!!
-      f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/" + scene_name + "\"\n" )
+      if ascii_mode:
+        f.write ( "  MODE = ASCII\n" )
+      else:
+        f.write ( "  MODE = CELLBLENDER\n" )
+      f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/" + scene_name + "\"\n" )  # Should be using "os.sep"
       f.write ( "  MOLECULES\n" )
       f.write ( "  {\n" )
       f.write ( "    NAME_LIST {%s}\n" % (mol_list_string) )
