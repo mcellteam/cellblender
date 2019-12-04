@@ -70,7 +70,7 @@ global_mol_file_list = []
 
 
 def create_color_list():
-    """ Create a list of colors to be assigned to the glyphs. """ 
+    """ Create a list of colors to be assigned to the glyphs. """
 
     mcell = bpy.context.scene.mcell
     mcell.mol_viz.color_index = 0
@@ -107,8 +107,8 @@ def assemble_mat(obj1, obj2):
 
   # Apply the assembly tform matrix to obj2
   obj2.matrix_world = obj2.matrix_world*assem
-  
-  
+
+
 
 
 @persistent
@@ -364,7 +364,7 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
         global global_mol_file_list
 
         mcell = context.scene.mcell
-        
+
         if (os.path.isdir(self.filepath)):
             mol_file_dir = self.filepath
         else:
@@ -890,17 +890,17 @@ def mol_viz_file_read(mcell, filepath):
                     mol_pos = array.array("f")     # Create a floating point array to hold the positions
                     mol_orient = array.array("f")  # Create a floating point array to hold the orientations
                     mol_pos.fromfile(mol_file, ni[0])  # Read the positions which should be 3 floats per molecule
-#                    tot += ni[0]/3  
+#                    tot += ni[0]/3
                     if mt[0] == 1:                                        # If mt==1, it's a surface molecule
                         mol_orient.fromfile(mol_file, ni[0])              # Read the surface molecule orientations
-                    mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]     # Create a dictionary entry for this molecule containing a list of relevant data                    
+                    mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]     # Create a dictionary entry for this molecule containing a list of relevant data
                     if len(mcell.mol_viz.mol_viz_list) > 0:
                       for i in range(len(mcell.mol_viz.mol_viz_list)):
                         if mcell.mol_viz.mol_viz_list[i].name[4:] == mol_name:
-                          dup_check = True      
+                          dup_check = True
                     if dup_check == False:
                       new_item = mcell.mol_viz.mol_viz_list.add()           # Create a new collection item to hold the name for this molecule
-                      new_item.name = mol_name                              # Assign the name to the new item                              
+                      new_item.name = mol_name                              # Assign the name to the new item
 
                 except EOFError:
 #                    print("Molecules read: %d" % (int(tot)))
@@ -951,7 +951,7 @@ def mol_viz_file_read(mcell, filepath):
             bpy.ops.object.add(location=[0, 0, 0])      # Create an "Empty" object in the Blender scene
             ### Note, the following line seems to cause an exception in some contexts: 'Context' object has no attribute 'selected_objects'
             mols_obj = bpy.context.selected_objects[0]  # The newly added object will be selected
-            mols_obj.name = "molecules"                 # Name this empty object "molecules" 
+            mols_obj.name = "molecules"                 # Name this empty object "molecules"
             mols_obj.hide_select = True
             mols_obj.hide = True
 
@@ -979,7 +979,7 @@ def mol_viz_file_read(mcell, filepath):
                         -1.0, 1.0) for i in range(len(mol_pos))])
 
                 # Look up the glyph, color, size, and other attributes from the molecules list
-                
+
                 #### If the molecule found in the viz file doesn't exist in the molecules list, create it as the interface for changing color, etc.
 
                 mname = mol_name[4:]   # Trim off the "mol_" portion to use as an index into the molecules list
@@ -990,7 +990,7 @@ def mol_viz_file_read(mcell, filepath):
                     # print ( "Mol " + mname + " has color " + str(mol.color) )
 
                 # Look-up mesh shape (glyph) template and create if needed
-                
+
                 # This may end up calling a member function of the molecule class to create a new default molecule (including glyph)
                 if mol != None:
                     # print ( "Molecule  glyph: " + str (mol.glyph) )
@@ -1076,7 +1076,7 @@ def mol_viz_file_read(mcell, filepath):
                 if (not (mol_obj is None)) and (not (mol_shape_obj is None)):
                     mol_obj.layers = mol_layers[:]
                     mol_shape_obj.layers = mol_layers[:]
-            
+
                 # Restore the visibility state
                 mol_obj.hide = hide
 
@@ -1289,7 +1289,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         name="Enable Molecule Vizualization",
         description="Disable for faster animation preview",
         default=True, update=mol_viz_update)
-    ascii_enable = BoolProperty(name="Change Viz Data to Ascii",default= False)
+    ascii_enable = BoolProperty(name="Generate ASCII Viz Data",default= False)
     molecule_read_in = BoolProperty(name = "Define molecules from Viz Data.",default= False)
     color_list = CollectionProperty(
         type=MCellFloatVectorProperty, name="Molecule Color List")
@@ -1403,11 +1403,11 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         self.remove_properties ( context )
 
         # Build the new properties
-        
+
         for s in dm["seed_list"]:
             new_item = self.mol_viz_seed_list.add()
             new_item.name = s
-            
+
         self.active_mol_viz_seed_index = dm['active_seed_index']
 
         # Don't restore the actual mol_file_dir, but append the blend file path to the relative file_dir.
@@ -1430,7 +1430,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         for s in dm["viz_list"]:
             new_item = self.mol_viz_list.add()
             new_item.name = s
-            
+
         self.render_and_save = dm['render_and_save']
         self.mol_viz_enable = dm['viz_enable']
 
@@ -1446,7 +1446,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         for c in dm["color_list"]:
             new_item = self.color_list.add()
             new_item.vec = c
-            
+
         if 'color_index' in dm:
             self.color_index = dm['color_index']
         else:
@@ -1583,7 +1583,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
             if self.manual_select_viz_dir == True:
               if len(mcell.mol_viz.mol_viz_list) > 0:
-                row.prop(self,"molecule_read_in", icon = 'IMPORT')                
+                row.prop(self,"molecule_read_in", icon = 'IMPORT')
 
             row = layout.row()
             row.prop(self,"viz_code", text="")
@@ -1691,7 +1691,7 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellVizOutputPropertyGroup data model to current version." )
-        
+
         self.all_iterations = dm["all_iterations"]
         if "start" in dm: self.start.set_expr ( dm["start"] )
         if "end"   in dm: self.end.set_expr   ( dm["end"] )

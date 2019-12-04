@@ -368,7 +368,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
 
     # Export all ascii
     export_all_ascii = BoolProperty(
-        name="Export ASCII Mol Viz Also",
+        name="Generate ASCII Mol Viz Also",
         description="Positions of all molecules are also exported in ASCII format",
         default=False)
 
@@ -608,7 +608,7 @@ surfaces or only for those in the volume. OFF is the default."""
 
                 helptext = """In addititon to the binary visualization data
 read by MCell, export ASCII formatted data. The default is OFF."""
-                ps.draw_prop_with_help ( box, "Export ASCII Mol Viz Also", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
+                ps.draw_prop_with_help ( box, "Generate ASCII Mol Viz Also", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
 
                 helptext = "Command Line Parameters - \n" \
                            "These options are passed directly to the program.\n" \
