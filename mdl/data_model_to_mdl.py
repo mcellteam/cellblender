@@ -379,530 +379,524 @@ def write_export_scripting ( dm, before_after, section, mdl_file ):
 ############################################  M  D  L  R    Code  ###################################################
 #####################################################################################################################
 
-
-import subprocess
-import sys
-import shutil
-
 try:
+
+    import subprocess
+    import sys
+    import shutil
     import cellblender
-    cellblender_python_path = cellblender.python_path
-except:
-    cellblender_python_path = 'python3' # just use the system python
 
-project_files_dir = ""
-start_seed = 1
-end_seed = 1
+    project_files_dir = ""
+    start_seed = 1
+    end_seed = 1
 
 
-def postprocess():
-  global parameter_dictionary
-  print ( "Postprocessing MCellR Reaction Output..." )
+    def postprocess():
+      global parameter_dictionary
+      print ( "Postprocessing MCellR Reaction Output..." )
 
-  mcellr_react_dir = os.path.join(project_files_dir, "output_data")
+      mcellr_react_dir = os.path.join(project_files_dir, "output_data")
 
-  react_dir = os.path.join(mcellr_react_dir, "react_data")
+      react_dir = os.path.join(mcellr_react_dir, "react_data")
 
-  if os.path.exists(react_dir):
-      shutil.rmtree(react_dir,ignore_errors=True)
-  if not os.path.exists(react_dir):
-      os.makedirs(react_dir)
+      if os.path.exists(react_dir):
+          shutil.rmtree(react_dir,ignore_errors=True)
+      if not os.path.exists(react_dir):
+          os.makedirs(react_dir)
 
-  for run_seed in range(start_seed, end_seed+1):
-    print ( "  Postprocessing for seed " + str(run_seed) )
+      for run_seed in range(start_seed, end_seed+1):
+        print ( "  Postprocessing for seed " + str(run_seed) )
 
-    seed_dir = "seed_%05d" % run_seed
+        seed_dir = "seed_%05d" % run_seed
 
-    react_seed_dir = os.path.join(react_dir, seed_dir)
+        react_seed_dir = os.path.join(react_dir, seed_dir)
 
-    if os.path.exists(react_seed_dir):
-        shutil.rmtree(react_seed_dir,ignore_errors=True)
-    if not os.path.exists(react_seed_dir):
-        os.makedirs(react_seed_dir)
-
-
-    # Read the MCellR data file and split into a list of rows where each row is a list of columns
-    mcellr_react_file = open ( os.path.join ( mcellr_react_dir, 'Scene.mdlr_total.xml.gdat' ) )
-    all_react_data = mcellr_react_file.read()
-    react_data_all = [ [t.strip() for t in s.split(',') if len(t.strip()) > 0] for s in all_react_data.split('\n') if len(s) > 0 ]
-    react_data_header = react_data_all[0]
-    react_data_rows = react_data_all[1:]
-
-    for col in range(1,len(react_data_header)):
-      out_file_name = os.path.join ( react_seed_dir, react_data_header[col] + ".dat" )
-      print ( "    Writing data to " + out_file_name )
-      f = open(out_file_name,"w")
-      for row in react_data_rows:
-#        print ( "  " + row[0] + " " + row[col] )
-        f.write ( row[0] + " " + row[col] + '\n' )
-      f.close()
-
-  print ( "Done Postprocessing MCellR Reaction Output" )
+        if os.path.exists(react_seed_dir):
+            shutil.rmtree(react_seed_dir,ignore_errors=True)
+        if not os.path.exists(react_seed_dir):
+            os.makedirs(react_seed_dir)
 
 
-def makedirs_exist_ok ( path_to_build, exist_ok=False ):
-    # Needed for old python which doesn't have the exist_ok option!!!
-    print ( " Make dirs for " + path_to_build )
-    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
-    full = ""
-    if len(parts[0]) == 0:
-      # This happens with an absolute PosixPath
-      full = os.sep
-    else:
-      # This may be a Windows drive or the start of a non-absolute path
-      if ":" in parts[0]:
-        # Assume a Windows drive
-        full = parts[0] + os.sep
-      else:
-        # This is a non-absolute path which will be handled naturally with full=""
-        pass
-    for p in parts:
-      full = os.path.join(full,p)
-      if not os.path.exists(full):
-        os.makedirs ( full, exist_ok=True )
+        # Read the MCellR data file and split into a list of rows where each row is a list of columns
+        mcellr_react_file = open ( os.path.join ( mcellr_react_dir, 'Scene.mdlr_total.xml.gdat' ) )
+        all_react_data = mcellr_react_file.read()
+        react_data_all = [ [t.strip() for t in s.split(',') if len(t.strip()) > 0] for s in all_react_data.split('\n') if len(s) > 0 ]
+        react_data_header = react_data_all[0]
+        react_data_rows = react_data_all[1:]
+
+        for col in range(1,len(react_data_header)):
+          out_file_name = os.path.join ( react_seed_dir, react_data_header[col] + ".dat" )
+          print ( "    Writing data to " + out_file_name )
+          f = open(out_file_name,"w")
+          for row in react_data_rows:
+    #        print ( "  " + row[0] + " " + row[col] )
+            f.write ( row[0] + " " + row[col] + '\n' )
+          f.close()
+
+      print ( "Done Postprocessing MCellR Reaction Output" )
 
 
-def write_geometry_mdlr3 ( geom, f ):
-    if 'object_list' in geom:
-      glist = geom['object_list']
-      if len(glist) > 0:
-        for g in glist:
-          loc_x = 0.0
-          loc_y = 0.0
-          loc_z = 0.0
-          if 'location' in g:
-            loc_x = g['location'][0]
-            loc_y = g['location'][1]
-            loc_z = g['location'][2]
-          f.write ( "%s POLYGON_LIST\n" % g['name'] )
+    def makedirs_exist_ok ( path_to_build, exist_ok=False ):
+        # Needed for old python which doesn't have the exist_ok option!!!
+        print ( " Make dirs for " + path_to_build )
+        parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
+        full = ""
+        if len(parts[0]) == 0:
+          # This happens with an absolute PosixPath
+          full = os.sep
+        else:
+          # This may be a Windows drive or the start of a non-absolute path
+          if ":" in parts[0]:
+            # Assume a Windows drive
+            full = parts[0] + os.sep
+          else:
+            # This is a non-absolute path which will be handled naturally with full=""
+            pass
+        for p in parts:
+          full = os.path.join(full,p)
+          if not os.path.exists(full):
+            os.makedirs ( full, exist_ok=True )
+
+
+    def write_geometry_mdlr3 ( geom, f ):
+        if 'object_list' in geom:
+          glist = geom['object_list']
+          if len(glist) > 0:
+            for g in glist:
+              loc_x = 0.0
+              loc_y = 0.0
+              loc_z = 0.0
+              if 'location' in g:
+                loc_x = g['location'][0]
+                loc_y = g['location'][1]
+                loc_z = g['location'][2]
+              f.write ( "%s POLYGON_LIST\n" % g['name'] )
+              f.write ( "{\n" )
+              if 'vertex_list' in g:
+                f.write ( "  VERTEX_LIST\n" )
+                f.write ( "  {\n" )
+                for v in g['vertex_list']:
+                  f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
+                f.write ( "  }\n" )
+              if 'element_connections' in g:
+                f.write ( "  ELEMENT_CONNECTIONS\n" )
+                f.write ( "  {\n" )
+                for c in g['element_connections']:
+                  f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
+                f.write ( "  }\n" )
+              if 'define_surface_regions' in g:
+                f.write ( "  DEFINE_SURFACE_REGIONS\n" )
+                f.write ( "  {\n" )
+                for r in g['define_surface_regions']:
+                  f.write ( "    %s\n" % r['name'] )
+                  f.write ( "    {\n" )
+                  if 'include_elements' in r:
+                    int_regs = [ int(r) for r in r['include_elements'] ]
+                    f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
+                  f.write ( "    }\n" )
+                f.write ( "  }\n" )
+              f.write ( "}\n")
+              f.write ( "\n" );
+
+    def write_viz_out_mdlr3 ( vizout, mols, init, f ):
+
+        mol_list_string = ""
+
+        if vizout['export_all']:
+          # Don't check the molecules just output all of them
+          mol_list_string = "ALL_MOLECULES"
+        elif (mols != None):
+          # There might be some (or all) molecules with viz output enabled ... need to check
+          if 'molecule_list' in mols:
+            mlist = mols['molecule_list']
+            if len(mlist) > 0:
+              for m in mlist:
+                if 'export_viz' in m:
+                  if m['export_viz']:
+                    mol_list_string += " " + m['mol_name']
+          mol_list_string = mol_list_string.strip()
+
+        # Write a visualization block only if needed
+        if len(mol_list_string) > 0:
+          ascii_mode = False
+          if init != None:
+            if 'export_all_ascii' in init:
+              ascii_mode = init['export_all_ascii']
+          f.write ( "VIZ_OUTPUT\n" )
           f.write ( "{\n" )
-          if 'vertex_list' in g:
-            f.write ( "  VERTEX_LIST\n" )
-            f.write ( "  {\n" )
-            for v in g['vertex_list']:
-              f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
-            f.write ( "  }\n" )
-          if 'element_connections' in g:
-            f.write ( "  ELEMENT_CONNECTIONS\n" )
-            f.write ( "  {\n" )
-            for c in g['element_connections']:
-              f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
-            f.write ( "  }\n" )
-          if 'define_surface_regions' in g:
-            f.write ( "  DEFINE_SURFACE_REGIONS\n" )
-            f.write ( "  {\n" )
-            for r in g['define_surface_regions']:
-              f.write ( "    %s\n" % r['name'] )
-              f.write ( "    {\n" )
-              if 'include_elements' in r:
-                int_regs = [ int(r) for r in r['include_elements'] ]
-                f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
-              f.write ( "    }\n" )
-            f.write ( "  }\n" )
-          f.write ( "}\n")
+          if ascii_mode:
+            f.write ( "  MODE = ASCII\n" )
+          else:
+            f.write ( "  MODE = CELLBLENDER\n" )
+          #TODO Note that the use of "Scene" here for file output is a temporary measure!!!!
+          f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/Scene\"\n" )
+          f.write ( "  MOLECULES\n" )
+          f.write ( "  {\n" )
+          f.write ( "    NAME_LIST {%s}\n" % (mol_list_string) )
+          if vizout['all_iterations']:
+            f.write ( "    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n" )
+          else:
+            f.write ( "    ITERATION_NUMBERS {ALL_DATA @ [[%s TO %s STEP %s]]}\n" % (vizout['start'], vizout['end'], vizout['step']) )
+          f.write ( "  }\n" )
+          f.write ( "}\n" )
           f.write ( "\n" );
 
-def write_viz_out_mdlr3 ( vizout, mols, f ):
+    def write_mdlr ( dm, file_name, scene_name='Scene' ):
+        # The file_name parameter will be something like:
+        #   <project>_files/mcell/output_data/Scene.main.mdl"
+        #   <project>_files/mcell/output_data/Par_x_index_n/Scene.main.mdl
+        #   <project>_files/mcell/output_data/Par_x_index_n/Par_y_index_n/Scene.main.mdl
+        print ( "write_mdlr called with file_name = \"" + str(file_name) + "\"" )
+        output_detail = 20
+        data_model = dm['mcell']
+        print ( "DM: " + str(data_model.keys()) )
+        # This function does essentially what the sim_engines/mcell3r/__init__.py file did
+        # This function does not add any of the other functionality of write_mdl which called it
+        # This function should eventually be removed if the writing of MDLR can be integrated with write_mdl
+        project_dir = os.path.dirname(file_name)
+        print ( "project_dir = " + str(project_dir) )
 
-    mol_list_string = ""
+        final_shared_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),"extensions")
+        mc_path = os.path.join ( final_shared_path, "mcell" )
+        print ( "final_shared_path = " + str(final_shared_path) )
 
-    if vizout['export_all']:
-      # Don't check the molecules just output all of them
-      mol_list_string = "ALL_MOLECULES"
-    elif (mols != None):
-      # There might be some (or all) molecules with viz output enabled ... need to check
-      if 'molecule_list' in mols:
-        mlist = mols['molecule_list']
-        if len(mlist) > 0:
-          for m in mlist:
-            if 'export_viz' in m:
-              if m['export_viz']:
-                mol_list_string += " " + m['mol_name']
-      mol_list_string = mol_list_string.strip()
+        final_bionetgen_path = os.path.join(final_shared_path,"bng2","BNG2.pl")
+        print ( "final_bionetgen_path = " + str(final_bionetgen_path) )
 
-    # Write a visualization block only if needed
-    if len(mol_list_string) > 0:
-      f.write ( "VIZ_OUTPUT\n" )
-      f.write ( "{\n" )
-      f.write ( "  MODE = CELLBLENDER\n" )
-      #TODO Note that the use of "Scene" here for file output is a temporary measure!!!!
-      f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/Scene\"\n" )
-      f.write ( "  MOLECULES\n" )
-      f.write ( "  {\n" )
-      f.write ( "    NAME_LIST {%s}\n" % (mol_list_string) )
-      if vizout['all_iterations']:
-        f.write ( "    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n" )
-      else:
-        f.write ( "    ITERATION_NUMBERS {ALL_DATA @ [[%s TO %s STEP %s]]}\n" % (vizout['start'], vizout['end'], vizout['step']) )
-      f.write ( "  }\n" )
-      f.write ( "}\n" )
-      f.write ( "\n" );
+        final_lib_path = os.path.join(final_shared_path,"lib") + os.path.sep
+        print ( "final_lib_path = " + str(final_lib_path) )
 
-def write_mdlr ( dm, file_name, scene_name='Scene' ):
-    # The file_name parameter will be something like:
-    #   <project>_files/mcell/output_data/Scene.main.mdl"
-    #   <project>_files/mcell/output_data/Par_x_index_n/Scene.main.mdl
-    #   <project>_files/mcell/output_data/Par_x_index_n/Par_y_index_n/Scene.main.mdl
-    print ( "write_mdlr called with file_name = \"" + str(file_name) + "\"" )
-    output_detail = 20
-    data_model = dm['mcell']
-    print ( "DM: " + str(data_model.keys()) )
-    # This function does essentially what the sim_engines/mcell3r/__init__.py file did
-    # This function does not add any of the other functionality of write_mdl which called it
-    # This function should eventually be removed if the writing of MDLR can be integrated with write_mdl
-    dirname = os.path.dirname(file_name)
-    if dirname:
-        project_dir = dirname
-    else:
-        project_dir = os.getcwd()
-    print ( "project_dir = " + str(project_dir) )
+        final_mcell_path = os.path.join(final_shared_path,"mcell","mcell")
+        print ( "final_mcell_path = " + str(final_mcell_path) )
 
-    final_shared_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),"extensions")
-    mc_path = os.path.join ( final_shared_path, "mcell" )
-    print ( "final_shared_path = " + str(final_shared_path) )
+        output_data_dir = project_dir
+        makedirs_exist_ok ( output_data_dir, exist_ok=True )
 
-    final_bionetgen_path = os.path.join(final_shared_path,"bng2","BNG2.pl")
-    print ( "final_bionetgen_path = " + str(final_bionetgen_path) )
+        react_data_dir = os.path.join(output_data_dir, "react_data")
+        if os.path.exists(react_data_dir):
+            shutil.rmtree(react_data_dir,ignore_errors=True)
+        if not os.path.exists(react_data_dir):
+            os.makedirs(react_data_dir)
 
-    final_lib_path = os.path.join(final_shared_path,"lib") + os.path.sep
-    print ( "final_lib_path = " + str(final_lib_path) )
+        viz_data_dir = os.path.join(output_data_dir, "viz_data")
+        if os.path.exists(viz_data_dir):
+            shutil.rmtree(viz_data_dir,ignore_errors=True)
+        if not os.path.exists(viz_data_dir):
+            os.makedirs(viz_data_dir)
 
-    final_mcell_path = os.path.join(final_shared_path,"mcell","mcell")
-    print ( "final_mcell_path = " + str(final_mcell_path) )
+        time_step = '1e-6'  # This is needed as a default for plotting
 
-    output_data_dir = project_dir
-    makedirs_exist_ok ( output_data_dir, exist_ok=True )
+        f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
 
-    react_data_dir = os.path.join(output_data_dir, "react_data")
-    if os.path.exists(react_data_dir):
-        shutil.rmtree(react_data_dir,ignore_errors=True)
-    if not os.path.exists(react_data_dir):
-        os.makedirs(react_data_dir)
+        if 'parameter_system' in data_model:
+          # Write the parameter system
+          write_parameter_system ( data_model['parameter_system'], f )
 
-    viz_data_dir = os.path.join(output_data_dir, "viz_data")
-    if os.path.exists(viz_data_dir):
-        shutil.rmtree(viz_data_dir,ignore_errors=True)
-    if not os.path.exists(viz_data_dir):
-        os.makedirs(viz_data_dir)
+        if 'initialization' in data_model:
+          # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
+          # write_initialization(data_model['initialization'], f)
+          # Write specific parts instead:
+          write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
+          write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
+          write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
 
-    time_step = '1e-6'  # This is needed as a default for plotting
+          time_step = data_model['initialization']['time_step']
 
-    f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
-
-    if 'parameter_system' in data_model:
-      # Write the parameter system
-      write_parameter_system ( data_model['parameter_system'], f )
-
-    if 'initialization' in data_model:
-      # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
-      # write_initialization(data_model['initialization'], f)
-      # Write specific parts instead:
-      write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
-      write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
-      write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
-
-      time_step = data_model['initialization']['time_step']
-
-    f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n' )
+        f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n' )
 
 
-    # Note that reflective surface classes may need to be added as defaults for MCell-R to run
-    # If so, it might be good to automate this rather than explicitly requiring it in CellBlender's model.
+        # Note that reflective surface classes may need to be added as defaults for MCell-R to run
+        # If so, it might be good to automate this rather than explicitly requiring it in CellBlender's model.
 
-    if 'define_surface_classes' in data_model:
-      write_surface_classes(data_model['define_surface_classes'], f)
+        if 'define_surface_classes' in data_model:
+          write_surface_classes(data_model['define_surface_classes'], f)
 
-    if 'modify_surface_regions' in data_model:
-      write_modify_surf_regions ( data_model['modify_surface_regions'], f )
+        if 'modify_surface_regions' in data_model:
+          write_modify_surf_regions ( data_model['modify_surface_regions'], f )
 
-    if 'define_molecules' in data_model:
-      mols = data_model['define_molecules']
-      if 'molecule_list' in mols:
-        mlist = mols['molecule_list']
-        if len(mlist) > 0:
-          f.write ( "#DEFINE_MOLECULES\n" )
-          f.write ( "{\n" )
-          for m in mlist:
-            f.write ( "  %s" % m['mol_name'] )
-            if "bngl_component_list" in m:
-              # This code had previously written out ALL components since there were no "angle reference key" components
-              # However, there are now "key" components that are not yet recognized as such by subsequent code
-              # For now, create a substitute list named "no_key_m" to use for producing this output
-              # To fix this later, change "no_key_m" back to "m" and write the keys in proper syntax
-              no_key_m = {}
-              no_key_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if c['is_key'] == False ]
-              f.write( "(" )
-              num_components = len(no_key_m['bngl_component_list'])
-              if num_components > 0:
-                for ci in range(num_components):
-                  c = no_key_m['bngl_component_list'][ci]
-                  f.write( c['cname'] )
-                  for state in c['cstates']:
-                    f.write ( "~" + state )
-                  if 'spatial_structure' in m:
-                    if m['spatial_structure'] != "None":
-                      # This molecule has spatial structure, so include it after the states
-                      print ( " Writing out spatial structure for mol " + m['mol_name'] + ", component " + c['cname'] )
-                      f.write ( "{loc=[" + c['loc_x'] + "," + c['loc_y'] + "," + c['loc_z'] + "]" )
-                      if (m['spatial_structure']=="XYZVA") or (c['rot_index'] < 0):
-                        # This component doesn't use a rotation key at all. Assume that it has valid "rot_xyz" fields
-                        f.write ( ",rot=[" + c['rot_x'] + "," + c['rot_y'] + "," + c['rot_z'] + "," + c['rot_ang'] + "]}" )
-                      else:
-                        # This component uses a rotation key index, so pull the rotation axis from the key component's **LOCATION**
-                        ki = c['rot_index']   # This index (ki) is in the ORIGINAL "m" and NOT the "no_key_m" created without keys
-                        k = m['bngl_component_list'][ki] # Use the ki to fetch the original key component
-                        # When writing, the rotation values (rot_xyz) for the component are the LOCATION values of the key (loc_xyz)
-                        # However, the rotation angle is from the component itself (and not from the key)
-                        f.write ( ",rot=[" + k['loc_x'] + "," + k['loc_y'] + "," + k['loc_z'] + "," + c['rot_ang'] + "]}" )
-                  if ci < num_components-1:
-                    f.write ( "," )
-              f.write( ")" )
-            f.write ( "\n" )
-            f.write ( "  {\n" )
-            if m['mol_type'] == '2D':
-              f.write ( "    DIFFUSION_CONSTANT_2D = %s\n" % m['diffusion_constant'] )
-            else:
-              f.write ( "    DIFFUSION_CONSTANT_3D = %s\n" % m['diffusion_constant'] )
-            if 'custom_time_step' in m:
-              if len(m['custom_time_step']) > 0:
-                f.write ( "    CUSTOM_TIME_STEP = %s\n" % m['custom_time_step'] )
-            if 'custom_space_step' in m:
-              if len(m['custom_space_step']) > 0:
-                f.write ( "    CUSTOM_SPACE_STEP = %s\n" % m['custom_space_step'] )
-            if 'target_only' in m:
-              if m['target_only']:
-                f.write("    TARGET_ONLY\n")
-            f.write("  }\n")
-          f.write ( "}\n" )
-        f.write ( "\n" );
-
-    if 'define_reactions' in data_model:
-      reacts = data_model['define_reactions']
-      if 'reaction_list' in reacts:
-        rlist = reacts['reaction_list']
-        if len(rlist) > 0:
-          f.write ( "#DEFINE_REACTIONS\n" )
-          f.write ( "{\n" )
-          for r in rlist:
-            f.write("  %s " % (r['name']))
-            if r['rxn_type'] == "irreversible":
-              if r['variable_rate_switch'] and r['variable_rate_valid']:
-                variable_rate_name = r['variable_rate']
-                f.write('["%s"]' % (variable_rate_name))
-                ## Create the actual variable rate file and write to it
-                vrf = open(os.path.join(os.path.dirname(f.name),variable_rate_name), "w")
-                vrf.write ( r['variable_rate_text'] )
-                #with open(variable_rate_name, "w", encoding="utf8",
-                #          newline="\n") as variable_out_file:
-                #    variable_out_file.write(r['variable_rate_text'])
-              else:
-                f.write ( "[%s]" % ( r['fwd_rate'] ) )
-            else:
-              f.write ( "[%s, %s]" % ( r['fwd_rate'], r['bkwd_rate'] ) )
-            if 'rxn_name' in r:
-              if len(r['rxn_name']) > 0:
-                f.write ( " : %s" % (r['rxn_name']) )
-            f.write("\n")
-          f.write ( "}\n" )
-          f.write("\n")
-
-    if ('model_objects' in data_model) or ('release_sites' in data_model):
-      geom = None
-      rels = None
-      if 'model_objects' in data_model:
-        geom = data_model['model_objects']
-      if 'release_sites' in data_model:
-        rels = data_model['release_sites']
-      mols = data_model['define_molecules']
-      #TODO Note that the use of "Scene" here is a temporary measure!!!!
-      f.write ( "#INSTANTIATE Scene OBJECT\n" )
-      f.write ( "{\n" )
-      if geom != None:
-        if 'model_object_list' in geom:
-          glist = geom['model_object_list']
-          if len(glist) > 0:
-            # Sort the objects by parent
-            unsorted_objs = [ g for g in glist ]
-            sorted_objs = []
-            sorted_obj_names = []
-            any_change = True  # This flag is used to break out of an infinite loop in ill-defined situations
-            while (len(unsorted_objs) > 0) and any_change:
-              any_change = False
-              for index in range(len(unsorted_objs)):
-                if output_detail > 10: print ( "  Sorting by parent: checking " + unsorted_objs[index]['name'] + " for parent " + unsorted_objs[index]['parent_object'] )
-                if len(unsorted_objs[index]['parent_object']) == 0:
-                  # Move this object to the sorted list because it has no parent
-                  sorted_obj_names.append ( unsorted_objs[index]['name'])
-                  sorted_objs.append ( unsorted_objs.pop(index) )
-                  any_change = True
-                  break
-                elif unsorted_objs[index]['parent_object'] in sorted_obj_names:
-                  # Move this object to the sorted list because its parent is already in the list
-                  sorted_obj_names.append ( unsorted_objs[index]['name'])
-                  sorted_objs.append ( unsorted_objs.pop(index) )
-                  any_change = True
-                  break
-
-            for g in sorted_objs:
-              f.write ( "  %s OBJECT %s {\n" % (g['name'], g['name']) )
-              if len(g['parent_object']) > 0:
-                f.write ( "    PARENT = %s\n" % (g['parent_object']) )
-              if len(g['membrane_name']) > 0:
-                # f.write ( "    MEMBRANE = %s\n" % (g['membrane_name']) )
-                f.write ( "    MEMBRANE = %s OBJECT %s[ALL]\n" % (g['membrane_name'], g['name']) )
-              f.write ( "  }\n" )
-      if rels != None:
-        if 'release_site_list' in rels:
-          rlist = rels['release_site_list']
-          if len(rlist) > 0:
-            for r in rlist:
-              f.write ( "  %s RELEASE_SITE\n" % (r['name']) )
-              f.write ( "  {\n" )
-
-              # First handle the release shape
-              if ((r['shape'] == 'CUBIC') |
-                  (r['shape'] == 'SPHERICAL') |
-                  (r['shape'] == 'SPHERICAL_SHELL')):
-                # Output MDL for releasing in a non-object shape pattern
-                f.write("   SHAPE = %s\n" % (r['shape']))
-                f.write("   LOCATION = [%s, %s, %s]\n" % (r['location_x'],r['location_y'],r['location_z']))
-                f.write("   SITE_DIAMETER = %s\n" % (r['site_diameter']))
-              elif r['shape'] == "OBJECT":
-                # Output MDL for releasing in or on and object
-                #TODO Note that the use of "Scene." here for object names is a temporary measure!!!!
-                obj_expr = r['object_expr']
-                obj_expr = '-'.join(["Scene."+t.strip() for t in obj_expr.split('-')])
-                # Can't repeat this because the "Scene's" accumulate
-                #obj_expr = '+'.join(["Scene."+t.strip() for t in obj_expr.split('+')])
-                #obj_expr = '*'.join(["Scene."+t.strip() for t in obj_expr.split('*')])
-                f.write("   SHAPE = %s\n" % (obj_expr))
-
-              # Next handle the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
-              mlist = mols['molecule_list']
-              mol = None
+        if 'define_molecules' in data_model:
+          mols = data_model['define_molecules']
+          if 'molecule_list' in mols:
+            mlist = mols['molecule_list']
+            if len(mlist) > 0:
+              f.write ( "#DEFINE_MOLECULES\n" )
+              f.write ( "{\n" )
               for m in mlist:
-                if m['mol_name'] == r['molecule']:
-                  mol = m
-                  break
-              f.write("   MOLECULE = %s\n" % (r['molecule']))
+                f.write ( "  %s" % m['mol_name'] )
+                if "bngl_component_list" in m:
+                  # This code had previously written out ALL components since there were no "angle reference key" components
+                  # However, there are now "key" components that are not yet recognized as such by subsequent code
+                  # For now, create a substitute list named "no_key_m" to use for producing this output
+                  # To fix this later, change "no_key_m" back to "m" and write the keys in proper syntax
+                  no_key_m = {}
+                  no_key_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if c['is_key'] == False ]
+                  f.write( "(" )
+                  num_components = len(no_key_m['bngl_component_list'])
+                  if num_components > 0:
+                    for ci in range(num_components):
+                      c = no_key_m['bngl_component_list'][ci]
+                      f.write( c['cname'] )
+                      for state in c['cstates']:
+                        f.write ( "~" + state )
+                      if 'spatial_structure' in m:
+                        if m['spatial_structure'] != "None":
+                          # This molecule has spatial structure, so include it after the states
+                          print ( " Writing out spatial structure for mol " + m['mol_name'] + ", component " + c['cname'] )
+                          f.write ( "{loc=[" + c['loc_x'] + "," + c['loc_y'] + "," + c['loc_z'] + "]" )
+                          if (m['spatial_structure']=="XYZVA") or (c['rot_index'] < 0):
+                            # This component doesn't use a rotation key at all. Assume that it has valid "rot_xyz" fields
+                            f.write ( ",rot=[" + c['rot_x'] + "," + c['rot_y'] + "," + c['rot_z'] + "," + c['rot_ang'] + "]}" )
+                          else:
+                            # This component uses a rotation key index, so pull the rotation axis from the key component's **LOCATION**
+                            ki = c['rot_index']   # This index (ki) is in the ORIGINAL "m" and NOT the "no_key_m" created without keys
+                            k = m['bngl_component_list'][ki] # Use the ki to fetch the original key component
+                            # When writing, the rotation values (rot_xyz) for the component are the LOCATION values of the key (loc_xyz)
+                            # However, the rotation angle is from the component itself (and not from the key)
+                            f.write ( ",rot=[" + k['loc_x'] + "," + k['loc_y'] + "," + k['loc_z'] + "," + c['rot_ang'] + "]}" )
+                      if ci < num_components-1:
+                        f.write ( "," )
+                  f.write( ")" )
+                f.write ( "\n" )
+                f.write ( "  {\n" )
+                if m['mol_type'] == '2D':
+                  f.write ( "    DIFFUSION_CONSTANT_2D = %s\n" % m['diffusion_constant'] )
+                else:
+                  f.write ( "    DIFFUSION_CONSTANT_3D = %s\n" % m['diffusion_constant'] )
+                if 'custom_time_step' in m:
+                  if len(m['custom_time_step']) > 0:
+                    f.write ( "    CUSTOM_TIME_STEP = %s\n" % m['custom_time_step'] )
+                if 'custom_space_step' in m:
+                  if len(m['custom_space_step']) > 0:
+                    f.write ( "    CUSTOM_SPACE_STEP = %s\n" % m['custom_space_step'] )
+                if 'target_only' in m:
+                  if m['target_only']:
+                    f.write("    TARGET_ONLY\n")
+                f.write("  }\n")
+              f.write ( "}\n" )
+            f.write ( "\n" );
 
-              # Now write out the quantity, probability, and pattern
-
-              if r['quantity_type'] == 'NUMBER_TO_RELEASE':
-                f.write("   NUMBER_TO_RELEASE = %s\n" % (r['quantity']))
-              elif r['quantity_type'] == 'GAUSSIAN_RELEASE_NUMBER':
-                f.write("   GAUSSIAN_RELEASE_NUMBER\n")
-                f.write("   {\n")
-                f.write("        MEAN_NUMBER = %s\n" % (r['quantity']))
-                f.write("        STANDARD_DEVIATION = %s\n" % (r['stddev']))
-                f.write("      }\n")
-              elif r['quantity_type'] == 'DENSITY':
-                if mol:
-                  if mol['mol_type'] == '2D':
-                    f.write("   DENSITY = %s\n" % (r['quantity']))
+        if 'define_reactions' in data_model:
+          reacts = data_model['define_reactions']
+          if 'reaction_list' in reacts:
+            rlist = reacts['reaction_list']
+            if len(rlist) > 0:
+              f.write ( "#DEFINE_REACTIONS\n" )
+              f.write ( "{\n" )
+              for r in rlist:
+                f.write("  %s " % (r['name']))
+                if r['rxn_type'] == "irreversible":
+                  if r['variable_rate_switch'] and r['variable_rate_valid']:
+                    variable_rate_name = r['variable_rate']
+                    f.write('["%s"]' % (variable_rate_name))
+                    ## Create the actual variable rate file and write to it
+                    vrf = open(os.path.join(os.path.dirname(f.name),variable_rate_name), "w")
+                    vrf.write ( r['variable_rate_text'] )
+                    #with open(variable_rate_name, "w", encoding="utf8",
+                    #          newline="\n") as variable_out_file:
+                    #    variable_out_file.write(r['variable_rate_text'])
                   else:
-                    f.write("   CONCENTRATION = %s\n" % (r['quantity']))
-              f.write("   RELEASE_PROBABILITY = %s\n" % (r['release_probability']))
-              if len(r['pattern']) > 0:
-                f.write("   RELEASE_PATTERN = %s\n" % (r['pattern']))
+                    f.write ( "[%s]" % ( r['fwd_rate'] ) )
+                else:
+                  f.write ( "[%s, %s]" % ( r['fwd_rate'], r['bkwd_rate'] ) )
+                if 'rxn_name' in r:
+                  if len(r['rxn_name']) > 0:
+                    f.write ( " : %s" % (r['rxn_name']) )
+                f.write("\n")
+              f.write ( "}\n" )
+              f.write("\n")
 
-              f.write ( "  }\n" )
-      f.write ( "}\n" )
-      f.write("\n")
-
-
-    if 'reaction_data_output' in data_model:
-      plot_out = data_model['reaction_data_output']
-      rxn_step = time_step  # Default if not otherwise specified in the reaction data output block
-      if 'rxn_step' in plot_out:
-        if len(plot_out['rxn_step']) > 0:
-          rxn_step = plot_out['rxn_step']
-      if 'reaction_output_list' in plot_out:
-        plist = plot_out['reaction_output_list']
-        if len(plist) > 0:
-          f.write ( "#REACTION_DATA_OUTPUT\n" )
+        if ('model_objects' in data_model) or ('release_sites' in data_model):
+          geom = None
+          rels = None
+          if 'model_objects' in data_model:
+            geom = data_model['model_objects']
+          if 'release_sites' in data_model:
+            rels = data_model['release_sites']
+          mols = data_model['define_molecules']
+          #TODO Note that the use of "Scene" here is a temporary measure!!!!
+          f.write ( "#INSTANTIATE Scene OBJECT\n" )
           f.write ( "{\n" )
-          f.write ( "  STEP = %s\n" % rxn_step )
-          for p in plist:
-            if 'rxn_or_mol' in p:
-              if p['rxn_or_mol'] == 'MDLString':
-                # Trouble with first two approaches:
-                # f.write ( "  { %s } => \"./react_data/seed_\" & seed & \"/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
-                # f.write ( "  { %s } => \"./react_data/seed_00001/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
-                f.write ( "  { %s } => \"./react_data/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+          if geom != None:
+            if 'model_object_list' in geom:
+              glist = geom['model_object_list']
+              if len(glist) > 0:
+                # Sort the objects by parent
+                unsorted_objs = [ g for g in glist ]
+                sorted_objs = []
+                sorted_obj_names = []
+                any_change = True  # This flag is used to break out of an infinite loop in ill-defined situations
+                while (len(unsorted_objs) > 0) and any_change:
+                  any_change = False
+                  for index in range(len(unsorted_objs)):
+                    if output_detail > 10: print ( "  Sorting by parent: checking " + unsorted_objs[index]['name'] + " for parent " + unsorted_objs[index]['parent_object'] )
+                    if len(unsorted_objs[index]['parent_object']) == 0:
+                      # Move this object to the sorted list because it has no parent
+                      sorted_obj_names.append ( unsorted_objs[index]['name'])
+                      sorted_objs.append ( unsorted_objs.pop(index) )
+                      any_change = True
+                      break
+                    elif unsorted_objs[index]['parent_object'] in sorted_obj_names:
+                      # Move this object to the sorted list because its parent is already in the list
+                      sorted_obj_names.append ( unsorted_objs[index]['name'])
+                      sorted_objs.append ( unsorted_objs.pop(index) )
+                      any_change = True
+                      break
+
+                for g in sorted_objs:
+                  f.write ( "  %s OBJECT %s {\n" % (g['name'], g['name']) )
+                  if len(g['parent_object']) > 0:
+                    f.write ( "    PARENT = %s\n" % (g['parent_object']) )
+                  if len(g['membrane_name']) > 0:
+                    # f.write ( "    MEMBRANE = %s\n" % (g['membrane_name']) )
+                    f.write ( "    MEMBRANE = %s OBJECT %s[ALL]\n" % (g['membrane_name'], g['name']) )
+                  f.write ( "  }\n" )
+          if rels != None:
+            if 'release_site_list' in rels:
+              rlist = rels['release_site_list']
+              if len(rlist) > 0:
+                for r in rlist:
+                  f.write ( "  %s RELEASE_SITE\n" % (r['name']) )
+                  f.write ( "  {\n" )
+
+                  # First handle the release shape
+                  if ((r['shape'] == 'CUBIC') |
+                      (r['shape'] == 'SPHERICAL') |
+                      (r['shape'] == 'SPHERICAL_SHELL')):
+                    # Output MDL for releasing in a non-object shape pattern
+                    f.write("   SHAPE = %s\n" % (r['shape']))
+                    f.write("   LOCATION = [%s, %s, %s]\n" % (r['location_x'],r['location_y'],r['location_z']))
+                    f.write("   SITE_DIAMETER = %s\n" % (r['site_diameter']))
+                  elif r['shape'] == "OBJECT":
+                    # Output MDL for releasing in or on and object
+                    #TODO Note that the use of "Scene." here for object names is a temporary measure!!!!
+                    obj_expr = r['object_expr']
+                    obj_expr = '-'.join(["Scene."+t.strip() for t in obj_expr.split('-')])
+                    # Can't repeat this because the "Scene's" accumulate
+                    #obj_expr = '+'.join(["Scene."+t.strip() for t in obj_expr.split('+')])
+                    #obj_expr = '*'.join(["Scene."+t.strip() for t in obj_expr.split('*')])
+                    f.write("   SHAPE = %s\n" % (obj_expr))
+
+                  # Next handle the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
+                  mlist = mols['molecule_list']
+                  mol = None
+                  for m in mlist:
+                    if m['mol_name'] == r['molecule']:
+                      mol = m
+                      break
+                  f.write("   MOLECULE = %s\n" % (r['molecule']))
+
+                  # Now write out the quantity, probability, and pattern
+
+                  if r['quantity_type'] == 'NUMBER_TO_RELEASE':
+                    f.write("   NUMBER_TO_RELEASE = %s\n" % (r['quantity']))
+                  elif r['quantity_type'] == 'GAUSSIAN_RELEASE_NUMBER':
+                    f.write("   GAUSSIAN_RELEASE_NUMBER\n")
+                    f.write("   {\n")
+                    f.write("        MEAN_NUMBER = %s\n" % (r['quantity']))
+                    f.write("        STANDARD_DEVIATION = %s\n" % (r['stddev']))
+                    f.write("      }\n")
+                  elif r['quantity_type'] == 'DENSITY':
+                    if mol:
+                      if mol['mol_type'] == '2D':
+                        f.write("   DENSITY = %s\n" % (r['quantity']))
+                      else:
+                        f.write("   CONCENTRATION = %s\n" % (r['quantity']))
+                  f.write("   RELEASE_PROBABILITY = %s\n" % (r['release_probability']))
+                  if len(r['pattern']) > 0:
+                    f.write("   RELEASE_PATTERN = %s\n" % (r['pattern']))
+
+                  f.write ( "  }\n" )
           f.write ( "}\n" )
           f.write("\n")
 
-    f.write("\n")
-    f.write ( "INCLUDE_FILE = \"Scene.viz_output.mdl\"\n\n" )
 
-    f.close()
+        if 'reaction_data_output' in data_model:
+          plot_out = data_model['reaction_data_output']
+          rxn_step = time_step  # Default if not otherwise specified in the reaction data output block
+          if 'rxn_step' in plot_out:
+            if len(plot_out['rxn_step']) > 0:
+              rxn_step = plot_out['rxn_step']
+          if 'reaction_output_list' in plot_out:
+            plist = plot_out['reaction_output_list']
+            if len(plist) > 0:
+              f.write ( "#REACTION_DATA_OUTPUT\n" )
+              f.write ( "{\n" )
+              f.write ( "  STEP = %s\n" % rxn_step )
+              for p in plist:
+                if 'rxn_or_mol' in p:
+                  if p['rxn_or_mol'] == 'MDLString':
+                    # Trouble with first two approaches:
+                    # f.write ( "  { %s } => \"./react_data/seed_\" & seed & \"/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+                    # f.write ( "  { %s } => \"./react_data/seed_00001/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+                    f.write ( "  { %s } => \"./react_data/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+              f.write ( "}\n" )
+              f.write("\n")
 
-    f = open ( os.path.join(output_data_dir,"Scene.geometry.mdl"), 'w' )
-    write_geometry_mdlr3 (data_model['geometrical_objects'], f)
-    f.close()
+        f.write("\n")
+        f.write ( "INCLUDE_FILE = \"Scene.viz_output.mdl\"\n\n" )
 
-    f = open ( os.path.join(output_data_dir,"Scene.viz_output.mdl"), 'w' )
-    f.write ( 'sprintf(seed,"%05g",SEED)\n\n' )
-    write_viz_out_mdlr3(data_model['viz_output'], data_model['define_molecules'], f)
-    f.close()
+        f.close()
 
-    fseed = data_model['simulation_control']['start_seed']
-    lseed = data_model['simulation_control']['end_seed']
+        f = open ( os.path.join(output_data_dir,"Scene.geometry.mdl"), 'w' )
+        write_geometry_mdlr3 (data_model['geometrical_objects'], f)
+        f.close()
 
-    global start_seed
-    global end_seed
-    start_seed = int(fseed)
-    end_seed = int(lseed)
+        f = open ( os.path.join(output_data_dir,"Scene.viz_output.mdl"), 'w' )
+        f.write ( 'sprintf(seed,"%05g",SEED)\n\n' )
+        write_viz_out_mdlr3(data_model['viz_output'], data_model['define_molecules'], data_model['initialization'], f)
+        f.close()
 
-    # execute mdlr2mdl.py to generate MDL from MDLR
-    mdlr_cmd = os.path.join ( mc_path, 'mdlr2mdl.py' )
-    if not os.path.exists(mdlr_cmd):
-        # during testing, mcell might not be still installed, try build path
-        # .../cellblender/extensions/mcell/mdlr2mdl.py
-        mdlr_cmd = os.path.join( os.path.dirname(os.path.dirname(mdlr_cmd)), '..', '..', '..', 'build_mcell', 'mdlr2mdl.py') 
-    
-    mdlr_args = [ cellblender_python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
-    wd = output_data_dir
-    print ( "\n\n\n" )
-    print ( "mdlr_cmd = " + str(mdlr_cmd) )
-    print ( "mdlr_args = " + str(mdlr_args) )
-    print ( "wd = " + str(wd) )
-    print ( "Calling Popen" )
-    sys.stderr.write( "Running: " + str(mdlr_args) + " in " + wd + "\n")
-    p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
-    p.wait()
-    if p.returncode != 0:
-        print("Fatal error: mdlr2mdl.py failed with exit code " + str(p.returncode) + ".")
-        sys.exit(1)    
-    print ( "\n\n||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" )
-    print ( "\n\nProcess Finished from write_mdlr with:\n" + str(p.stdout.read().decode('utf-8')) + "\n\n" )
-    print ( "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n\n" )
+        fseed = data_model['simulation_control']['start_seed']
+        lseed = data_model['simulation_control']['end_seed']
+
+        global start_seed
+        global end_seed
+        start_seed = int(fseed)
+        end_seed = int(lseed)
+
+        # execute mdlr2mdl.py to generate MDL from MDLR
+        mdlr_cmd = os.path.join ( mc_path, 'mdlr2mdl.py' )
+        mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
+        wd = output_data_dir
+        print ( "\n\n\n" )
+        print ( "mdlr_cmd = " + str(mdlr_cmd) )
+        print ( "mdlr_args = " + str(mdlr_args) )
+        print ( "wd = " + str(wd) )
+        print ( "Calling Popen" )
+        p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
+        p.wait()
+        print ( "\n\n||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" )
+        print ( "\n\nProcess Finished from write_mdlr with:\n" + str(p.stdout.read().decode('utf-8')) + "\n\n" )
+        print ( "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n\n" )
 
 
-    # For now return no commands at all since the run has already taken place
-    command_list = []
+        # For now return no commands at all since the run has already taken place
+        command_list = []
 
-    command_dict = { 'cmd': cellblender_python_path,
-                     'args': [ os.path.join(mc_path, "mcell3r.py"), '-s', fseed, '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ],
-                     'wd': output_data_dir
-                   }
+        command_dict = { 'cmd': cellblender.python_path,
+                         'args': [ os.path.join(mc_path, "mcell3r.py"), '-s', fseed, '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ],
+                         'wd': output_data_dir
+                       }
 
-    command_line_options = ''
+        command_line_options = ''
 
-    if len(command_line_options) > 0:
-      command_dict['args'].append(command_line_options)
+        if len(command_line_options) > 0:
+          command_dict['args'].append(command_line_options)
 
-    command_list.append ( command_dict )
-    if output_detail > 0:
-      print ( str(command_dict) )
+        command_list.append ( command_dict )
+        if output_detail > 0:
+          print ( str(command_dict) )
 
-    # Postprocessing should be done through the command_list, but force it here for now...
+        # Postprocessing should be done through the command_list, but force it here for now...
 
-    # postprocess()
+        # postprocess()
 
-    return ( command_list )
+        return ( command_list )
 
+except:
+    # Unable to import Blender classses
+    print ( "Unable to import cellblender ... running outside normal environment." )
+    pass
 
 
 
@@ -1222,7 +1216,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         out_file = f
         if not (modular_path is None):
           out_file = open ( os.path.join(modular_path,scene_name + '.viz_output.mdl'), 'w' )
-        actually_wrote = write_viz_out ( scene_name, vizout, mols, out_file )
+        actually_wrote = write_viz_out ( scene_name, vizout, mols, mcell['initialization'], out_file )
         if not (out_file == f):
           out_file.close()
           if actually_wrote:
@@ -2161,7 +2155,7 @@ def write_release_patterns ( pats, f ):
     return wrote_mdl
 
 
-def write_viz_out ( scene_name, vizout, mols, f ):
+def write_viz_out ( scene_name, vizout, mols, init, f ):
 
     wrote_mdl = False
 
@@ -2183,12 +2177,18 @@ def write_viz_out ( scene_name, vizout, mols, f ):
 
     # Write a visualization block only if needed
     if len(mol_list_string) > 0:
+      ascii_mode = False
+      if init != None:
+        if 'export_all_ascii' in init:
+          ascii_mode = init['export_all_ascii']
       wrote_mdl = True
       f.write ( "VIZ_OUTPUT\n" )
       f.write ( "{\n" )
-      f.write ( "  MODE = CELLBLENDER\n" )
-      #TODO Note that the use of "Scene" here for file output is a temporary measure!!!!
-      f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/" + scene_name + "\"\n" )
+      if ascii_mode:
+        f.write ( "  MODE = ASCII\n" )
+      else:
+        f.write ( "  MODE = CELLBLENDER\n" )
+      f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/" + scene_name + "\"\n" )  # Should be using "os.sep"
       f.write ( "  MOLECULES\n" )
       f.write ( "  {\n" )
       f.write ( "    NAME_LIST {%s}\n" % (mol_list_string) )

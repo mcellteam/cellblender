@@ -55,10 +55,10 @@ def save(context, filepath=""):
 
 def dontrun_filter_ignore(unfiltered_item_list):
     """ Apply selected filter/ignore policy.
-    
+
     This function helps reduce boilerplate code.
     """
-    
+
     mcell = bpy.context.scene.mcell
 
     item_list = []
@@ -120,12 +120,12 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
 
 def save_general(mdl_filename, save_function, save_state, unfiltered_item_list):
     """ Set the filter/ignore policy and write to mdl.
-   
+
     This function helps reduce boilerplate code.
     """
     print ( "]]]]]] IO_Mesh/MCell 3 ::::: general" )
 
-    context = bpy.context    
+    context = bpy.context
     filedir = save_state['filedir']
     main_mdl_file = save_state['main_mdl_file']
 
@@ -212,10 +212,10 @@ def save_wrapper(context, out_file, filedir):
 
 
     scripting.write_scripting_output ( 'before', 'everything', context, out_file, filedir, dm )
-    
+
     scripting.write_scripting_output ( 'before', 'parameters', context, out_file, filedir, dm )
 
-    # Export parameters: 
+    # Export parameters:
     if ps and ps.general_parameter_list:
         args = [ps]
         save_modular_or_allinone(
@@ -226,7 +226,7 @@ def save_wrapper(context, out_file, filedir):
 
     # Export model initialization:
     out_file.write("ITERATIONS = %s\n" % (mcell.initialization.iterations.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-    
+
     out_file.write("TIME_STEP = %s\n" % (mcell.initialization.time_step.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
     if mcell.initialization.vacancy_search_distance.get_expr(ps.panel_parameter_list) != '':
@@ -238,7 +238,7 @@ def save_wrapper(context, out_file, filedir):
     args = [context]
 
     save_modular_or_allinone(filedir, out_file, 'initialization', save_initialization_commands, args)
-    
+
     scripting.write_scripting_output ( 'after', 'initialization', context, out_file, filedir, dm )
     scripting.write_scripting_output ( 'before', 'partitions', context, out_file, filedir, dm )
 
@@ -355,7 +355,7 @@ def save_wrapper(context, out_file, filedir):
     scripting.write_scripting_output ( 'after', 'rxn_output', context, out_file, filedir, dm )
 
     scripting.write_scripting_output ( 'after', 'everything', context, out_file, filedir, dm )
-                 
+
     """
     #deprecated
     #JJT:temporary solution for complex output expressions
@@ -555,7 +555,7 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
 
         print ( "release_site.shape = " + release_site.shape )
-        
+
         # Always need the molecule, so do it first
         mol_spec = None
         if release_site.molecule in mol_list:
@@ -738,7 +738,7 @@ def save_general_parameters(ps, out_file):
 
     # Export Parameters:
     if ps and ps.general_parameter_list:
-                
+
         if not ps.export_as_expressions:
 
             # Output as values ... order doesn't matter
@@ -906,7 +906,7 @@ def save_reactions(context, out_file, rxn_list, filedir):
 
     for rxn_item in rxn_list:
         rxn_item.write_to_mdl_file ( context, out_file, filedir )
-        
+
     out_file.write("}\n\n")
 
 
@@ -1001,12 +1001,11 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all, export
 
     if molecule_viz_list or export_all:
         out_file.write("VIZ_OUTPUT\n{\n")
-        #button for if they want to set this or ascii
-        if mcell.mol_viz.ascii_enable:
+        if export_all_ascii:
             out_file.write("  MODE = ASCII\n")
         else:
-            out_file.write("  MODE = CELLBLENDER\n") 
-        out_file.write("  FILENAME = \"./viz_data/seed_\" & seed & \"/%s\"\n" % settings.base_name)
+            out_file.write("  MODE = CELLBLENDER\n")
+        out_file.write("  FILENAME = \"./viz_data/seed_\" & seed & \"/%s\"\n" % settings.base_name)  # Should be using "os.sep"
         out_file.write("  MOLECULES\n")
         out_file.write("  {\n")
         if export_all:
@@ -1023,23 +1022,6 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all, export
         out_file.write("  }\n")
         out_file.write("}\n\n")
 
-    # New viz block if we also output ascii
-    if export_all_ascii:
-        out_file.write("VIZ_OUTPUT\n{\n")
-        out_file.write("  MODE = ASCII\n")
-        out_file.write("  FILENAME = \"./viz_data_ascii/seed_\" & seed & \"/%s\"\n" % settings.base_name)
-        out_file.write("  MOLECULES\n")
-        out_file.write("  {\n")
-        out_file.write("    NAME_LIST {ALL_MOLECULES}\n")
-        if all_iterations:
-            out_file.write(
-                "    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n")
-        else:
-            out_file.write(
-                "    ITERATION_NUMBERS {ALL_DATA @ [[%s TO %s STEP %s]]}\n" %
-                (start, end, step))
-        out_file.write("  }\n")
-        out_file.write("}\n\n")
 
 def save_rxn_output_mdl(context, out_file, rxn_output_list):
     """ Saves reaction output info to mdl output file. """
@@ -1133,7 +1115,7 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
                         if mcell.rxn_output.hit_all==True:
                             out_file.write(
                              "  {COUNT[%s,%s.%s[%s],ALL_HITS]}=> \"./react_data/seed_\" & seed & "
-                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))    
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
                         elif mcell.rxn_output.hit_front==True:
                             out_file.write(
                              "  {COUNT[%s,%s.%s[%s],FRONT_HITS]}=> \"./react_data/seed_\" & seed & "
@@ -1153,7 +1135,7 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
                         elif mcell.rxn_output.cross_back==True:
                             out_file.write(
                              "  {COUNT[%s,%s.%s[%s],BACK_CROSSINGS]}=> \"./react_data/seed_\" & seed & "
-                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))                             
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
                     else:
                         out_file.write(
                         "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
@@ -1164,15 +1146,15 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
                     #(count_name, context.scene.name,object_name, count_name, object_name))
           #  elif rxn_output.count_location == 'Object' and mcell.pbc.peri_trad == False:
            #         out_file.write("  {COUNT["+count_name+ ","+ context.scene.name+ "." + object_name + ",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
-            #         + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s_%s_%s.dat\"\n" %(count_name, object_name,mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z))                
+            #         + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s_%s_%s.dat\"\n" %(count_name, object_name,mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z))
     out_file.write("}\n\n")
 
-""" 
+"""
 #deprecated
 def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
     #JJT:temporary code that outsputs imported rxn output expressions
     #remove when we figure out how to add this directly to the interface
-    
+
     mcell = context.scene.mcell
     ps = mcell.parameter_system
 
@@ -1181,7 +1163,7 @@ def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
         ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
-    
+
     for rxn_output in rxn_output_list:
         outputStr = rxn_output.molecule_name
         if outputStr not in ['',None]:

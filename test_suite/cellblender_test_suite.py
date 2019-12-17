@@ -117,7 +117,6 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
         update=run_method_changed)
 
     update_soure_file = bpy.props.BoolProperty(name="Update Source", default=False)
-    make_tutorial = bpy.props.BoolProperty(name="Make Tutorial", default=False)
     source_file_to_update = bpy.props.StringProperty(name="Source File to Update", default="")
     stress_test_level = bpy.props.IntProperty(name="Stress Test Level", default=100)
 
@@ -200,13 +199,9 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
 
 class CellBlenderTestSuitePanel(bpy.types.Panel):
     bl_label = "CellBlender Test Suite"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category = "Test Suite"
-    #bl_space_type = "PROPERTIES"
-    #bl_region_type = "WINDOW"
-    #bl_options = { 'DEFAULT_CLOSED' }
-    #bl_context = "scene"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
     def draw(self, context):
         app = context.scene.cellblender_test_suite
 
@@ -243,13 +238,10 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
           row.label( icon='FILE_TICK', text="Pass" )
         elif app.test_status == "F":
           row.label( icon='ERROR',     text="Fail" )
+        row.prop(app, "exit_on_error")
         row.prop(app, "run_mcell")
         row.prop(app, "run_method",    text="")
         # row.prop(app, "run_with_queue")
-
-        row = self.layout.row()
-        row.prop(app, "exit_on_error")
-        row.prop(app, "make_tutorial")
         row.prop(app, "update_soure_file")
         if app.update_soure_file:
             row = self.layout.row()
@@ -257,7 +249,6 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
             col.prop ( app, "source_file_to_update" )
             col = row.column()
             col.operator("cellblender_test.set_source_file", text="", icon='FILESEL')
-
 
         for group_num in range(next_test_group_num):
             # print ( "Drawing Group " + str(group_num) )
@@ -2666,7 +2657,7 @@ class ShapedCylinder (plf_object):
 ###########################################################################################################
 ##   This is an example model used for all the SimRunner tests.
 
-def SimRunnerExample ( context, method="COMMAND", test_name=None ):
+def SimRunnerExample ( context, method="QUEUE", test_name=None ):
 
     cb_model = CellBlender_Model ( context, test_name )
 
@@ -2685,7 +2676,7 @@ def SimRunnerExample ( context, method="COMMAND", test_name=None ):
 
     cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
 
-    cb_model.compare_mdl_with_sha1 ( "80e484d45193d50b59affca4c38701fcfad90151", test_name=test_name )
+    cb_model.compare_mdl_with_sha1 ( "8263c1099a3d6d86640116a5f6ee6f5b4b663330", test_name=test_name )
 
     cb_model.refresh_molecules()
 
@@ -2702,25 +2693,25 @@ def SimRunnerExample ( context, method="COMMAND", test_name=None ):
 
 
 ###########################################################################################################
-group_name = "Sim Runner Tests"
-test_name = "Simulation Runner Command Test"
-operator_name = "cellblender_test.sim_runner_command"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+#group_name = "Sim Runner Tests"
+#test_name = "Simulation Runner Command Test"
+#operator_name = "cellblender_test.sim_runner_command"
+#next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class SimRunnerCommandTestOp(bpy.types.Operator):
-    bl_idname = operator_name
-    bl_label = test_name
-    self_test_name = test_name
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def execute(self, context):
-        global active_frame_change_handler
-        active_frame_change_handler = None
-        SimRunnerExample ( context, method="COMMAND", test_name=self.self_test_name )
-        return { 'FINISHED' }
+#class SimRunnerCommandTestOp(bpy.types.Operator):
+#    bl_idname = operator_name
+#    bl_label = test_name
+#    self_test_name = test_name
+#
+#    def invoke(self, context, event):
+#        self.execute ( context )
+#        return {'FINISHED'}
+#
+#    def execute(self, context):
+#        global active_frame_change_handler
+#        active_frame_change_handler = None
+#        SimRunnerExample ( context, method="COMMAND", test_name=self.self_test_name )
+#        return { 'FINISHED' }
 
 
 
@@ -2748,46 +2739,46 @@ class SimRunnerQueueTestOp(bpy.types.Operator):
 
 
 ###########################################################################################################
-group_name = "Sim Runner Tests"
-test_name = "Simulation Runner Java Test"
-operator_name = "cellblender_test.sim_runner_java"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+#group_name = "Sim Runner Tests"
+#test_name = "Simulation Runner Java Test"
+#operator_name = "cellblender_test.sim_runner_java"
+#next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class SimRunnerJavaTestOp(bpy.types.Operator):
-    bl_idname = operator_name
-    bl_label = test_name
-    self_test_name = test_name
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def execute(self, context):
-        global active_frame_change_handler
-        active_frame_change_handler = None
-        SimRunnerExample ( context, method="JAVA", test_name=self.self_test_name )
-        return { 'FINISHED' }
+#class SimRunnerJavaTestOp(bpy.types.Operator):
+#    bl_idname = operator_name
+#    bl_label = test_name
+#    self_test_name = test_name
+#
+#    def invoke(self, context, event):
+#        self.execute ( context )
+#        return {'FINISHED'}
+#
+#    def execute(self, context):
+#        global active_frame_change_handler
+#        active_frame_change_handler = None
+#        SimRunnerExample ( context, method="JAVA", test_name=self.self_test_name )
+#        return { 'FINISHED' }
 
 
 
 ###########################################################################################################
-group_name = "Sim Runner Tests"
-test_name = "Simulation Runner Open GL Test"
-operator_name = "cellblender_test.sim_runner_opengl"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+#group_name = "Sim Runner Tests"
+#test_name = "Simulation Runner Open GL Test"
+#operator_name = "cellblender_test.sim_runner_opengl"
+#next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class SimRunnerOpenGLTestOp(bpy.types.Operator):
-    bl_idname = operator_name
-    bl_label = test_name
-    self_test_name = test_name
+#class SimRunnerOpenGLTestOp(bpy.types.Operator):
+#    bl_idname = operator_name
+#    bl_label = test_name
+#    self_test_name = test_name
 
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
+#    def invoke(self, context, event):
+#        self.execute ( context )
+#        return {'FINISHED'}
 
-    def execute(self, context):
-        SimRunnerExample ( context, method="OPENGL", test_name=self.self_test_name )
-        return { 'FINISHED' }
+#    def execute(self, context):
+#        SimRunnerExample ( context, method="OPENGL", test_name=self.self_test_name )
+#        return { 'FINISHED' }
 
 
 
@@ -2829,7 +2820,7 @@ class SingleMoleculeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
         
-        cb_model.compare_mdl_with_sha1 ( "057807fc054cdf8368e326b4a94bd9d84dd79fd7", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "e686b50419ad1a94388bb5e922ef6a9b92346260", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -2890,7 +2881,7 @@ class DoubleSphereTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "76be56dd5a1d9f66a7329674f3abefa80842b31d", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "5029857613a93bad467d7e91451713ec4a2b78d7", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -2955,7 +2946,7 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ce8ace9fa65577efdd4e536d97dacd1571dce8f2", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "85028326cb23454b1c5f9a2b3b8e7316d51ffbc3", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3022,7 +3013,7 @@ class ReactionTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=20.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "0f17842dff980f0df746556ebc0aa5b80ee16173", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "e4498510e8d8a2c804707dfc314786d6ce558122", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3099,7 +3090,7 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "293920c4819afc77818ab0c241e666d5460a7854", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "9e4bc202f9cfb65a0575b15695a51917e666bd00", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3234,7 +3225,7 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "10776f6209bfad7c410875cf288a4863f64de528", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "0e8e59531032418691f245f668df968aca0ac7b6", test_name=self.self_test_name )
         
         cb_model.refresh_molecules()
 
@@ -3348,7 +3339,7 @@ class ParSys200pCntTestOp(bpy.types.Operator):
         active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context, self.self_test_name )
-        cb_model = ParSysTest ( cb_model, first='1', num_pars=200, num_back=1, mdl_hash="7275cb9bcdb67b9486e0bd60ed3c28d8b11e17b2", test_name=self.self_test_name )
+        cb_model = ParSysTest ( cb_model, first='1', num_pars=200, num_back=1, mdl_hash="348f796badcbcaf05562d772ef498c263ea0ed10", test_name=self.self_test_name )
 
         return { 'FINISHED' }
 
@@ -3375,7 +3366,7 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
 
         cb_model = CellBlender_Model ( context, self.self_test_name )
         if cb_model.using_id_params():
-            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=100, num_back=3, mdl_hash="a0b221cb0b11289962617f91410268b734e790aa", test_name=self.self_test_name )
+            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=100, num_back=3, mdl_hash="1e8dca080ab8ab213f9f0d381d05bd9cadb3dfc7", test_name=self.self_test_name )
         else:
             cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=100, num_back=3, mdl_hash="1be16b43f98f8a61617eb8450601a5deafccd3f3", test_name=self.self_test_name )
 
@@ -3404,7 +3395,7 @@ class ParSystem1000p3eTestOp(bpy.types.Operator):
 
         cb_model = CellBlender_Model ( context, self.self_test_name )
         if cb_model.using_id_params():
-            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=1000, num_back=3, mdl_hash="cdf6f34dde382128f1e8c040dac826b29249a7c2", test_name=self.self_test_name )
+            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=1000, num_back=3, mdl_hash="959a55e1de527d2a3e24518bb19e27b97a07057c", test_name=self.self_test_name )
         else:
             cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=1000, num_back=3, mdl_hash="fe97effc69d90e15c5a39b72aebfbbd660d3f707", test_name=self.self_test_name )
 
@@ -3460,7 +3451,7 @@ class GlyphTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "b2ed324f215c780ccaebdca9b54768123b6b8f8b", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "2551b6fe95415e7053cd40c02fe61844ee034bcd", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3521,7 +3512,7 @@ class CubeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d122c6de268d920ec3ddce99ca883b2dd1d07911", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "1d006610fe4a01735e92e0a07e3faae722383a3f", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3590,7 +3581,7 @@ class CubeSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=6.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "9fac09c08f4e8d41cdb9d176920924693a627c7e", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "ec58f3b5fbff36014d9cbf20ce2166bc7d750460", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3661,7 +3652,7 @@ class SphereSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=7.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "67318562a0e0ef094061c7c2d02ab5ac59a01559", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "423801fc511d12515dcd25f6336feca082d013b7", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3742,7 +3733,7 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "2d0bdffa35a9a7629c2241b321feef70f8647e70", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "5a0eb3b118623ce7ba3cd8db13b14dd426e01ff3", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3880,7 +3871,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "3fe7af313c5f01b47ddbd4fa0ea476c8f444c61c", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "63c08fa5300d6744d701b9d6d15c59ce89dacfe5", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3980,7 +3971,7 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='10000', time_step='1e-6', wait_time=50.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "a3a11faa9af3b31f5b67e1e851f3b77a095efa1a", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "9413bb5f46ac9479bbbc71b2af0cf21afa6d1648", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4055,7 +4046,7 @@ class GobletTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d720d94e42f383b06fc8e5c538f81e36fda343c4", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "6bd75c3193a22497a8eb6eb794130e8db98b4dec", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4432,7 +4423,7 @@ class MDLGeoImport(bpy.types.Operator):
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "1d015b7f6923107faa855a11f3d6dcb213c1e8e3", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "ddc8c38d8d53bdc3cc4bfee5461684b5a2da2127", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4913,7 +4904,7 @@ class DynTaperedCubeTest(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "2d3cc932c87d640353d2ac67f304b579b5c01003", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "c3a9d9fbd7f064bbf60a36bb895fdd992625f7de", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5067,7 +5058,7 @@ for f in ico.faces:
 
         cb_model.run_only ( wait_time=30.0, seed=2 )
 
-        cb_model.compare_mdl_with_sha1 ( "ee6efeeb70691430e3c740de70957af9a0c3c967", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "98fca76aa30e8f801c182f9bc5b0d4ae617ede60", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5140,7 +5131,7 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "af086eaa3a2f282e7374a53d89613ee2eaffaada", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "b35a4dc33ba608930b208c1b0f5951ce800e9ec8", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5234,7 +5225,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1500', time_step=dt, wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "9e4ad1971c570bc61f3f93fb7cc1948d7b0f0cd3", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "61639ba5586eb57aa327f80cff3922d5bd08fc06", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5368,7 +5359,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="44e9ee94b7b8dbbe03e69f34f9498df802b3d9a3", test_name=self.self_test_name, wait_time=15.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5beae6fabdb57b3245403491edfc2c32ebcb1f00", test_name=self.self_test_name, wait_time=15.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -5396,7 +5387,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="a66cbd57429d22025a55abeb25408023332c4f83", test_name=self.self_test_name, wait_time=60.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4ed241042418f86e99291ad285c1a6cde9e57427", test_name=self.self_test_name, wait_time=60.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -5525,7 +5516,7 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d835cada890d696fdac92054f21bf337e1031a3b", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "169ab78d07b4583655f55da36807efd9417290fd", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5674,7 +5665,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.8 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "d95df92a80fee0e4b8f806d412fa281f1b2bde35", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "ecd38f44858e26219dcea028a2956fed20d94c24", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5779,7 +5770,7 @@ class SimpleSynapseTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "48caeefeb06d4573d0d4f5d7a9283e226399256d", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "e86e25e48d7d85fee416ee384d05cbc4773c9c56", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5905,736 +5896,6 @@ class StressModelObjectsTestOp(bpy.types.Operator):
 
 #############################################################
 ################## End of Individual Tests ##################
-#############################################################
-
-
-#############################################################
-################## Start of Tutorial Code ###################
-#############################################################
-
-class TutorialHelper:
-
-    def capture_frame ( self ):
-        # Capture the current frame into a file
-        frame_name = str(self.tutorial_step-1) + "_" + str(self.frame_name)
-        print ( "Saving file: " + frame_name )
-        alt_context = {
-            'region'  : None,
-            'area'    : None,
-            'window'  : bpy.context.window,
-            'scene'   : bpy.context.scene,
-            'screen'  : bpy.context.window.screen
-        }
-        bpy.ops.screen.screenshot(alt_context, filepath=frame_name, full=True)
-        # Update the frame_list file
-        f_list = open ( self.tutorial_list, "at" )
-        f_list.write ( "    { \"fname\": \"" + frame_name + "\", \"desc\": \"" + self.frame_desc + "\" },\n" )
-        f_list.close()
-
-
-
-###########################################################################################################
-group_name = "Tutorials"
-test_name = "Organelle Tutorial"
-operator_name = "cellblender_test.organelle_tutorial"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
-
-class OrganelleTutorialOp(bpy.types.Operator,TutorialHelper):
-    bl_idname = operator_name
-    bl_label = test_name
-    self_test_name = test_name
-    bl_options = {'REGISTER'}
-
-    _timer = None
-    tutorial_step = 0
-    tutorial_list = "tutorial_list.txt"
-    tutorial_name = "Change Colors"
-    frame_name = "default.png"
-    frame_desc = "Start Here"
-
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def modal(self, context, event):
-        if event.type == 'TIMER':
-            print ( "Timer event with tutorial_step = " + str(self.tutorial_step) )
-            # self.tutorial_step += 1
-            self.build_model ( context, self.tutorial_step )
-            if self.tutorial_step < 0:
-                # The build_model function has signalled that it is done
-                self.tutorial_step = 0
-                print ( "Cancel the timer" )
-                # Note that this stops the timer, but when it's restarted ... it adds another one!!
-                wm = context.window_manager
-                wm.event_timer_remove(self._timer)
-
-        return {'PASS_THROUGH'}
-
-
-    def build_model ( self, context, step=-1 ):
-
-        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-        if not ('cb_model' in dir(self)):
-
-            print ( "Creating a new CellBlender_Model" )
-            self.cb_model = CellBlender_Model ( context, self.self_test_name )
-
-        scn = self.cb_model.get_scene()
-        mcell = self.cb_model.get_mcell()
-
-        # Set some shared parameters
-        subdiv = 3
-
-        if (step == -1) or (step == 1):
-
-            # Set up a transparent material for the cell membranes
-            if len(bpy.data.materials) <= 0:
-                new_mat = bpy.data.materials.new("membrane")
-            bpy.data.materials[0].name = 'membrane'
-            bpy.data.materials['membrane'].use_transparency = True
-            bpy.data.materials['membrane'].alpha = 0.25
-
-            if step > 0:
-                self.cb_model.scale_view_distance ( 0.07 )
-                self.cb_model.hide_manipulator ( hide=True )
-
-        if (step == -1) or (step == 2):
-
-            # Open the Objects Panel
-            mcell.cellblender_main_panel.objects_select = True
-
-        if (step == -1) or (step == 3):
-
-            # Create Organelle 1
-
-            # Create the object and add it to the CellBlender model
-            self.cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="SOLID", size=0.3, y=-0.25, subdiv=subdiv+1 )
-            self.cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
-            bpy.ops.object.material_slot_add()
-            scn.objects['Organelle_1'].material_slots[0].material = bpy.data.materials['membrane']
-            scn.objects['Organelle_1'].show_transparent = True
-
-        if (step == -1) or (step == 4):
-
-            # Create Organelle 2
-
-            # Create the object and add it to the CellBlender model
-            self.cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="SOLID", size=0.2, y=0.31, subdiv=subdiv+1 )
-            self.cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
-            bpy.ops.object.material_slot_add()
-            scn.objects['Organelle_2'].material_slots[0].material = bpy.data.materials['membrane']
-            scn.objects['Organelle_2'].show_transparent = True
-
-        if (step == -1) or (step == 5):
-
-            # Create Cell itself
-
-            self.cb_model.add_icosphere_to_model ( name="Cell", draw_type="SOLID", size=0.625, subdiv=subdiv )
-            bpy.ops.object.material_slot_add()
-            scn.objects['Cell'].material_slots[0].material = bpy.data.materials['membrane']
-            scn.objects['Cell'].show_transparent = True
-
-        if (step == -1) or (step == 6):
-
-            # Close the objects panel and open the molecules panel
-            mcell.cellblender_main_panel.objects_select = False
-            mcell.cellblender_main_panel.molecule_select = True
-
-        if (step == -1) or (step == 7):
-
-            # Define the molecule species
-            self.mola = self.cb_model.add_molecule_species_to_model ( name="a", mol_type="3D", diff_const_expr="1e-6" )
-            self.molb = self.cb_model.add_molecule_species_to_model ( name="b", mol_type="3D", diff_const_expr="1e-6" )
-            self.molc = self.cb_model.add_molecule_species_to_model ( name="c", mol_type="3D", diff_const_expr="1e-6" )
-            self.mold = self.cb_model.add_molecule_species_to_model ( name="d", mol_type="3D", diff_const_expr="1e-6" )
-
-            self.molt1 = self.cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-7" )
-            self.molt2 = self.cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="1e-8" )
-
-            ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
-            ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
-
-        if (step == -1) or (step == 8):
-
-            self.mola  = self.cb_model.get_molecule_species_by_name('a')
-            self.molb  = self.cb_model.get_molecule_species_by_name('b')
-            self.molc  = self.cb_model.get_molecule_species_by_name('c')
-            self.mold  = self.cb_model.get_molecule_species_by_name('d')
-            self.molt1 = self.cb_model.get_molecule_species_by_name('t1')
-            self.molt2 = self.cb_model.get_molecule_species_by_name('t2')
-
-        if (step == -1) or (step == 9):
-
-            self.cb_model.change_molecule_display ( self.mola, glyph='Letter', letter='A', scale=1.0, red=0.0, green=0.0, blue=0.8, emit=1.0 )
-            self.cb_model.change_molecule_display ( self.molb, glyph='Letter', letter='B', scale=1.0, red=0.0, green=0.8, blue=0.8, emit=0.8 )
-            self.cb_model.change_molecule_display ( self.molc, glyph='Letter', letter='C', scale=2.0, red=1.0, green=0.2, blue=1.0, emit=2.0 )
-            self.cb_model.change_molecule_display ( self.mold, glyph='Cube', scale=2.0, red=1.0, green=1.0, blue=1.0 )
-
-            self.cb_model.change_molecule_display ( self.molt1, glyph='Cone', scale=1.3, red=0.0, green=0.8, blue=0.0 )
-            self.cb_model.change_molecule_display ( self.molt2, glyph='Receptor', scale=1.0, red=0.8, green=0.0, blue=0.0 )
-
-        if (step == -1) or (step == 10):
-
-            self.cb_model.add_molecule_release_site_to_model ( name="rel_a",  mol="a",  shape="OBJECT", obj_expr="Cell[ALL] - (Organelle_1[ALL] + Organelle_2[ALL])", q_expr="1000" )
-            self.cb_model.add_molecule_release_site_to_model ( name="rel_b",  mol="b",  shape="OBJECT", obj_expr="Organelle_1[ALL]", q_expr="1000" )
-            self.cb_model.add_molecule_release_site_to_model ( name="rel_t1", mol="t1", shape="OBJECT", obj_expr="Organelle_1[top]", orient="'", q_expr="700" )
-            self.cb_model.add_molecule_release_site_to_model ( name="rel_t2", mol="t2", shape="OBJECT", obj_expr="Organelle_2[top]", orient="'", q_expr="700" )
-
-        if (step == -1) or (step == 11):
-
-            self.cb_model.add_reaction_to_model ( rin="a + b",    rtype="irreversible", rout="c",        fwd_rate="1e9", bkwd_rate="" )
-            self.cb_model.add_reaction_to_model ( rin="a' + t1'", rtype="irreversible", rout="a, + t1'", fwd_rate="3e8", bkwd_rate="" )
-            self.cb_model.add_reaction_to_model ( rin="c' + t2'", rtype="irreversible", rout="d, + t2'", fwd_rate="3e9", bkwd_rate="" )
-            self.cb_model.add_reaction_to_model ( rin="c, + t1'", rtype="irreversible", rout="c' + t1'", fwd_rate="3e8", bkwd_rate="" )
-
-        if (step == -1) or (step == 12):
-
-            self.cb_model.add_count_output_to_model ( mol_name="a" )
-            self.cb_model.add_count_output_to_model ( mol_name="b" )
-            self.cb_model.add_count_output_to_model ( mol_name="c" )
-            self.cb_model.add_count_output_to_model ( mol_name="d" )
-
-            #self.cb_model.add_count_output_to_model ( mol_name="t1" )
-            #self.cb_model.add_count_output_to_model ( mol_name="t2" )
-
-        if (step == -1) or (step == 13):
-
-            mcell.rxn_output.plot_layout = ' '
-            mcell.rxn_output.mol_colors = True
-
-            mcell.partitions.include = True
-            bpy.ops.mcell.auto_generate_boundaries()
-
-        if (step == -1) or (step == 14):
-
-            print ( "OrganelleTutorialOp: Done building model" )
-            self.tutorial_step = -1
-
-        if self.tutorial_step >= 0:
-            self.tutorial_step += 1
-
-        return self.cb_model
-
-
-    def execute(self, context):
-
-        global active_frame_change_handler
-        active_frame_change_handler = None
-
-        app = context.scene.cellblender_test_suite
-
-        print ( "Make tutorial = " + str(app.make_tutorial) )
-
-        ret_val = { 'FINISHED' }
-
-        if app.make_tutorial:
-
-          self.cb_model = CellBlender_Model ( context, self.self_test_name )
-
-          delay = 2.0
-          print ( "Setting timer to delay of " + str(delay) )
-          wm = context.window_manager
-          self.tutorial_step = 0
-          self._timer = wm.event_timer_add(delay, context.window)
-          wm.modal_handler_add(self)
-          ret_val = {'RUNNING_MODAL'}
-
-        else:
-
-          cb_model = self.build_model ( context )
-
-          cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
-
-          cb_model.compare_mdl_with_sha1 ( "d835cada890d696fdac92054f21bf337e1031a3b", test_name=self.self_test_name )
-
-          cb_model.refresh_molecules()
-
-          cb_model.select_none()
-
-
-          cb_model.get_scene().frame_current = 2
-
-          cb_model.set_view_back()
-
-          cb_model.scale_view_distance ( 0.07 )
-
-          cb_model.hide_manipulator ( hide=True )
-
-          cb_model.play_animation()
-
-        return ret_val
-
-
-
-
-
-from bpy.props import *
-
-class TUTORIAL_OT_frames(bpy.types.Operator):
-    #Process actions after a delay so the screen can respond to commands
-    bl_idname = "tutorial.create_frames"
-    bl_label = "Create Tutorial Slides"
-    bl_options = {'REGISTER'}
-
-    _timer = None
-    tutorial_step = 0
-    tutorial_list = "tutorial_list.txt"
-    tutorial_name = "Change Colors"
-    frame_name = "default.png"
-    frame_desc = "Start Here"
-
-    def capture_frame ( self ):
-        # Capture the current frame into a file
-        frame_name = str(self.tutorial_step-1) + "_" + str(self.frame_name)
-        print ( "Saving file: " + frame_name )
-        alt_context = {
-            'region'  : None,
-            'area'    : None,
-            'window'  : bpy.context.window,
-            'scene'   : bpy.context.scene,
-            'screen'  : bpy.context.window.screen
-        }
-        bpy.ops.screen.screenshot(alt_context, filepath=frame_name, full=True)
-        # Update the frame_list file
-        f_list = open ( self.tutorial_list, "at" )
-        f_list.write ( "    { \"fname\": \"" + frame_name + "\", \"desc\": \"" + self.frame_desc + "\" },\n" )
-        f_list.close()
-
-    def modal(self, context, event):
-        if event.type == 'TIMER':
-            print ( "Timer event with tutorial_step = " + str(self.tutorial_step) )
-
-            if (self.tutorial_step > 0) and (self.tutorial_step <= 7):  # This should be 1 more than last step number
-                # Step 0 should always just give a file name for the original configuration.
-                # So there's no need to capture it twice.
-                # For some reason the cancel doesn't work. That's why the (self.tutorial_step <= n+1) check is needed.
-                self.capture_frame ()
-
-            if self.tutorial_step == 0:
-
-                self.frame_name = "start.png"
-
-            elif self.tutorial_step == 1:
-
-                bpy.data.materials['torus_mat'].diffuse_color[0] = 1 # red
-                bpy.data.materials['torus_mat'].diffuse_color[1] = 0 # green
-                bpy.data.materials['torus_mat'].diffuse_color[2] = 0 # blue
-                self.frame_name = "red_frame.png"
-                self.frame_desc = "Change to red"
-
-            elif self.tutorial_step == 2:
-
-                bpy.data.materials['torus_mat'].diffuse_color[0] = 0 # red
-                bpy.data.materials['torus_mat'].diffuse_color[1] = 1 # green
-                bpy.data.materials['torus_mat'].diffuse_color[2] = 0 # blue
-                self.frame_name = "green_frame.png"
-                self.frame_desc = "Change to green"
-
-            elif self.tutorial_step == 3:
-
-                bpy.data.materials['torus_mat'].diffuse_color[0] = 0 # red
-                bpy.data.materials['torus_mat'].diffuse_color[1] = 0 # green
-                bpy.data.materials['torus_mat'].diffuse_color[2] = 1 # blue
-                self.frame_name = "blue_frame.png"
-                self.frame_desc = "Change to blue"
-
-            elif self.tutorial_step == 4:
-
-                bpy.data.materials['torus_mat'].diffuse_color[0] = 1 # red
-                bpy.data.materials['torus_mat'].diffuse_color[1] = 1 # green
-                bpy.data.materials['torus_mat'].diffuse_color[2] = 0 # blue
-                self.frame_name = "yellow_frame.png"
-                self.frame_desc = "Change to yellow"
-
-            elif self.tutorial_step == 5:
-
-                bpy.data.materials['torus_mat'].diffuse_color[0] = 1 # red
-                bpy.data.materials['torus_mat'].diffuse_color[1] = 0 # green
-                bpy.data.materials['torus_mat'].diffuse_color[2] = 1 # blue
-                self.frame_name = "magenta_frame.png"
-                self.frame_desc = "Change to magenta"
-
-            elif self.tutorial_step == 6:
-
-                bpy.data.materials['torus_mat'].diffuse_color[0] = 0 # red
-                bpy.data.materials['torus_mat'].diffuse_color[1] = 1 # green
-                bpy.data.materials['torus_mat'].diffuse_color[2] = 1 # blue
-                self.frame_name = "cyan_frame.png"
-                self.frame_desc = "Change to cyan"
-
-            else:
-
-                print ( "Calling self.cancel" )
-                self.cancel(context)
-
-            # Force a screen update by changing colors
-            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
-            color.h += 0.01
-            color.h -= 0.01
-
-            self.tutorial_step += 1
-
-        return {'PASS_THROUGH'}
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def execute(self, context):
-        import time
-        print ( "Inside tutorial.execute with context = " + str(context) )
-
-        # Delete all objects
-        for obj in bpy.data.objects:
-            bpy.data.objects.remove ( obj, do_unlink=True )
-
-        # Create a Torus
-        bpy.ops.mesh.primitive_torus_add(major_segments=48,minor_segments=12,major_radius=1.0,minor_radius=0.25)
-        obj = bpy.data.objects[0]
-
-        # Create a material if needed
-        if not ('torus_mat' in bpy.data.materials):
-            new_mat = bpy.data.materials.new("torus_mat")
-
-        # Create a material slot
-        obj.data.materials.append(None)
-        # bpy.ops.object.material_slot_add()
-
-        # Assign the material to the object
-        bpy.data.objects[0].material_slots[0].material = bpy.data.materials['torus_mat']
-
-        # Write a single pixel file
-        single_pixel_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x04sBIT\x08\x08\x08\x08|\x08d\x88\x00\x00\x00\tpHYs\x00\x00\x0f\x88\x00\x00\x0f\x88\x01\x16\xc8\xa5\x86\x00\x00\x00\x19tEXtSoftware\x00gnome-screenshot\xef\x03\xbf>\x00\x00\x00\rIDAT\x08\x99c````\x00\x00\x00\x05\x00\x01\x87\xa1N\xd4\x00\x00\x00\x00IEND\xaeB`\x82'
-        f = open ( "single_pixel.png", 'wb' )
-        f.write ( single_pixel_data )
-        f.close()
-
-        # Begin writing the frames
-        f_list = open ( self.tutorial_list, "w" )
-        f_list.write ( "{\n  \"title\": \"" + str(self.tutorial_name) + "\"" + ",\n" )
-        f_list.write ( "  \"frames\": [\n" )
-        f_list.close()
-        delay = 1.0
-        print ( "Setting timer to delay of " + str(delay) )
-        wm = context.window_manager
-        self.tutorial_step = 0
-        self._timer = wm.event_timer_add(delay, context.window)
-        wm.modal_handler_add(self)
-        return {'RUNNING_MODAL'}
-
-    def cancel(self, context):
-        wm = context.window_manager
-        wm.event_timer_remove(self._timer)
-
-
-class TUTORIAL_OT_HTML(bpy.types.Operator):
-    #Process actions after a delay so the screen can respond to commands
-    bl_idname = "tutorial.create_html"
-    bl_label = "Create Tutorial HTML"
-    bl_options = {'REGISTER'}
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def execute(self, context):
-        import tutorial_maker
-        print ( "Inside html.execute with context = " + str(context) )
-
-        # Read from a tutorial_list.txt file and generate an HTML file
-        #  to browse all of the tutorial images described in that file.
-
-        f = open ( "tutorial_list.txt", 'r' )
-
-        txt = f.read() + "  ]\n}\n"
-
-        tut = eval(txt)
-
-        html = open ( "tutorial.html", 'w' )
-
-
-        top_html = """
-<!DOCTYPE html>
-<html style="height: 100%">
-
-<head>
-<style>
-
-/* CSS from the menu example */
-
-div.scrollmenu {
-    background-color: #333;
-    overflow: auto;
-    white-space: nowrap;
-    position:absolute;
-    bottom: 0px;
-    width: 100%;
-}
-
-div.scrollmenu a {
-    display: inline-block;
-    color: white;
-    text-align: center;
-    padding: 4px;
-    text-decoration: none;
-}
-
-div.scrollmenu a:hover {
-    background-color: #777;
-}
-
-/* CSS from the slideshow example */
-
-body {
-  font-family: Arial;
-  background-color: #000;
-  margin: 0;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-img {
-  vertical-align: middle;
-}
-
-/* Position the image container (needed to position the left and right arrows) */
-.container {
-
-  height:100%;
-}
-
-/* Hide the images by default */
-.mySlides {
-  display: none;
-}
-
-/* Add a pointer when hovering over the thumbnail images */
-.cursor {
-  cursor: pointer;
-}
-
-/* Next & previous buttons */
-.prev,
-.next {
-  position: absolute;
-  top: 0%;
-  width: 50%;
-  height: 80%;
-  padding: 16px;
-  margin-top: -50px;
-  color: white;
-  font-weight: bold;
-  font-size: 200px;
-  border-radius: 0 3px 3px 0;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.prev {
-  cursor: w-resize;
-}
-.next {
-  cursor: e-resize;
-}
-
-/* Position the "next button" to the right */
-.next {
-  right: 0;
-  border-radius: 3px 0 0 3px;
-}
-
-/* On hover, add a black background color with a little bit see-through */
-.prev:hover,
-.next:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-/* Number text (1/3 etc) */
-.numbertext {
-  color: #f2f2f2;
-  font-size: 12px;
-  padding: 8px 12px;
-  position: absolute;
-  top: 0;
-}
-
-/* Container for image text */
-.caption-container {
-  text-align: center;
-  background-color: #222;
-  padding: 2px 16px;
-  font-size: 18px;
-  font-weight: bold;
-  color: #ff8;
-}
-
-.row:after {
-  content: "";
-  display: table;
-  clear: both;
-}
-
-.image-container {
-  width:100%;
-}
-
-/* N columns side by side */
-.column {
-  float: left;
-  width: 20.0%;  /* This must be 100/#ActualSlides */
-}
-
-/* Add a transparency effect for thumnbail images */
-.demo {
-  opacity: 0.6;
-  cursor: pointer;
-}
-
-.active,
-.demo:hover {
-  opacity: 1;
-  cursor: pointer;
-}
-
-
-</style>
-</head>
-
-<body>
-
-<h1 style="text-align:center;color:#fff;">"""
-
-        html.write ( top_html )
-
-        html.write ( tut['title'] )
-
-        top_end = """</h1>
-
-<div class="container">
-
-  <a class="prev" onclick="plusSlides(-1)"><img src="single_pixel.png"></a>
-  <a class="next" onclick="plusSlides(1)"><img src="single_pixel.png"></a>
-
-"""
-
-        html.write ( top_end )
-
-        for frame in tut['frames']:
-
-          html.write ( '<div class="mySlides"> <div class="numbertext">&nbsp; </div> <img class="image-container" src="' + frame['fname'] + '"> </div>\n' )
-
-        mid_html = """
-
-  <div class="caption-container">
-    <h2><p id="caption"></p></h2>
-  </div>
-
-
-</div>
-
-
-<script>
-var slideIndex = 1;
-showSlides(slideIndex,true);
-
-function plusSlides(n) {
-  // plusSlides is called without clicking an icon directly. Scroll to show active.
-  showSlides(slideIndex+=n,true);
-}
-
-function currentSlide(n) {
-  // currentSlide is called when an icon is clicked directly. Don't move it in this case.
-  showSlides(slideIndex=n,false);
-}
-
-function showSlides(n,scroll) {
-  var i;
-  var slides = document.getElementsByClassName("mySlides");
-  var icons = document.getElementsByClassName("icon");
-  var captionText = document.getElementById("caption");
-
-  // Ensure the slideIndex is within range
-  if (n > slides.length) {
-    slideIndex = 1;
-  }
-  if (n < 1) {
-    slideIndex = slides.length;
-  }
-  // Hide all of the slides
-  for (i = 0; i < slides.length; i++) {
-    slides[i].style.display = "none";
-  }
-  // Remove the "active" property from all icons
-  for (i = 0; i < icons.length; i++) {
-    icons[i].className = icons[i].className.replace(" active", "");
-  }
-  // Show the selected slide
-  slides[slideIndex-1].style.display = "block";
-  // Make the selected icon active
-  if (slideIndex-1 < icons.length ) {
-    icons[slideIndex-1].className += " active";
-  }
-  // If scroll was requested, set the scrollbar to show the icon for the current image
-  if (scroll) {
-    sb = document.getElementById("icon_bar");
-    // sb.scrollWidth is the width of all of the child items put together
-    // sb.getBoundingClientRect.width is the width of the window in which to fit the visible portion of sb.scrollWidth
-    slide_width = sb.scrollWidth / slides.length
-    scrollbar_width = sb.getBoundingClientRect().width
-    sb.scrollLeft = ( slide_width * (slideIndex-1) ) + (slide_width/2) - (scrollbar_width / 2)
-  }
-  // Set the caption based on the "alt" text for each icon
-  if (slideIndex <= icons.length) {
-    captionText.innerHTML = icons[slideIndex-1].alt;
-  } else {
-    captionText.innerHTML = " &nbsp; ";
-  }
-}
-</script>
-
-<div class="scrollmenu" id="icon_bar">
-"""
-
-        html.write ( mid_html )
-
-        i = 1
-        for frame in tut['frames']:
-          html.write ( '<img class="icon demo" src="' + frame['fname'] + '" width="300" onclick="currentSlide(' + str(i) + ')" alt="' + frame['desc'] + '">\n' )
-          i += 1
-
-
-        bot_html = """
-          </div>
-
-        </body>
-        </html>
-        """
-
-        html.write ( bot_html )
-
-
-        return {'FINISHED'}
-
-
-class CreateTutorialPanel(bpy.types.Panel):
-    bl_label = "CellBlender Tutorial Maker"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = { 'DEFAULT_CLOSED' }
-    def draw(self, context):
-        row = self.layout.row()
-        row.operator("tutorial.create_frames")
-        row.operator("tutorial.create_html")
-
-
-#############################################################
-##################  End of Tutorial Code  ###################
 #############################################################
 
 

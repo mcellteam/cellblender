@@ -94,65 +94,65 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         helptext = "Number of iterations to run"
         self.iterations.init_ref    ( parameter_system,
-                                      user_name="Iterations", 
-                                      user_expr="1000",    
-                                      user_units="",  
-                                      user_descr=helptext,  
+                                      user_name="Iterations",
+                                      user_expr="1000",
+                                      user_units="",
+                                      user_descr=helptext,
                                       user_int=True )
 
         helptext = "Simulation Time Step\n1e-6 is a common value."
         self.time_step.init_ref     ( parameter_system,
-                                      user_name="Time Step",  
-                                      user_expr="1e-6", 
-                                      user_units="seconds", 
+                                      user_name="Time Step",
+                                      user_expr="1e-6",
+                                      user_units="seconds",
                                       user_descr=helptext )
-       
+
         helptext = """The longest possible time step.  MCell3 will move longer
 than the specified simulation time step if it seems safe. This command makes
 sure that the longest possible time step is no longer than this value (in
 seconds), even if MCell3 thinks a longer step would be safe.  The default is no
 limit."""
         self.time_step_max.init_ref ( parameter_system,
-                                      user_name="Maximum Time Step", 
-                                      user_expr="", 
-                                      user_units="seconds", 
+                                      user_name="Maximum Time Step",
+                                      user_expr="",
+                                      user_units="seconds",
                                       user_descr=helptext )
-       
+
         helptext = """Have molecules take the same mean diffusion distance.
 Have all diffusing molecules take time steps of different duration, chosen so
 that the mean diffusion distance is N microns for each molecule. By default,
 all molecules move the same time step."""
         self.space_step.init_ref    ( parameter_system,
-                                      user_name="Space Step",    
-                                      user_expr="", 
-                                      user_units="microns", 
+                                      user_name="Space Step",
+                                      user_expr="",
+                                      user_units="microns",
                                       user_descr=helptext )
-       
+
         helptext = """Diffusing Volume Molecules will interact when they get
 within N microns of each other. The default is:  1 / sqrt(Pi *
 SurfaceGridDensity)"""
         self.interaction_radius.init_ref ( parameter_system,
-                                           user_name="Interaction Radius", 
-                                           user_expr="", user_units="microns", 
+                                           user_name="Interaction Radius",
+                                           user_expr="", user_units="microns",
                                            user_descr=helptext )
-       
+
         helptext = """Specifies how many different directions to put in the
 lookup table.  The default is sensible. Don’t use this unless you know what
 you’re doing.  Instead of a number, you can specify FULLY_RANDOM in MDL to
 generate the directions directly from double precision numbers (but this is
 slower)."""
         self.radial_directions.init_ref   ( parameter_system,
-                                            user_name="Radial Directions",   
-                                            user_expr="", user_units="microns", 
+                                            user_name="Radial Directions",
+                                            user_expr="", user_units="microns",
                                             user_descr=helptext )
-       
+
         helptext = """Specifies how many distances to put in the diffusion
 look-up table. The default is sensible. FULLY_RANDOM is not implemented."""
         self.radial_subdivisions.init_ref ( parameter_system,
-                                            user_name="Radial Subdivisions", 
-                                            user_expr="", 
+                                            user_name="Radial Subdivisions",
+                                            user_expr="",
                                             user_descr=helptext )
-       
+
         helptext = """Surface molecule products can be created at r distance.
 Normally, a reaction will not proceed on a surface unless there is room to
 place all products on the single grid element where the reaction is initiated.
@@ -161,22 +161,22 @@ reaction’s location, in microns, the reaction can place its products. To be
 useful, r must be larger than the longest axis of the grid element on the
 triangle in question. The reaction will then proceed if there is room to place
 its products within a radius r, and will place those products as close as
-possible to the place where the reaction occurs (deterministically, so 
+possible to the place where the reaction occurs (deterministically, so
 small-scale directional bias is possible)."""
         self.vacancy_search_distance.init_ref ( parameter_system,
-                                                user_name="Vacancy Search Distance", 
-                                                user_expr="", 
-                                                user_units="microns", 
+                                                user_name="Vacancy Search Distance",
+                                                user_expr="",
+                                                user_units="microns",
                                                 user_descr=helptext )
-       
+
         helptext = """Number of molecules that can be stored per square micron.
 Tile all surfaces so that they can hold molecules at N different positions per
 square micron. The default is 10000. For backwards compatibility,
 EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         self.surface_grid_density.init_ref ( parameter_system,
-                                             user_name="Surface Grid Density", 
-                                             user_expr="10000", 
-                                             user_units="count / sq micron", 
+                                             user_name="Surface Grid Density",
+                                             user_expr="10000",
+                                             user_units="count / sq micron",
                                              user_descr=helptext )
 
     def remove_properties ( self, context ):
@@ -240,7 +240,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         notify_dict['molecule_collision_report'] = self.molecule_collision_report==True
         notify_dict['box_triangulation_report'] = False
         dm_dict['notifications'] = notify_dict
-        
+
         warn_dict = {}
         warn_dict['all_warnings'] = str(self.all_warnings)
         warn_dict['large_molecular_displacement'] = str(self.large_molecular_displacement)
@@ -368,7 +368,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
 
     # Export all ascii
     export_all_ascii = BoolProperty(
-        name="Export all molecules as ASCII",
+        name="ASCII Molecule Files",
         description="Positions of all molecules are also exported in ASCII format",
         default=False)
 
@@ -585,7 +585,7 @@ slower but more accurate. If boolean is FALSE, then molecule interaction disks
 will be clipped at partition boundaries and probabilities adjusted to get the
 correct rate – this is faster but can be less accurate. The default is TRUE."""
                 ps.draw_prop_with_help ( box, "Accurate 3D Reactions", mcell.initialization, "accurate_3d_reactions", "acc3D_show_help", self.acc3D_show_help, helptext )
-                
+
                 #row = box.row()
                 #row.prop(mcell.initialization, "center_molecules_grid")
                 helptext = """If boolean is set to TRUE, then all molecules on
@@ -606,10 +606,10 @@ VOLUME_ONLY, the more accurate routines will be used only for reactions at
 surfaces or only for those in the volume. OFF is the default."""
                 ps.draw_prop_with_help ( box, "Microscopic Reversibility", mcell.initialization, "microscopic_reversibility", "micro_rev_show_help", self.micro_rev_show_help, helptext )
 
-                helptext = """In addititon to the binary visualization data
-read by MCell, export ASCII formatted data. The default is OFF."""
-                ps.draw_prop_with_help ( box, "Export all molecules as ASCII", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
-                
+                helptext = """Generate visualization data in ASCII format.
+The default is OFF."""
+                ps.draw_prop_with_help ( box, "ASCII Molecule Files", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
+
                 helptext = "Command Line Parameters - \n" \
                            "These options are passed directly to the program.\n" \
                            "Use -h to print MCell's help to console or text overlay.\n" \
