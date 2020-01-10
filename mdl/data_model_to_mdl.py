@@ -33,6 +33,9 @@ import json
 import os
 import re
 
+# global variable needed for testing
+fail_on_error = False
+
 #### Helper Functions ####
 
 def pickle_data_model ( dm ):
@@ -873,8 +876,9 @@ def write_mdlr ( dm, file_name, scene_name='Scene' ):
     p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
     p.wait()
     if p.returncode != 0:
-        print("Fatal error: mdlr2mdl.py failed with exit code " + str(p.returncode) + ".")
-        sys.exit(1)    
+        print("Error: mdlr2mdl.py failed with exit code " + str(p.returncode) + ".")
+        if fail_on_error:
+            sys.exit(1)  # this should happen only during testing...  
     print ( "\n\n||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" )
     print ( "\n\nProcess Finished from write_mdlr with:\n" + str(p.stdout.read().decode('utf-8')) + "\n\n" )
     print ( "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n\n" )
@@ -2302,9 +2306,19 @@ def dump_data_model ( dm ):
 
 
 if __name__ == "__main__":
+    global fail_on_error
+    fail_on_error = False 
 
     if len(sys.argv) > 2:
         print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
+        
+        if len(sys.argv) == 4:
+            # needed for testing
+            if sys.argv[3] == '-fail-on-error':
+                fail_on_error = True 
+            else:
+                print( "Warning: unuexpected argument " + sys.argv[2])
+        
         print ( "Reading Data Model: " + sys.argv[1] )
         dm = read_data_model ( sys.argv[1] )
         # dump_data_model ( dm )
