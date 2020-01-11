@@ -33,9 +33,6 @@ import json
 import os
 import re
 
-# global variable needed for testing
-fail_on_error = False
-
 #### Helper Functions ####
 
 def pickle_data_model ( dm ):
@@ -541,7 +538,7 @@ def write_viz_out_mdlr3 ( vizout, mols, f ):
       f.write ( "}\n" )
       f.write ( "\n" );
 
-def write_mdlr ( dm, file_name, scene_name='Scene' ):
+def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
     # The file_name parameter will be something like:
     #   <project>_files/mcell/output_data/Scene.main.mdl"
     #   <project>_files/mcell/output_data/Par_x_index_n/Scene.main.mdl
@@ -938,7 +935,7 @@ def requires_mcellr ( dm ):
 #####################################################################################################################
 
 
-def write_mdl ( dm, file_name, scene_name='Scene' ):
+def write_mdl ( dm, file_name, scene_name='Scene', fail_on_error=False ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
 
     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
@@ -970,7 +967,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
     if bionetgen_mode:
       print ( 100 * "#" )
       print ( "  BioNetGen Mode!!!" )
-      write_mdlr ( dm, file_name, scene_name )
+      write_mdlr ( dm, file_name, scene_name, fail_on_error )
       print ( 100 * "#" )
       return
 
@@ -2306,12 +2303,10 @@ def dump_data_model ( dm ):
 
 
 if __name__ == "__main__":
-    global fail_on_error
-    fail_on_error = False 
-
     if len(sys.argv) > 2:
         print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
-        
+
+        fail_on_error = False 
         if len(sys.argv) == 4:
             # needed for testing
             if sys.argv[3] == '-fail-on-error':
@@ -2323,7 +2318,7 @@ if __name__ == "__main__":
         dm = read_data_model ( sys.argv[1] )
         # dump_data_model ( dm )
         print ( "Writing MDL: " + sys.argv[2] )
-        write_mdl ( dm, sys.argv[2] )
+        write_mdl ( dm, sys.argv[2], fail_on_error=fail_on_error )
         print ( "Wrote Data Model found in \"" + sys.argv[1] + "\" to MDL file \"" + sys.argv[2] + "\"" )
         # Drop into an interactive python session
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
