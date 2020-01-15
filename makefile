@@ -12,18 +12,10 @@ UNAME_S := $(shell uname -s)
 # For example, for a link pointing into a Linux bundle: ln -s ~/src/blender/Blender-2.78c-CellBlender-linux/2.78/scripts/addons/ ~/my_cellblender_link
 # For example, for a link pointing into a MacOSX bundle: ln -s /Applications/Blender-2.78c-CellBlender/blender.app/Contents/Resources/2.78/scripts/addons/ ~/my_cellblender_link
 
-<<<<<<< HEAD
 INSTALL_DIR ?= ~/my_cellblender_link/
-=======
-INSTALL_DIR = ~/my_cellblender_link/
->>>>>>> refs/remotes/origin/master
 
 # Linux:
-<<<<<<< HEAD
 #INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
-=======
-#INSTALL_DIR = ~/.config/blender/2.76/scripts/addons/
->>>>>>> refs/remotes/origin/master
 
 # Mac:
 #INSTALL_DIR = ~/Library/Application\ Support/Blender/2.78/scripts/addons/
