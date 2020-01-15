@@ -5,7 +5,7 @@ SHELL = /bin/sh
 OBJS = mdlparse.bison.o mdlmesh_parser.o vector.o mdlmesh_parser_wrap.o
 
 _mdlmesh_parser.so: makefile setup.py mdlobj.py mdlparse.bison.c mdlmesh_parser.c vector.c mdlmesh_parser_wrap.c 
-	python3.5 setup.py build_ext
+	python setup.py build_ext
 
 mdllex.flex.c: mdllex.l
 	flex -Crema mdllex.l

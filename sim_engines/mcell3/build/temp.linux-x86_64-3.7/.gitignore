@@ -1,0 +1,4 @@
+/mdlmesh_parser.o
+/mdlmesh_parser_wrap.o
+/mdlparse.bison.o
+/vector.o
