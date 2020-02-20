@@ -386,9 +386,10 @@ import shutil
 
 try:
     import cellblender
-    cellblender_python_path = cellblender.python_path
+    cellblender_python_path = cellblender.cellblender_utils.get_python_path()
 except:
     cellblender_python_path = 'python3' # just use the system python
+
 
 project_files_dir = ""
 start_seed = 1
