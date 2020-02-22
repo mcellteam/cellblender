@@ -590,6 +590,9 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
 
     f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
 
+    if 'periodic_boundary_conditions' in data_model:
+      write_periodic_bcs(data_model['periodic_boundary_conditions'], f)
+
     if 'parameter_system' in data_model:
       # Write the parameter system
       write_parameter_system ( data_model['parameter_system'], f )
@@ -861,8 +864,8 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
     if not os.path.exists(mdlr_cmd):
         # during testing, mcell might not be still installed, try build path
         # .../cellblender/extensions/mcell/mdlr2mdl.py
-        mdlr_cmd = os.path.join( os.path.dirname(os.path.dirname(mdlr_cmd)), '..', '..', '..', 'build_mcell', 'mdlr2mdl.py') 
-    
+        mdlr_cmd = os.path.join( os.path.dirname(os.path.dirname(mdlr_cmd)), '..', '..', '..', 'build_mcell', 'mdlr2mdl.py')
+
     mdlr_args = [ cellblender_python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
     wd = output_data_dir
     print ( "\n\n\n" )
@@ -876,7 +879,7 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
     if p.returncode != 0:
         print("Error: mdlr2mdl.py failed with exit code " + str(p.returncode) + ".")
         if fail_on_error:
-            sys.exit(1)  # this should happen only during testing...  
+            sys.exit(1)  # this should happen only during testing...
     print ( "\n\n||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" )
     print ( "\n\nProcess Finished from write_mdlr with:\n" + str(p.stdout.read().decode('utf-8')) + "\n\n" )
     print ( "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n\n" )
@@ -999,6 +1002,9 @@ def write_mdl ( dm, file_name, scene_name='Scene', fail_on_error=False ):
 
 
       write_export_scripting ( dm, 'before', 'everything', f )
+
+      if 'periodic_boundary_conditions' in mcell:
+        write_periodic_bcs ( mcell['periodic_boundary_conditions'], f )
 
       write_export_scripting ( dm, 'before', 'parameters', f )
 
@@ -1657,6 +1663,26 @@ def write_warnings ( warnings, f ):
     return True
 
 
+def MDL_BOOL(b):
+    if b:
+      return ( "TRUE" )
+    else:
+      return ( "FALSE" )
+
+def write_periodic_bcs ( pbcs, f ):
+    print ( 10*"***************************  Inside write_periodic_bcs  ***************************\n" )
+    if 'include' in pbcs:
+      if pbcs['include']:
+        f.write ( "PERIODIC_BOX\n" )
+        f.write ( "  {\n" )
+        f.write ( "    CORNERS = [ %.15g, %.15g, %.15g ],[ %.15g, %.15g, %.15g ]\n" % ( float(pbcs['x_start']), float(pbcs['y_start']), float(pbcs['z_start']), float(pbcs['x_end']), float(pbcs['y_end']), float(pbcs['z_end']) ) )
+        f.write ( "    PERIODIC_TRADITIONAL = %s\n" % MDL_BOOL(pbcs['periodic_traditional']) )
+        f.write ( "    PERIODIC_X = %s\n" % MDL_BOOL(pbcs['peri_x']) )
+        f.write ( "    PERIODIC_Y = %s\n" % MDL_BOOL(pbcs['peri_y']) )
+        f.write ( "    PERIODIC_Z = %s\n" % MDL_BOOL(pbcs['peri_z']) )
+        f.write ( "  }\n" )
+
+
 def write_partitions ( parts, f ):
     if 'include' in parts:
       if parts['include']:
@@ -2307,14 +2333,14 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
 
-        fail_on_error = False 
+        fail_on_error = False
         if len(sys.argv) == 4:
             # needed for testing
             if sys.argv[3] == '-fail-on-error':
-                fail_on_error = True 
+                fail_on_error = True
             else:
                 print( "Warning: unuexpected argument " + sys.argv[2])
-        
+
         print ( "Reading Data Model: " + sys.argv[1] )
         dm = read_data_model ( sys.argv[1] )
         # dump_data_model ( dm )

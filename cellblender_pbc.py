@@ -92,21 +92,74 @@ class MCellPBCPropertyGroup(bpy.types.PropertyGroup):
                     #Boolean variables
                     row = layout.row(align=True)
                     layout.label("Defaulted to True, uncheck the boxes to set them to false.")
-                    
+
                     row = layout.row(align=True)
                     #Periodic Traditional variable
                     row.prop(self, "peri_trad")
                     #Periodic X variable
                     row.prop(self, "peri_x")
-                   
+
                     row = layout.row(align=True)
                     #Periodic Y variable
                     row.prop(self, "peri_y")
                     #Periodic Z variable
                     row.prop(self, "peri_z")
 
+    def build_data_model_from_properties ( self, context ):
+        print ( "Periodic Boundary Conditions building Data Model" )
+        dm_dict = {}
+        dm_dict['data_model_version'] = "DM_2020_02_21_1900"
+        dm_dict['include'] = self.include==True
+        dm_dict['periodic_traditional'] = self.peri_trad==True
+        dm_dict['peri_x'] = self.peri_x==True
+        dm_dict['peri_y'] = self.peri_y==True
+        dm_dict['peri_z'] = self.peri_z==True
+        dm_dict['x_start'] = "%g" % (self.x_start)
+        dm_dict['x_end'] =   "%g" % (self.x_end)
+        dm_dict['y_start'] = "%g" % (self.y_start)
+        dm_dict['y_end'] =   "%g" % (self.y_end)
+        dm_dict['z_start'] = "%g" % (self.z_start)
+        dm_dict['z_end'] =   "%g" % (self.z_end)
+        return dm_dict
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellPBCPropertyGroup Data Model" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            dm['data_model_version'] = "DM_2020_02_21_1900"
+
+        if dm['data_model_version'] != "DM_2020_02_21_1900":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellPBCPropertyGroup data model to current version." )
+            return None
+
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+
+        if dm['data_model_version'] != "DM_2020_02_21_1900":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPBCPropertyGroup data model to current version." )
+
+        self.include = dm['include']
+        self.peri_trad = dm['periodic_traditional']
+        self.peri_x  = dm['peri_x']
+        self.peri_y  = dm['peri_y']
+        self.peri_z  = dm['peri_z']
+        self.x_start = float(dm['x_start'])
+        self.x_end   = float(dm['x_end'])
+        self.y_start = float(dm['y_start'])
+        self.y_end   = float(dm['y_end'])
+        self.z_start = float(dm['z_start'])
+        self.z_end   = float(dm['z_end'])
+
+
     #Function that contains the previous function
     def draw_panel ( self, context, panel ):
-            # Create a layout from the panel and draw into it 
+            # Create a layout from the panel and draw into it
             layout = panel.layout
             self.draw_layout ( context, layout )
