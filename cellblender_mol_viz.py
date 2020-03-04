@@ -46,10 +46,11 @@ import json
 
 # CellBlender imports
 import cellblender
-from . import parameter_system
-from . import cellblender_release
-from . import cellblender_utils
 
+import cellblender.parameter_system as parameter_system 
+import cellblender.cellblender_release as cellblender_release 
+import cellblender.cellblender_utils as cellblender_utils 
+    
 from cellblender.cellblender_utils import timeline_view_all
 from cellblender.cellblender_utils import mcell_files_path
 
@@ -480,7 +481,7 @@ def get_mol_file_dir():
 
     return filepath
 
-
+# Why is self here? This isn't a class method...
 def mol_viz_update(self, context):
     """ Clear the old viz data. Draw the new viz data. """
     global global_mol_file_list
@@ -489,8 +490,11 @@ def mol_viz_update(self, context):
 
 #    if len(mcell.mol_viz.mol_file_list) > 0:
     if len(global_mol_file_list) > 0:
-#        filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
-        filename = global_mol_file_list[mcell.mol_viz.mol_file_index]
+#       filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
+        for file in global_mol_file_list:
+            print(str(file))
+        # added "-2" to match cell number with frame number
+        filename = global_mol_file_list[mcell.mol_viz.mol_file_index-2]
         mcell.mol_viz.mol_file_name = filename
         filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
 
@@ -509,7 +513,6 @@ def mol_viz_update(self, context):
 
 def mol_viz_clear(mcell_prop, force_clear=False):
     """ Clear the viz data from the previous frame. """
-
     mcell = mcell_prop
     scn = bpy.context.scene
     scn_objs = scn.objects
@@ -555,9 +558,6 @@ def mol_viz_clear(mcell_prop, force_clear=False):
     # Reset mol_viz_list to empty
     for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
         mcell.mol_viz.mol_viz_list.remove(i)
-
-
-
 
 
 def old_mol_viz_file_read(mcell_prop, filepath):
@@ -823,7 +823,6 @@ def mol_viz_file_dump(filepath):
 
 def mol_viz_file_read(mcell, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
-
     mv = mcell.mol_viz
     if (mv.viz_code in ['custom','both']):
 
@@ -1025,8 +1024,14 @@ def mol_viz_file_read(mcell, filepath):
                 mol_mat = mats.get(mol_mat_name)
                 if not mol_mat:
                     mol_mat = mats.new(mol_mat_name)
-                    mol_mat.diffuse_color = mcell.mol_viz.color_list[
-                        mcell.mol_viz.color_index].vec
+                        
+                    # if-else added to avoid IndexError when searching for item in zero length list
+                    if mcell.mol_viz.color_list:
+                        mol_mat.diffuse_color = mcell.mol_viz.color_list[mcell.mol_viz.color_index].vec
+                    else:
+                        #print("Unknown color, defaulting to 1,0,0")
+                        mol_mat.diffuse_color = (1, 0, 0)
+                        
                     mcell.mol_viz.color_index = mcell.mol_viz.color_index + 1
                     if (mcell.mol_viz.color_index >
                             len(mcell.mol_viz.color_list)-1):
