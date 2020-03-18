@@ -52,8 +52,14 @@ ZIPOPTS = -X -0 -D -o
 .PHONY: all
 all: cellblender subdirs cellblender.zip
 
+ifeq ($(OS),Windows_NT)
+	MKLINK_CMD="mklink /J cellblender ."
+else
+	MKLINK_CMD="ln -s . cellblender "
+endif
+
 cellblender:
-	ln -s . cellblender
+	$(MKLINK_CMD) 
 
 .PHONY: subdirs $(SUBDIRS)
 subdirs: makefile $(SUBDIRS)

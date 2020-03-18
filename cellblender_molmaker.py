@@ -488,8 +488,11 @@ def set_component_positions_2D ( mc ):
 
 
 
-def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_as_3D, include_rotation=True ):
+def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_as_3D, axial_rotation=True, bending_rotation=False ):
   # Bind these two molecules by aligning their axes and shifting to align their components
+  # The "fixed" parts (components and molecules) will NOT have their locations changed.
+  # The "variable" parts (components and molecules) will be transformed to properly match up with the "fixed" parts.
+
   # num_parts = len(mc)
 
   checked_print ( "  Binding " + str(mc[fixed_comp_index]['name']) + " to " + str(mc[var_comp_index]['name']) );
@@ -498,6 +501,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
   fixed_mol_index = mc[fixed_comp_index]['peer_list'][0]
   var_mol_index = mc[var_comp_index]['peer_list'][0]
 
+  # These vectors are either 2D (x,y) or 3D (x,y,z)
   fixed_vec = []
   var_vec = []
 
@@ -678,15 +682,15 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
       ##### fprintf ( stdout, "  Component %s after  is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
 
 
-  # Now the molecules are aligned as they should be except for rotation along their bonding axis
+  # Now the molecules are aligned as they should be except for rotation along their bonding axis or bending axis
 
-  if build_as_3D and include_rotation:
+  if build_as_3D and axial_rotation:
 
     # dump_molcomp_list ( mc )
 
     # Rotate the variable molecule along its bonding axis to align based on the rotation key angle
 
-    checked_print ( "Final Rotation:" )
+    checked_print ( "Axial Rotation:" )
     checked_print ( "  Fixed mol " + str(fixed_mol_index) + " binding to Var mol " + str(var_mol_index) )
     checked_print ( "  Fixed component " + str(fixed_comp_index) + " binding to Var component " + str(var_comp_index) )
 
@@ -775,7 +779,11 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
     checked_print ( "Current key plane angle = " + str(180*cur_key_plane_angle/math.pi) + ",  dot_cross_rot = " + str(dot_cross_rot) )
 
 
-    composite_rot_angle = math.pi + (var_req_bond_angle+fixed_req_bond_angle) + cur_key_plane_angle # The "math.pi" adds 180 degrees to make the components "line up"
+    composite_rot_angle = math.pi + cur_key_plane_angle # The "math.pi" adds 180 degrees to make the components "line up"
+
+    if not bending_rotation:
+      # Only add the requested axial rotation if there is no bending
+      composite_rot_angle += (var_req_bond_angle + fixed_req_bond_angle)
 
     checked_print ( "  Fixed angle                is = " + str(180 * fixed_req_bond_angle / math.pi) + " degrees" )
     checked_print ( "  Var angle                  is = " + str(180 * var_req_bond_angle / math.pi) + " degrees" )
@@ -850,6 +858,16 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
           mc[mc[var_mol_index]['key_list'][ci]]['coords'][2] = (R[2][0]*x) + (R[2][1]*y) + (R[2][2]*z) + mc[var_mol_index]['coords'][2]
           ##### fprintf ( stdout, "  Component %s after  is at (%g,%g)\n", mc[mc[var_mol_index].peers[ci]].name, mc[mc[var_mol_index].peers[ci]]['coords'][0], mc[mc[var_mol_index].peers[ci]]['coords'][1] );
 
+  if build_as_3D and bending_rotation:
+
+    # dump_molcomp_list ( mc )
+
+    # Rotate the variable molecule about an axis through its binding component and normal to the fixed molecule/component/key plane
+    # Rotate by an amount that puts the pre-axially rotated variable key in line with the binding component to fixed key vector
+
+    # Unfortunately, the location of the pre-axially rotated variable key is not available since the composite rotation angle included the arbitrary user-selected rotation
+    pass
+
 
   ##### dump_molcomp_array(mc,num_parts);
 
@@ -884,7 +902,7 @@ def bind_molecules_at_components ( mc, fixed_comp_index, var_comp_index, build_a
 
 
 
-def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
+def bind_all_molecules ( molcomp_array, build_as_3D, axial_rotation=True, bending_rotation=False ):
 
   context = bpy.context
   mcell = context.scene.mcell
@@ -954,7 +972,7 @@ def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
 
                 # Perform the bond (changes the locations)
 
-                bind_molecules_at_components ( molcomp_array, fci, vci, build_as_3D, include_rotation )
+                bind_molecules_at_components ( molcomp_array, fci, vci, build_as_3D, axial_rotation, bending_rotation )
 
                 # The bonding process will have specified the placement of the variable molecule
                 # Set the variable molecule and all of its components to final
@@ -971,7 +989,7 @@ def bind_all_molecules ( molcomp_array, build_as_3D, include_rotation=True ):
                 molmaker.print_debug = old_debug
 
 
-def build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=True ):
+def build_all_mols ( context, molcomp_list, build_as_3D=True, axial_rotation=True, bending_rotation=False ):
 
   if build_as_3D:
     checked_print ( "\n\nBuilding as 3D" )
@@ -980,7 +998,7 @@ def build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=T
 
   molmaker = context.scene.mcell.molmaker
 
-  bind_all_molecules ( molcomp_list, build_as_3D, include_rotation=molmaker.include_rotation )
+  bind_all_molecules ( molcomp_list, build_as_3D, axial_rotation=molmaker.axial_rotation, bending_rotation=molmaker.bending_rotation )
 
   if molmaker.average_coincident:
     i = 0
@@ -1029,7 +1047,7 @@ class MolMaker_OT_build_2D(bpy.types.Operator):
     update_molcomp_list_from_defs ( context, molcomp_list, moldef_text, build_as_3D=False )
 
     set_component_positions_2D ( molcomp_list )
-    build_all_mols ( context, molcomp_list, build_as_3D=False, include_rotation=molmaker.include_rotation )
+    build_all_mols ( context, molcomp_list, build_as_3D=False, axial_rotation=molmaker.axial_rotation, bending_rotation=molmaker.bending_rotation )
     return {'FINISHED'}
 
 
@@ -1052,7 +1070,7 @@ class MolMaker_OT_build_3D(bpy.types.Operator):
     update_molcomp_list_from_defs ( context, molcomp_list, moldef_text, build_as_3D=True )
 
     set_component_positions_3D ( molcomp_list )
-    build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=molmaker.include_rotation )
+    build_all_mols ( context, molcomp_list, build_as_3D=True, axial_rotation=molmaker.axial_rotation, bending_rotation=molmaker.bending_rotation )
     return {'FINISHED'}
 
 
@@ -1443,7 +1461,7 @@ def build_complex_from_cellblender ( context ):
 
   # Finally build the molecules from the molcomp_list
 
-  build_all_mols ( context, molcomp_list, build_as_3D=True, include_rotation=molmaker.include_rotation )
+  build_all_mols ( context, molcomp_list, build_as_3D=True, axial_rotation=molmaker.axial_rotation, bending_rotation=molmaker.bending_rotation )
 
   checked_print ( 'Built Blender model\n' )
 
@@ -1487,7 +1505,8 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
   cellblender_colors = BoolProperty ( default=True )
   show_key_planes = BoolProperty ( default=True )
   average_coincident = BoolProperty ( default=False )
-  include_rotation = BoolProperty ( default=True )
+  axial_rotation = BoolProperty ( default=True )
+  bending_rotation = BoolProperty ( default=True )
   dynamic_rotation = BoolProperty ( default=False )
   print_debug = BoolProperty ( default=False )
 
@@ -1508,7 +1527,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
   def build_data_model_from_properties ( self ):
     mm_dict = {}
-    mm_dict['data_model_version'] = "DM_2018_10_31_1510"
+    mm_dict['data_model_version'] = "DM_2020_01_10_1930"
     mm_dict['molecule_definition'] = self.molecule_definition
     mm_dict['molecule_text_name'] = self.molecule_text_name
     mm_dict['comp_loc_text_name'] = self.comp_loc_text_name
@@ -1516,7 +1535,8 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     mm_dict['cellblender_colors'] = self.cellblender_colors
     mm_dict['show_key_planes'] = self.show_key_planes
     mm_dict['average_coincident'] = self.average_coincident
-    mm_dict['include_rotation'] = self.include_rotation
+    mm_dict['axial_rotation'] = self.axial_rotation
+    mm_dict['bending_rotation'] = self.bending_rotation
     mm_dict['dynamic_rotation'] = self.dynamic_rotation
     mm_dict['print_debug'] = self.print_debug
     mm_dict['show_text_interface'] = self.show_text_interface
@@ -1550,7 +1570,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
     print ( "------------------------->>> Upgrading MCellMolMakerProperty Data Model" )
     if not ('data_model_version' in dm):
-        # Make changes to move from unversioned to DM_2014_10_24_1638
+        # Make changes to move from unversioned to DM_2018_10_26_1310
         dm['data_model_version'] = "DM_2018_10_26_1310"
 
     # Check that the upgraded data model version matches the version for this property group
@@ -1559,7 +1579,15 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
         dm['average_coincident'] = False
         dm['data_model_version'] = "DM_2018_10_31_1510"
         return None
-    if dm['data_model_version'] != "DM_2018_10_31_1510":
+    if dm['data_model_version'] == "DM_2018_10_31_1510":
+        # Convert "include_rotation" to "axial_rotation"
+        dm['axial_rotation'] = dm['include_rotation']
+        # Create a new field for "bending_rotation"
+        dm['bending_rotation'] = 0.0
+        # Update the data model version
+        dm['data_model_version'] = "DM_2020_01_10_1930"
+        return None
+    if dm['data_model_version'] != "DM_2020_01_10_1930":
         data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMolMakerPropertyGroup data model " + str(dm['data_model_version']) + " to current version." )
         return None
 
@@ -1567,7 +1595,7 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
 
   def build_properties_from_data_model ( self, context, dm_dict ):
     # Check that the data model version matches the version for this property group
-    if dm_dict['data_model_version'] != "DM_2018_10_31_1510":
+    if dm_dict['data_model_version'] != "DM_2020_01_10_1930":
         data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMolMakerPropertyGroup data model " + str(dm['data_model_version']) + " to current version." )
     # Now convert the updated Data Model into CellBlender Properties
     self.molecule_definition = dm_dict['molecule_definition']
@@ -1576,7 +1604,8 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     self.make_materials = dm_dict['make_materials']
     self.cellblender_colors = dm_dict['cellblender_colors']
     self.average_coincident = dm_dict['average_coincident']
-    self.include_rotation = dm_dict['include_rotation']
+    self.axial_rotation = dm_dict['axial_rotation']
+    self.bending_rotation = dm_dict['bending_rotation']
     self.dynamic_rotation = dm_dict['dynamic_rotation']
     self.print_debug = dm_dict['print_debug']
     self.show_text_interface = dm_dict['show_text_interface']
@@ -1657,7 +1686,9 @@ class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
     col.prop ( self, 'average_coincident', text="Average Coincident" )
     row = layout.row()
     col = row.column()
-    col.prop ( self, 'include_rotation', text="Axial Rotation" )
+    col.prop ( self, 'axial_rotation', text="Axial Rotation" )
+    col = row.column()
+    col.prop ( self, 'bending_rotation', text="Bending Rotation" )
     col = row.column()
     col.prop ( self, 'dynamic_rotation', text="Dynamic Rotation" )
     col = row.column()
