@@ -20,6 +20,7 @@ if not os.path.exists(CELLBLENDER_DIR):
     sys.exit(1)
 sys.path.insert(1, CELLBLENDER_DIR)
 import cellblender_mol_viz as cb_mv
+import data_model
 
 
 INPUT_DIRECTORY = sys.argv[4]
@@ -48,18 +49,12 @@ def mol_viz_update_from_file(mcell, filename):
 
 
 def update_frame_data(scene):
-    
     # this is our iteration
-    current_iteration = bpy.context.scene.frame_current
-    
-    # os directory that enables access to files within the input folder 
-    # use regex to find appropriate data file in seed folder
-    
+    current_iteration = bpy.context.scene.frame_current - 1
+   
     best_datamodel_iteration = -1
     best_datamodel_file = ''
     best_mol_pos_file = ''
-    
-    
     
     filepath = os.scandir(INPUT_DIRECTORY)
     for file in filepath:
@@ -80,34 +75,52 @@ def update_frame_data(scene):
 
     # geometry does not have to be present
     if best_datamodel_file:
-        #print("** Matching datamodel file " + best_datamodel_file)
+        print("** Matching datamodel file " + best_datamodel_file)
         #load_datamodel(best_datamodel_file)
+        data_model.import_datamodel_all_json(best_datamodel_file, bpy.context)
         pass
     
     # molecule positions must be found        
     if best_mol_pos_file:
         # file.path gets the entire folder path as well as the file name as a string.
-        #visualize_data(scene, best_mol_pos_file)
         mol_viz_update_from_file(bpy.context.scene.mcell, best_mol_pos_file)
     else:
         # print out of bounds error
         out_of_bounds(current_iteration)
     
+
+def load_first_frame_and_set_nr_of_frames():
     
-        
-        
+    # get nr of frames
+    max_frame_nr = -1
+    filepath = os.scandir(INPUT_DIRECTORY)
+    for file in filepath:
+        # --- geometry ---
+        if re.match(r'(.*\.[0-9]+\.dat)', str(file)):
+            name = str(file.path)
+            file_iteration = int(name.split('.')[-2])
+            
+            # find the highest value 
+            if file_iteration >= max_frame_nr:
+                max_frame_nr = file_iteration
+            
+                
+    bpy.context.scene.frame_end = max_frame_nr + 1 # frames are counted from 1, iterations from 0
+    update_frame_data(bpy.context.scene)
+    
 
-
-print("*** Loading vizualization data from directory " + INPUT_DIRECTORY)
-
-
+print("*** Loading visualization data from directory " + INPUT_DIRECTORY)
+if not os.path.exists(INPUT_DIRECTORY):
+    print("Error: directory " + INPUT_DIRECTORY + " does not exist, terminating.")
+    sys.exit(1)
 
 # remove all default objects from blender startup
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete()
 
+# set number of frames and load first file
+load_first_frame_and_set_nr_of_frames()
 
-#note: maybe list the directory on start
-
+# register a handler for events when frame changes
 # update the visual output by sending the .dat files created by mcell into cellblender for each frame
 bpy.app.handlers.frame_change_pre.append(update_frame_data)
