@@ -14,7 +14,8 @@ import re
 import sys
 
 #FIXME: need to find cellblender plugin directory, maybe pass as argument
-CELLBLENDER_DIR = '/media/ahusar/Data/mcell/releases/3.5.0/Blender-2.79-CellBlender/2.79/scripts/addons/cellblender'
+THIS_DIR = os.path.dirname(os.path.realpath(__file__))
+CELLBLENDER_DIR = os.path.join(THIS_DIR, '..', '..')
 if not os.path.exists(CELLBLENDER_DIR):
     print("Directory where the cellblender plugin should reside was not found: " + CELLBLENDER_DIR)
     sys.exit(1)
@@ -22,9 +23,8 @@ sys.path.insert(1, CELLBLENDER_DIR)
 import cellblender_mol_viz as cb_mv
 import data_model
 
-
+# TODO: better argument checkinbg 
 INPUT_DIRECTORY = sys.argv[4]
-
    
 # reports error when the cellblender frame goes past the mcell data provided
 def out_of_bounds(n):
