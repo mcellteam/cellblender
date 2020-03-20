@@ -58,6 +58,7 @@ cellblender_info = {
         "developer_utilities"+os.sep+"data_model_print.py",
         "developer_utilities"+os.sep+"data_model_pyedit.py",
         "developer_utilities"+os.sep+"data_model_tree.py",
+        "developer_utilities"+os.sep+"mol_viz_scripts"+os.sep+"viz_mcell_run.py",
 
         "engine_runner_combos"+os.sep+"makefile",
         "engine_runner_combos"+os.sep+"rng.h",
