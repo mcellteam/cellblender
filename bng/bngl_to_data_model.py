@@ -353,6 +353,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   lines = re.split('\n', lines)
   i = 0
   for i in range(len(lines)):
+    lines[i] = lines[i].strip()
     l = lines[i]
     if '#' in l:
       lines[i] = l.split('#')[0].strip()
