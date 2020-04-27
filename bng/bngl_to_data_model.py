@@ -1191,8 +1191,11 @@ def read_data_model_from_bngsim( model ):
   rel_list = []
   site_num = 1
  
+  # TODO: Add relevant stuff to species objects 
+  # we have on BNGSim end
   for species in model.species:
     mol_expr, mol_quant = species, model.species[species]
+    mol_expr = mol_expr.string
     rel_item = {
       'data_model_version' : "DM_2018_01_11_1330",
       'description' : "",
@@ -1378,6 +1381,8 @@ def read_data_model_from_bngsim( model ):
   compiled_mol_regx = re.compile(mol_regx)
 
   # Fill in the reaction output list
+  # TODO: Add relevant info to observable list
+  # on BNGSim-side to avoid having to parse these
   for obs in model.observables:
     # obs is the name of the observable
     # model.observables is tuple (type, expression)
@@ -1426,14 +1431,6 @@ def read_data_model_from_bngsim( model ):
 
 
   # reaction rules
-
-  # These regular expressions seem to find rates at the end of a line
-  last_rate_regx = "[\\w\\.+-]+$"
-  last_2_rates_regx = "([\w\.+-]+){1}\s*,\s*([\w\.+-]+){1}$"
-
-  compiled_last_rate_regx = re.compile(last_rate_regx)
-  compiled_last_2_rates_regx = re.compile(last_2_rates_regx)
-
   dm['mcell']['define_reactions'] = { 'data_model_version' : "DM_2014_10_24_1638" }
   react_list = []
   for rule in model.rules:
