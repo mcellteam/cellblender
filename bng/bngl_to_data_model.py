@@ -529,6 +529,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
       cdefs = []
       for line in block[1:-1]:
+        # FIXME: spaces in expressions break this 
         parts = [ p for p in line.strip().split() ]
         # Evaluate the volume expression string (3rd value, parts[2]) to a float
         parts[2] = eval(parts[2],globals(),par_val_dict)
@@ -998,12 +999,564 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
   return dm
 
+def initialize_data_model():
+  dm = { 'mcell': { 'api_version': 0, 'blender_version': [2,78,0], 'data_model_version': "DM_2017_06_23_1300" } }
+  dm['mcell']['cellblender_source_sha1'] = "61cc8da7bfe09b42114982616ce284301adad4cc"
+  dm['mcell']['cellblender_version'] = "0.1.54"
+  dm['mcell']['model_language'] = "mcell3r"
+  # Force a reflective surface class
+  dm['mcell']['define_surface_classes'] = {
+    'data_model_version' : "DM_2014_10_24_1638",
+    'surface_class_list' : [
+      {
+        'data_model_version' : "DM_2018_01_11_1330",
+        'description' : "",
+        'name' : "reflect",
+        'surface_class_prop_list' : [
+          {
+            'affected_mols' : "ALL_MOLECULES",
+            'clamp_value' : "0",
+            'data_model_version' : "DM_2015_11_08_1756",
+            'molecule' : "",
+            'name' : "Molec.: ALL_MOLECULES   Orient.: Ignore   Type: Reflective",
+            'surf_class_orient' : ";",
+            'surf_class_type' : "REFLECTIVE"
+          }
+        ]
+      }
+    ]
+  }
+
+  # Add a default object material (may be augmented later)
+  dm['mcell']['materials'] = {
+    'material_dict' : {
+      'membrane_mat' : {
+        'diffuse_color' : {
+          'a' : 0.1,
+          'b' : 0.43,
+          'g' : 0.43,
+          'r' : 0.43
+        }
+      }
+    }
+  }
+
+  dm['mcell']['geometrical_objects'] = {
+    'object_list' : []
+  }
+
+  dm['mcell']['model_objects'] = {
+    'data_model_version' : "DM_2018_01_11_1330",
+    'model_object_list' : []
+  }
+  return dm
+
+def read_data_model_from_bngsim( model ):
+
+  # Now start building the data model
+  dm = initialize_data_model()
+
+  # Define special parameters that appear to be MCell Specific
+
+  special_parameters = { 'ITERATIONS': 1000, 'TIME_STEP': 1e-6, 'VACANCY_SEARCH_DISTANCE': 10 }
+
+  # Add the parameter system and build a parameter/value dictionary for future use
+  # This assumes that parameters are defined before being used
+
+  par_expr_dict = {}
+  par_val_dict = {}
+
+  par_list = []
+  for param in model.parameters: 
+    if param in special_parameters.keys():
+      #TODO what situations does len(param_line) == 3 handle?
+      special_parameters[param] = model.parameters[param]
+    else:
+      par = {}
+      par['par_name'] = param
+      par['par_expression'] = ""
+      par['par_description'] = ""
+      par['par_units'] = ""
+      par_list.append ( par )
+      #TODO we no longer need expression evaluation, XML exporting handles that
+      par_val_dict[param] = model.parameters[param]
+
+  dm['mcell']['parameter_system'] = { 'model_parameters': par_list }
+  for k in sorted(par_val_dict.keys()):
+    print ( "  " + str(k) + " = " + str(par_val_dict[k]) )
+
+  # Add the compartments
+  # Format:   Name Dimension Volume [outside compartment]
+  # Compartment Topology Rules
+  #  (generally analogous to SBML compartment topology)
+  #    The outside of a surface must be volume (or undefined).
+  #    The outside of a volume must be a surface (or undefined).
+  #    A compartment may only have one outside.
+  #    A volume may be outside of multiple surfaces.
+  #    A surface may be outside of only one volume.
+  #  The outside compartment must be defined before it is referenced
+
+  nesting_space = 0.05 # Note that this should be half of desired because of the intervening 2D surfaces
+  inner_cube_dim = 0.5
+
+  compartment_type_dict = {} # This will be a dictionary of name:type for each compartment
+  molecule_type_dict = {}    # This will be a dictionary of name:[types] for each molecule
+  topology = None            # This will be a recursive tree dictionary of nested objects
+
+  cdefs = []
+  for compartment in model.compartments:
+    dim = int(model.compartments[compartment][0])
+    vol = float(model.compartments[compartment][1])
+    parent = model.compartments[compartment][2]
+    if parent is None:
+        cdefs.append( [compartment, dim, vol] )
+    else:
+        cdefs.append( [compartment, dim, vol, parent] )
+
+  topology = build_topology_from_list ( cdefs, { '~children':{}, 'name':"World" } )
+  check_legal ( topology )
+  update_compartment_defs ( topology, compartment_type_dict )
+  if contains_siblings(topology):
+    print ( "Topology contains siblings" )
+    print ( "***** WARNING: Compartment Volumes are not used with siblings" )
+    assign_linear_dimensions ( topology, inner_cube_dim, nesting_space )
+    assign_linear_coordinates ( topology, 0, 0, 0, nesting_space )
+  else:
+    print ( "Topology does not contain siblings. Create nested volumes." )
+    assign_nested_dimensions ( topology )
+    assign_nested_coordinates ( topology, 0, 0, 0 )
+
+
+    append_objects ( topology, None, None, dm['mcell']['geometrical_objects']['object_list'], dm['mcell']['model_objects']['model_object_list'] )
+
+    print ( "Max depth = " + str(get_max_depth(topology)) )
+
+    # Print the compartments:
+    print ( "Topology = " + str(topology) )
+
+    dump_data_model ( "Topology", topology )
+
+
+  for k in compartment_type_dict.keys():
+    print ( "  Compartment " + str(k) + " is type " + str(compartment_type_dict[k]) )
+
+
+  # Change the materials to add a new one for each object
+  mat_name_number = 1
+  for obj in dm['mcell']['geometrical_objects']['object_list']:
+    if len(obj['material_names']) > 0:
+      if obj['material_names'][0] == 'membrane_mat':
+        # Make a new material to replace the defaulted "membrane_mat"
+        mat_name = obj['name'] + '_mat_' + str(mat_name_number)
+        dm['mcell']['materials']['material_dict'][mat_name] = { 'diffuse_color' : { 'a':0.1, 'r':mat_name_number&1, 'g':mat_name_number&2, 'b':mat_name_number&4 } }
+        obj['material_names'][0] = mat_name
+        mat_name_number += 1
+
+  # Make a "Modify Surface Regions" "ALL" entry for every object
+  dm['mcell']['modify_surface_regions'] = {
+    'data_model_version' : "DM_2014_10_24_1638",
+    'modify_surface_regions_list' : []
+  }
+
+  # Make a "Modify Surface Regions" entry for every named surface in an object
+  for obj in dm['mcell']['geometrical_objects']['object_list']:
+    msr = {
+        'data_model_version' : "DM_2018_01_11_1330",
+        'description' : "",
+        'name' : "Surface Class: reflect   Object: " + obj['name'] + "   ALL",
+        'object_name' : obj['name'],
+        'region_name' : "",
+        'region_selection' : "ALL",
+        'surf_class_name' : "reflect"
+      }
+    dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
+
+    if 'define_surface_regions' in obj:
+      for surf in obj['define_surface_regions']:
+        msr = {
+            'data_model_version' : "DM_2018_01_11_1330",
+            'description' : "",
+            'name' : "Surface Class: reflect   Object: " + obj['name'] + "   Region: " + surf['name'],
+            'object_name' : obj['name'],
+            'region_name' : surf['name'],
+            'region_selection' : "SEL",
+            'surf_class_name' : "reflect"
+          }
+        dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
+
+
+  # Add the seed species as release sites
+
+  dm['mcell']['release_sites'] = { 'data_model_version' : "DM_2014_10_24_1638" }
+  rel_list = []
+  site_num = 1
+ 
+  for species in model.species:
+    mol_expr, mol_quant = species, model.species[species]
+    rel_item = {
+      'data_model_version' : "DM_2018_01_11_1330",
+      'description' : "",
+      'location_x' : "0",
+      'location_y' : "0",
+      'location_z' : "0",
+      'molecule' : mol_expr,
+      'name' : "Rel_Site_" + str(site_num),
+      'object_expr' : "",
+      'orient' : "'",
+      'pattern' : "",
+      'points_list' : [],
+      'quantity' : mol_quant,
+      'quantity_type' : "NUMBER_TO_RELEASE",
+      'release_probability' : "1",
+      'shape' : "OBJECT",
+      'site_diameter' : "0",
+      'stddev' : "0"
+    }
+
+    # Release based on compartment names and parent/child relationships in the object topology
+
+    if '@' in mol_expr:
+      # This release site is in a compartment
+      compartment_name = None
+      mol_name = None
+      if ":" in mol_expr:
+        # This is the old format using a colon
+        compartment_name = mol_expr[mol_expr.find('@')+1:mol_expr.find(':')].strip()
+        mol_name = mol_expr[mol_expr.find(':')+1:]
+        mol_name = mol_name[0:mol_name.find('(')].strip()
+      else:
+        compartment_name = mol_expr[mol_expr.find('@')+1:].split()[0].strip()
+        if '(' in mol_expr:
+          mol_name = mol_expr.split('(')[0].strip()
+        else:
+          mol_name = mol_expr.split('@')[0].strip()
+      if not (mol_name in molecule_type_dict):
+        molecule_type_dict[mol_name] = []
+      # Note that a molecule may be of multiple types if used in different contexts!!
+      # This might be better implemented as a set, but using a dictionary for now
+      molecule_type_dict[mol_name].append ( compartment_type_dict[compartment_name] )
+
+      compartment = find_object_by_name ( topology, compartment_name )
+      compartment_expression = ""
+      if compartment['dim'] == '3':
+        # The compartment of interest is a volume
+        # The volume's children will be surfaces
+        # The volume's grandchildren will be volumes (which is what MCell expects)
+        # Each of these grandchildren will need to be subtracted from the volume
+        compartment_expression = compartment['name'] + "[ALL]"
+        grandchild_names = get_grandchild_names ( compartment )
+        print ( "  " + str(compartment['name']) + " is " + str(compartment['dim']) + "D" )
+        print ( "    GrandChildren: " + str(grandchild_names) )
+        for cn in grandchild_names:
+          compartment_expression += " - " + cn + "[ALL]"
+      elif compartment['dim'] == '2':
+        # The OUTER compartment of interest is a surface.
+        # In CBNGL, the enclosed volume is the INNER object.
+        # In MCell, the surface is referenced as a part of the volume object: vol[surf]
+        # In mixed MCell/CBNGL syntax, this becomes INNER[OUTER]
+        child_names = get_child_names ( compartment )
+        print ( "  " + str(compartment['name']) + " is " + str(compartment['dim']) + "D" )
+        print ( "    Children: " + str(child_names) )
+        if len(child_names) > 1:
+          print ( "***** WARNING: Surface should not contain more than one volume!!" )
+        compartment_expression = child_names[0] + "[" + compartment['name'] + "]"
+      print ( "  " + "Releasing " + rel_item['molecule'] + " in " + compartment_expression )
+      print ( "  " )
+      rel_item['object_expr'] = compartment_expression
+
+    rel_list.append(rel_item)
+    site_num += 1
+
+  for rel_item in rel_list:
+    print ( "  Release " + str(rel_item['molecule']) + " at " + str(rel_item['object_expr']) )
+
+  dm['mcell']['release_sites']['release_site_list'] = rel_list
+
+  for k in molecule_type_dict.keys():
+    print ( "  Molecule " + str(k) + " is of types: " + str(molecule_type_dict[k]) )
+
+
+  # Add the molecules list here since the vol/surf type is deduced from compatments and seed species (above)
+
+  default_vol_dc = "1e-6"
+  default_surf_dc = "1e-8"
+
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in par_expr_dict:
+    default_vol_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_3D']
+
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in par_expr_dict:
+    default_surf_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_2D']
+
+  mol_list = []
+  color_index = 1
+  vol_glyphs = ['Icosahedron', 'Sphere_1', 'Sphere_2', 'Octahedron', 'Cube']
+  surf_glyphs = ['Torus', 'Cone', 'Receptor', 'Cylinder', 'Pyramid', 'Tetrahedron']
+  vol_glyph_index = 0
+  surf_glyph_index = 0
+  for mtype in model.moltypes:
+    mol = {}
+    mol['data_model_version'] = "DM_2018_01_11_1330"
+    mol['mol_name'] = mtype.string.split('(')[0].strip()
+    mol['mol_type'] = '3D'
+    if mol['mol_name'] in molecule_type_dict.keys():
+      print ( "Assigning molecule based on type of : " + str(molecule_type_dict[mol['mol_name']]) )
+      # Use the first item in the list for now. Eventually may need to create two mols (for vol & surf)
+      if molecule_type_dict[mol['mol_name']][0] == '2':
+        mol['mol_type'] = '2D'
+    else:
+      print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
+
+    mol['custom_space_step'] = ""
+    mol['custom_time_step'] = ""
+    mol['description'] = ""
+
+    if mol['mol_type'] == '3D':
+      mol['diffusion_constant'] = default_vol_dc
+      key = 'MCELL_DIFFUSION_CONSTANT_3D_' + mol['mol_name']
+      if key in par_expr_dict:
+        mol['diffusion_constant'] = par_expr_dict[key]
+    else:
+      mol['diffusion_constant'] = default_surf_dc
+      key = 'MCELL_DIFFUSION_CONSTANT_2D_' + mol['mol_name']
+      if key in par_expr_dict:
+        mol['diffusion_constant'] = par_expr_dict[key]
+
+    mol['export_viz'] = False
+    mol['maximum_step_length'] = ""
+    mol['mol_bngl_label'] = ""
+    mol['target_only'] = False
+
+    mol['display'] = { 'color': [color_index&1, color_index&2, color_index&4], 'emit': 0.0, 'glyph': "Cube", 'scale': 1.0 }
+    color_index += 1
+    if mol['mol_type'] == '2D':
+      mol['display']['glyph'] = surf_glyphs[surf_glyph_index%len(surf_glyphs)]
+      surf_glyph_index += 1
+    else:
+      mol['display']['glyph'] = vol_glyphs[vol_glyph_index%len(vol_glyphs)]
+      vol_glyph_index += 1
+
+    mol['bngl_component_list'] = []
+    mol_comps = mtype.string.split('(')[1].split(')')[0].split(',')
+    for c in mol_comps:
+      comp = {}
+      cparts = c.split('~')
+      comp['cname'] = cparts[0]
+      comp['cstates'] = []
+      if len(cparts) > 1:
+        comp['cstates'] = cparts[1:]
+      mol['bngl_component_list'].append ( comp )
+    mol_list.append ( mol )
+  dm['mcell']['define_molecules'] = { 'molecule_list': mol_list, 'data_model_version': "DM_2014_10_24_1638" }
+
+  # observables
+  dm['mcell']['viz_output'] = {
+    'all_iterations' : True,
+    'data_model_version' : "DM_2014_10_24_1638",
+    'end' : "1000",
+    'export_all' : True,
+    'start' : "0",
+    'step' : "5"
+  }
+  dm['mcell']['reaction_data_output'] = {
+    'always_generate' : True,
+    'combine_seeds' : True,
+    'data_model_version' : "DM_2016_03_15_1800",
+    'mol_colors' : False,
+    'output_buf_size' : "",
+    'plot_layout' : " plot ",
+    'plot_legend' : "0",
+    'rxn_step' : "",
+    'reaction_output_list' : []
+  }
+
+  # This regular expression seems to find BNGL molecules with parens: \b\w+\([\w,~\!\?\+]+\)+([.]\w+\([\w,~\!\?\+]+\))*
+  mol_regx = "\\b\\w+\\([\\w,~\\!\\?\\+]+\\)+([.]\\w+\\([\\w,~\\!\\?\\+]+\\))*"
+
+  # This regular expression seems to find BNGL molecules with or without parens: \b\w+(\([\w,~\!\?\+]+\)+)*([.]\w+\([\w,~\!\?\+]+\))*
+  mol_regx = "\\b\\w+(\\([\\w,~\\!\\?\\+]+\\)+)*([.]\\w+\\([\\w,~\\!\\?\\+]+\\))*"
+
+  compiled_mol_regx = re.compile(mol_regx)
+
+  # Fill in the reaction output list
+  for obs in model.observables:
+    # obs is the name of the observable
+    # model.observables is tuple (type, expression)
+    keyword = model.observables[obs][0]
+    if keyword != "Molecules":
+      print ( "Warning: Conversion only supports Molecule observables" )
+    label = obs
+
+    mols_part = model.observables[obs][1].string
+    print ( "  Mols part: " + mols_part )
+
+    start = 0
+    end = 0
+    match = compiled_mol_regx.search(mols_part,start)
+    things_to_count = []
+    while match:
+      start = match.start()
+      end = match.end()
+      print ( "  Found: \"" + mols_part[start:end] + "\"" )
+      things_to_count.append ( mols_part[start:end] )
+      start = end
+      match = compiled_mol_regx.search(mols_part,start)
+
+    count_parts = [ "COUNT[" + thing + ",WORLD]" for thing in things_to_count ]
+    count_expr = ' + '.join(count_parts)
+
+    mdl_prefix = label
+    if label.endswith ( '_MDLString' ):
+      mdl_prefix = label[0:len(label)-len('_MDLString')]
+    count_item = {
+        'count_location' : "World",
+        'data_file_name' : "",
+        'data_model_version' : "DM_2018_01_11_1330",
+        'description' : "",
+        'mdl_file_prefix' : mdl_prefix,
+        'mdl_string' : count_expr,
+        'molecule_name' : "",
+        'name' : "MDL: " + count_expr,
+        'object_name' : "",
+        'plotting_enabled' : True,
+        'reaction_name' : "",
+        'region_name' : "",
+        'rxn_or_mol' : "MDLString"
+      }
+    dm['mcell']['reaction_data_output']['reaction_output_list'].append ( count_item )
+
+
+  # reaction rules
+
+  # These regular expressions seem to find rates at the end of a line
+  last_rate_regx = "[\\w\\.+-]+$"
+  last_2_rates_regx = "([\w\.+-]+){1}\s*,\s*([\w\.+-]+){1}$"
+
+  compiled_last_rate_regx = re.compile(last_rate_regx)
+  compiled_last_2_rates_regx = re.compile(last_2_rates_regx)
+
+  dm['mcell']['define_reactions'] = { 'data_model_version' : "DM_2014_10_24_1638" }
+  react_list = []
+  for rule in model.rules:
+    rxn = {
+            'bkwd_rate' : "",
+            'data_model_version' : "DM_2018_01_11_1330",
+            'description' : "",
+            'fwd_rate' : "",
+            'name' : "",
+            'products' : "",
+            'reactants' : "",
+            'rxn_name' : "",
+            'rxn_type' : "",
+            'variable_rate' : "",
+            'variable_rate_switch' : False,
+            'variable_rate_text' : "",
+            'variable_rate_valid' : False
+          }
+    if '<->' in model.rules[rule][1]:
+      # Process as a reversible reaction
+      reactants = model.rules[rule][0]
+      products = model.rules[rule][1]
+      frate,rrate = model.rules[rule][3]
+
+      rxn['reactants'] = reactants
+      rxn['products'] = products
+      rxn['fwd_rate'] = frate
+      rxn['bkwd_rate'] = rrate
+      rxn['rxn_type'] = "reversible"
+      rxn['name'] = reactants + " <-> " + products
+    elif '->' in model.rules[rule][1]:
+      # Process as an irreversible reaction
+      reactants = model.rules[rule][0]
+      products = model.rules[rule][1]
+      frate = model.rules[rule][3][0]
+
+      rxn['reactants'] = reactants
+      rxn['products'] = products
+      rxn['fwd_rate'] = frate
+      rxn['bkwd_rate'] = ""
+      rxn['rxn_type'] = "irreversible"
+      rxn['name'] = reactants + " -> " + products
+    else:
+      # Error?
+      print ( "Reaction definition \"" + line + "\" does not specify '->' or '<->'" )
+
+    react_list.append ( rxn )
+
+  dm['mcell']['define_reactions']['reaction_list'] = react_list
+
+  # initialization
+  dm['mcell']['initialization'] = {
+    'accurate_3d_reactions' : True,
+    'center_molecules_on_grid' : False,
+    'data_model_version' : "DM_2017_11_18_0130",
+    'export_all_ascii' : False,
+    'interaction_radius' : "",
+    'iterations' : "1000",
+    'microscopic_reversibility' : "OFF",
+    'notifications' : {
+      'all_notifications' : "INDIVIDUAL",
+      'box_triangulation_report' : False,
+      'diffusion_constant_report' : "BRIEF",
+      'file_output_report' : False,
+      'final_summary' : True,
+      'iteration_report' : True,
+      'molecule_collision_report' : False,
+      'partition_location_report' : False,
+      'probability_report' : "ON",
+      'probability_report_threshold' : "0",
+      'progress_report' : True,
+      'release_event_report' : True,
+      'varying_probability_report' : True
+    },
+    'partitions' : {
+      'data_model_version' : "DM_2016_04_15_1600",
+      'include' : False,
+      'recursion_flag' : False,
+      'x_end' : "1",
+      'x_start' : "-1",
+      'x_step' : "0.02",
+      'y_end' : "1",
+      'y_start' : "-1",
+      'y_step' : "0.02",
+      'z_end' : "1",
+      'z_start' : "-1",
+      'z_step' : "0.02"
+    },
+    'radial_directions' : "",
+    'radial_subdivisions' : "",
+    'space_step' : "",
+    'surface_grid_density' : "10000",
+    'time_step' : "1e-6",
+    'time_step_max' : "",
+    'vacancy_search_distance' : "",
+    'warnings' : {
+      'all_warnings' : "INDIVIDUAL",
+      'degenerate_polygons' : "WARNING",
+      'high_probability_threshold' : "1",
+      'high_reaction_probability' : "IGNORED",
+      'large_molecular_displacement' : "WARNING",
+      'lifetime_threshold' : "50",
+      'lifetime_too_short' : "WARNING",
+      'missed_reaction_threshold' : "0.001",
+      'missed_reactions' : "WARNING",
+      'missing_surface_orientation' : "ERROR",
+      'negative_diffusion_constant' : "WARNING",
+      'negative_reaction_rate' : "WARNING",
+      'useless_volume_orientation' : "WARNING"
+    }
+  }
+
+  return dm
 
 def read_data_model_from_bngl_file ( bngl_file_name ):
-  bngl_model_file = open ( bngl_file_name, 'r' )
-  bngl_model_text = bngl_model_file.read()
-  return read_data_model_from_bngl_text ( bngl_model_text )
-
+  try: 
+    import BNGSim
+    model = BNGSim.BNGModel(bngl_file_name)
+    return read_data_model_from_bngsim( model )
+  except ImportError:
+    bngl_model_file = open ( bngl_file_name, 'r' )
+    bngl_model_text = bngl_model_file.read()
+    return read_data_model_from_bngl_text ( bngl_model_text )
 
 
 if __name__ == "__main__":
