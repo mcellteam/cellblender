@@ -1360,17 +1360,7 @@ def read_data_model_from_bngsim( model ):
     'reaction_output_list' : []
   }
 
-  # This regular expression seems to find BNGL molecules with parens: \b\w+\([\w,~\!\?\+]+\)+([.]\w+\([\w,~\!\?\+]+\))*
-  mol_regx = "\\b\\w+\\([\\w,~\\!\\?\\+]+\\)+([.]\\w+\\([\\w,~\\!\\?\\+]+\\))*"
-
-  # This regular expression seems to find BNGL molecules with or without parens: \b\w+(\([\w,~\!\?\+]+\)+)*([.]\w+\([\w,~\!\?\+]+\))*
-  mol_regx = "\\b\\w+(\\([\\w,~\\!\\?\\+]+\\)+)*([.]\\w+\\([\\w,~\\!\\?\\+]+\\))*"
-
-  compiled_mol_regx = re.compile(mol_regx)
-
   # Fill in the reaction output list
-  # TODO: Add relevant info to observable list
-  # on BNGSim-side to avoid having to parse these
   for obs in model.observables:
     # obs is the name of the observable
     # model.observables is tuple (type, expression)
@@ -1383,6 +1373,8 @@ def read_data_model_from_bngsim( model ):
     print ( "  Mols part: " + mols_part )
 
     things_to_count = []
+    # can read the molecules directly from the 
+    # parsed xml here
     for molec in model.observables[obs][1].molecules.keys():
       print ( "  Found: \"" + molec + "\"" )
       things_to_count.append ( molec )
