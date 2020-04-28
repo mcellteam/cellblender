@@ -1078,7 +1078,7 @@ def read_data_model_from_bngsim( model ):
       par['par_description'] = ""
       par['par_units'] = ""
       par_list.append ( par )
-      #TODO we no longer need expression evaluation, XML exporting handles that
+      # we no longer need expression evaluation, XML exporting handles that
       par_val_dict[param] = model.parameters[param]
 
   dm['mcell']['parameter_system'] = { 'model_parameters': par_list }
@@ -1191,11 +1191,9 @@ def read_data_model_from_bngsim( model ):
   rel_list = []
   site_num = 1
  
-  # TODO: Add relevant stuff to species objects 
-  # we have on BNGSim end
   for species in model.species:
-    mol_expr, mol_quant = species, model.species[species]
-    mol_expr = mol_expr.string
+    mol_patt, mol_quant = species, model.species[species]
+    mol_expr = mol_patt.string
     rel_item = {
       'data_model_version' : "DM_2018_01_11_1330",
       'description' : "",
@@ -1218,21 +1216,11 @@ def read_data_model_from_bngsim( model ):
 
     # Release based on compartment names and parent/child relationships in the object topology
 
-    if '@' in mol_expr:
-      # This release site is in a compartment
-      compartment_name = None
-      mol_name = None
-      if ":" in mol_expr:
-        # This is the old format using a colon
-        compartment_name = mol_expr[mol_expr.find('@')+1:mol_expr.find(':')].strip()
-        mol_name = mol_expr[mol_expr.find(':')+1:]
-        mol_name = mol_name[0:mol_name.find('(')].strip()
-      else:
-        compartment_name = mol_expr[mol_expr.find('@')+1:].split()[0].strip()
-        if '(' in mol_expr:
-          mol_name = mol_expr.split('(')[0].strip()
-        else:
-          mol_name = mol_expr.split('@')[0].strip()
+    # replacing parsing with info from molecule pattern
+    mol_dict = list(mol_patt.molecules.values())[0]
+    if 'compartment' in mol_dict:
+      mol_name = list(mol_patt.molecules.keys())[0]
+      compartment_name = mol_dict['compartment'][0]
       if not (mol_name in molecule_type_dict):
         molecule_type_dict[mol_name] = []
       # Note that a molecule may be of multiple types if used in different contexts!!
