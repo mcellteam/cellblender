@@ -1382,17 +1382,10 @@ def read_data_model_from_bngsim( model ):
     mols_part = model.observables[obs][1].string
     print ( "  Mols part: " + mols_part )
 
-    start = 0
-    end = 0
-    match = compiled_mol_regx.search(mols_part,start)
     things_to_count = []
-    while match:
-      start = match.start()
-      end = match.end()
-      print ( "  Found: \"" + mols_part[start:end] + "\"" )
-      things_to_count.append ( mols_part[start:end] )
-      start = end
-      match = compiled_mol_regx.search(mols_part,start)
+    for molec in model.observables[obs][1].molecules.keys():
+      print ( "  Found: \"" + molec + "\"" )
+      things_to_count.append ( molec )
 
     count_parts = [ "COUNT[" + thing + ",WORLD]" for thing in things_to_count ]
     count_expr = ' + '.join(count_parts)
