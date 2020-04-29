@@ -417,7 +417,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
   # Define special parameters that appear to be MCell Specific
 
-  special_parameters = { 'ITERATIONS': 1000, 'TIME_STEP': 1e-6, 'VACANCY_SEARCH_DISTANCE': 10 }
+  special_parameters = { 'MCELL_ITERATIONS': 1000, 'MCELL_TIME_STEP': 1e-6, 'MCELL_VACANCY_SEARCH_DISTANCE': 10 }
 
   # Add the parameter system and build a parameter/value dictionary for future use
   # This assumes that parameters are defined before being used
@@ -1058,7 +1058,7 @@ def read_data_model_from_bngsim( model ):
 
   # Define special parameters that appear to be MCell Specific
 
-  special_parameters = { 'ITERATIONS': 1000, 'TIME_STEP': 1e-6, 'VACANCY_SEARCH_DISTANCE': 10 }
+  special_parameters = { 'MCELL_ITERATIONS': 1000, 'MCELL_TIME_STEP': 1e-6, 'MCELL_VACANCY_SEARCH_DISTANCE': 10 }
 
   # Add the parameter system and build a parameter/value dictionary for future use
   # This assumes that parameters are defined before being used
