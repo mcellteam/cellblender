@@ -823,11 +823,10 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   default_vol_dc = "1e-6"
   default_surf_dc = "1e-8"
 
-  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in par_expr_dict:
-    default_vol_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_3D']
-
-  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in par_expr_dict:
-    default_surf_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_2D']
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in dm.special_parameters:
+    default_vol_dc = dm.special_parameters.pop('MCELL_DEFAULT_DIFFUSION_CONSTANT_3D')
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in dm.special_parameters:
+    default_surf_dc = dm.special_parameters.pop('MCELL_DEFAULT_DIFFUSION_CONSTANT_2D')
 
   mol_list = []
   color_index = 1
@@ -859,13 +858,13 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
         if mol['mol_type'] == '3D':
           mol['diffusion_constant'] = default_vol_dc
           key = 'MCELL_DIFFUSION_CONSTANT_3D_' + mol['mol_name']
-          if key in par_expr_dict:
-            mol['diffusion_constant'] = par_expr_dict[key]
+          if key in dm.special_parameters:
+            mol['diffusion_constant'] = dm.special_parameters.pop(key)
         else:
           mol['diffusion_constant'] = default_surf_dc
           key = 'MCELL_DIFFUSION_CONSTANT_2D_' + mol['mol_name']
-          if key in par_expr_dict:
-            mol['diffusion_constant'] = par_expr_dict[key]
+          if key in dm.special_parameters:
+            mol['diffusion_constant'] = dm.special_parameters.pop(key)
 
         mol['export_viz'] = False
         mol['maximum_step_length'] = ""
@@ -1205,11 +1204,10 @@ def read_data_model_from_bngsim( model ):
   default_vol_dc = "1e-6"
   default_surf_dc = "1e-8"
 
-  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in par_expr_dict:
-    default_vol_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_3D']
-
-  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in par_expr_dict:
-    default_surf_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_2D']
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in dm.special_parameters:
+    default_vol_dc = dm.special_parameters.pop('MCELL_DEFAULT_DIFFUSION_CONSTANT_3D')
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in dm.special_parameters:
+    default_surf_dc = dm.special_parameters.pop('MCELL_DEFAULT_DIFFUSION_CONSTANT_2D')
 
   mol_list = []
   color_index = 1
@@ -1237,13 +1235,13 @@ def read_data_model_from_bngsim( model ):
     if mol['mol_type'] == '3D':
       mol['diffusion_constant'] = default_vol_dc
       key = 'MCELL_DIFFUSION_CONSTANT_3D_' + mol['mol_name']
-      if key in par_expr_dict:
-        mol['diffusion_constant'] = par_expr_dict[key]
+      if key in dm.special_parameters:
+        mol['diffusion_constant'] = dm.special_parameters.pop(key)
     else:
       mol['diffusion_constant'] = default_surf_dc
       key = 'MCELL_DIFFUSION_CONSTANT_2D_' + mol['mol_name']
-      if key in par_expr_dict:
-        mol['diffusion_constant'] = par_expr_dict[key]
+      if key in dm.special_parameters:
+        mol['diffusion_constant'] = dm.special_parameters.pop(key)
 
     mol['export_viz'] = False
     mol['maximum_step_length'] = ""
@@ -1370,17 +1368,17 @@ def read_data_model_from_bngsim( model ):
   return dm.dm
 
 def read_data_model_from_bngl_file ( bngl_file_name ):
-  try: 
-    bngl_model_file = open ( bngl_file_name, 'r' )
-    bngl_model_text = bngl_model_file.read()
-    what = read_data_model_from_bngl_text ( bngl_model_text )
-    import BNGSim
-    model = BNGSim.BNGModel(bngl_file_name)
-    return read_data_model_from_bngsim( model )
-  except ImportError:
-    bngl_model_file = open ( bngl_file_name, 'r' )
-    bngl_model_text = bngl_model_file.read()
-    return read_data_model_from_bngl_text ( bngl_model_text )
+  bngl_model_file = open ( bngl_file_name, 'r' )
+  bngl_model_text = bngl_model_file.read()
+  return read_data_model_from_bngl_text ( bngl_model_text )
+  # try: 
+  #   import BNGSim
+  #   model = BNGSim.BNGModel(bngl_file_name)
+  #   return read_data_model_from_bngsim( model )
+  # except ImportError:
+  #   bngl_model_file = open ( bngl_file_name, 'r' )
+  #   bngl_model_text = bngl_model_file.read()
+  #   return read_data_model_from_bngl_text ( bngl_model_text )
 
 
 if __name__ == "__main__":
