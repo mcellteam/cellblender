@@ -766,6 +766,8 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
             compartment_name = mol_expr[mol_expr.find('@')+1:mol_expr.find(':')].strip()
             mol_name = mol_expr[mol_expr.find(':')+1:]
             mol_name = mol_name[0:mol_name.find('(')].strip()
+            # some notations will use double :: for compartments
+            mol_name = mol_name.replace(":","")
           else:
             compartment_name = mol_expr[mol_expr.find('@')+1:].split()[0].strip()
             if '(' in mol_expr:
@@ -844,9 +846,9 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
         mol['mol_type'] = '3D'
         if mol['mol_name'] in molecule_type_dict.keys():
-          print ( "Assigning molecule based on type of : " + str(molecule_type_dict[mol['mol_name']]) )
+          print ( "Assigning molecule {} based on type of : ".format(mol['mol_name']) + str(molecule_type_dict[mol['mol_name']]) )
           # Use the first item in the list for now. Eventually may need to create two mols (for vol & surf)
-          if molecule_type_dict[mol['mol_name']][0] == '2':
+          if int(molecule_type_dict[mol['mol_name']][0]) == 2:
             mol['mol_type'] = '2D'
         else:
           print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
@@ -1221,9 +1223,9 @@ def read_data_model_from_bngsim( model ):
     mol['mol_name'] = mtype.string.split('(')[0].strip()
     mol['mol_type'] = '3D'
     if mol['mol_name'] in molecule_type_dict.keys():
-      print ( "Assigning molecule based on type of : " + str(molecule_type_dict[mol['mol_name']]) )
+      print ( "Assigning molecule {} based on type of : ".format(mol['mol_name']) + str(molecule_type_dict[mol['mol_name']]) )
       # Use the first item in the list for now. Eventually may need to create two mols (for vol & surf)
-      if molecule_type_dict[mol['mol_name']][0] == '2':
+      if int(molecule_type_dict[mol['mol_name']][0]) == 2:
         mol['mol_type'] = '2D'
     else:
       print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
