@@ -1041,8 +1041,8 @@ if __name__ == "__main__":
         bngl =  """
                 begin model
                 begin parameters
-                  multiplier = 1.0
-                  MCELL_REDEFINE_multiplier = 1000.0
+                  diff_const_multiplier = 1e-10
+                  MCELL_REDEFINE_diff_const_multiplier = 1
                   km2  0.00
                   pLbs  100
                   km1  0.00
@@ -1084,15 +1084,15 @@ if __name__ == "__main__":
                   kpLs  0.0166057788110262/rxn_layer_t
                   vol_PM  0.01/rxn_layer_t    # Surface area
                   h  rxn_layer_t    # Thickness of 2D compartment, um    units=um
-                  MCELL_ITERATIONS  4000
-                  MCELL_TIME_STEP 4e-6
-                  MCELL_VACANCY_SEARCH_DISTANCE  40
-                  MCELL_DEFAULT_DIFFUSION_CONSTANT_2D  1.7e-7
-                  MCELL_DEFAULT_DIFFUSION_CONSTANT_3D  8.51e-7
-                  MCELL_DIFFUSION_CONSTANT_2D_Lyn  1.7e-7
-                  MCELL_DIFFUSION_CONSTANT_2D_Rec  1.7e-7
-                  MCELL_DIFFUSION_CONSTANT_3D_Lig  8.51e-7
-                  MCELL_DIFFUSION_CONSTANT_3D_Syk  8.51e-7
+                  MCELL_ITERATIONS  1000
+                  MCELL_TIME_STEP 1e-6
+                  MCELL_VACANCY_SEARCH_DISTANCE  10
+                  MCELL_DEFAULT_DIFFUSION_CONSTANT_2D  1.7e-7 * diff_const_multiplier
+                  MCELL_DEFAULT_DIFFUSION_CONSTANT_3D  8.51e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_2D_Lyn  1.7e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_2D_Rec  1.7e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_3D_Lig  8.51e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_3D_Syk  8.51e-7 * diff_const_multiplier
                 end parameters
                 begin molecule types
                   Lig(l,l)
