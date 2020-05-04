@@ -157,6 +157,9 @@ class DataModel:
                 # this is a MCELL_REDEFINE 
                 param_name = sp.replace("MCELL_REDEFINE_","")
                 ps = self.dm['mcell']['parameter_system']['model_parameters']
+                # this _only_ changes the parameter
+                # if it exists in the set of parameters
+                # we already have
                 for pdict in ps:
                     if pdict['par_name'] == param_name:
                         pdict['par_expression'] = spv
@@ -1345,7 +1348,7 @@ def read_data_model_from_bngsim( model ):
     if '<->' in model.rules[rule][1]:
       # Process as a reversible reaction
       reactants = model.rules[rule][0]
-      products = model.rules[rule][1]
+      products = model.rules[rule][2]
       frate,rrate = model.rules[rule][3]
 
       rxn['reactants'] = reactants
@@ -1357,7 +1360,7 @@ def read_data_model_from_bngsim( model ):
     elif '->' in model.rules[rule][1]:
       # Process as an irreversible reaction
       reactants = model.rules[rule][0]
-      products = model.rules[rule][1]
+      products = model.rules[rule][2]
       frate = model.rules[rule][3][0]
 
       rxn['reactants'] = reactants
@@ -1377,17 +1380,17 @@ def read_data_model_from_bngsim( model ):
   return dm.dm
 
 def read_data_model_from_bngl_file ( bngl_file_name ):
-  bngl_model_file = open ( bngl_file_name, 'r' )
-  bngl_model_text = bngl_model_file.read()
-  return read_data_model_from_bngl_text ( bngl_model_text )
-  # try: 
-  #   import BNGSim
-  #   model = BNGSim.BNGModel(bngl_file_name)
-  #   return read_data_model_from_bngsim( model )
-  # except ImportError:
-  #   bngl_model_file = open ( bngl_file_name, 'r' )
-  #   bngl_model_text = bngl_model_file.read()
-  #   return read_data_model_from_bngl_text ( bngl_model_text )
+  # bngl_model_file = open ( bngl_file_name, 'r' )
+  # bngl_model_text = bngl_model_file.read()
+  # return read_data_model_from_bngl_text ( bngl_model_text )
+  try: 
+    import BNGSim
+    model = BNGSim.BNGModel(bngl_file_name)
+    return read_data_model_from_bngsim( model )
+  except ImportError:
+    bngl_model_file = open ( bngl_file_name, 'r' )
+    bngl_model_text = bngl_model_file.read()
+    return read_data_model_from_bngl_text ( bngl_model_text )
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:
