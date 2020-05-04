@@ -1061,15 +1061,14 @@ def read_data_model_from_bngsim( model ):
   for param in model.parameters: 
     if "MCELL_" in param:
       dm.special_parameters[param] = model.parameters[param]
-    else:
-      par = {}
-      par['par_name'] = param
-      par['par_expression'] = model.parameters[param]
-      par['par_description'] = ""
-      par['par_units'] = ""
-      par_list.append ( par )
-      # we no longer need expression evaluation, XML exporting handles that
-      par_val_dict[param] = model.parameters[param]
+    par = {}
+    par['par_name'] = param
+    par['par_expression'] = model.parameters[param]
+    par['par_description'] = ""
+    par['par_units'] = ""
+    par_list.append ( par )
+    # we no longer need expression evaluation, XML exporting handles that
+    par_val_dict[param] = model.parameters[param]
 
   dm.add_parameters(par_list)
 
@@ -1302,11 +1301,14 @@ def read_data_model_from_bngsim( model ):
     print ( "  Mols part: " + mols_part )
 
     things_to_count = []
+    # FIXME: Not sure what the goal here is
+    # we need to test this and see 
     # can read the molecules directly from the 
     # parsed xml here
-    for molec in model.observables[obs][1].molecules.keys():
-      print ( "  Found: \"" + molec + "\"" )
-      things_to_count.append ( molec )
+    # for molec in model.observables[obs][1].molecules.keys():
+    #   print ( "  Found: \"" + molec + "\"" )
+    #   things_to_count.append ( molec )
+    things_to_count.append(model.observables[obs][1].string)
 
     count_parts = [ "COUNT[" + thing + ",WORLD]" for thing in things_to_count ]
     count_expr = ' + '.join(count_parts)
