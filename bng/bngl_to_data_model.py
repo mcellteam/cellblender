@@ -1301,14 +1301,11 @@ def read_data_model_from_bngsim( model ):
     print ( "  Mols part: " + mols_part )
 
     things_to_count = []
-    # FIXME: Not sure what the goal here is
-    # we need to test this and see 
     # can read the molecules directly from the 
     # parsed xml here
-    # for molec in model.observables[obs][1].molecules.keys():
-    #   print ( "  Found: \"" + molec + "\"" )
-    #   things_to_count.append ( molec )
-    things_to_count.append(model.observables[obs][1].string)
+    for molec in model.observables[obs][1].molecule_list:
+      print("  Found: \"" + molec + "\"")
+      things_to_count.append ( molec )
 
     count_parts = [ "COUNT[" + thing + ",WORLD]" for thing in things_to_count ]
     count_expr = ' + '.join(count_parts)
