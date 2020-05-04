@@ -1361,7 +1361,7 @@ def read_data_model_from_bngsim( model ):
       # Process as an irreversible reaction
       reactants = model.rules[rule][0]
       products = model.rules[rule][2]
-      frate = model.rules[rule][3][0]
+      frate = model.rules[rule][3]
 
       rxn['reactants'] = reactants
       rxn['products'] = products
