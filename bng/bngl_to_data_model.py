@@ -252,6 +252,63 @@ class DataModel:
         self.dm['mcell']['define_reactions'] = { 'data_model_version' : "DM_2014_10_24_1638" }
         self.dm['mcell']['define_reactions']['reaction_list'] = react_list
 
+    def append_to_geom_obj_list(self, item):
+        self.dm['mcell']['geometrical_objects']['object_list'].append(item)
+    def append_to_model_obj_list(self, item):
+        self.dm['mcell']['model_objects']['model_object_list'].append(item)
+
+    def append_objects(self, obj, inner_parent, outer_parent):
+      # Append this object (if 3D) and its 3D children to the data model object list
+      print ( "append_objects called with obj = " + str(obj['name']) )
+      if 'dim' in obj.keys():
+        if int(obj['dim']) == 3:
+          xr = obj['xdim'] / 2.0
+          yr = obj['ydim'] / 2.0
+          zr = obj['zdim'] / 2.0
+          points,faces = create_rectangle (-xr, xr, -yr, yr, -zr, zr )
+    
+          inner_parent_name = ""
+          if inner_parent != None:
+            if 'dim' in inner_parent.keys():
+              inner_parent_name = inner_parent['name']
+    
+          go = {
+              'name' : obj['name'],
+              'location' : [obj['x'], obj['y'], obj['z']],
+              'material_names' : ['membrane_mat'],
+              'vertex_list' : points,
+              'element_connections' : faces }
+    
+          if len(inner_parent_name) > 0:
+            go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : inner_parent_name } ]
+          else:
+            go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : obj['name']+'_outer_wall' } ]
+    
+          self.append_to_geom_obj_list(go)
+    
+          mo = {
+              'name' : obj['name'],
+              'parent_object' : "",
+              'membrane_name' : inner_parent_name,
+              'description' : "",
+              'object_source' : "blender",
+              'dynamic' : False,
+              'dynamic_display_source' : "script",
+              'script_name' : "" }
+    
+          if outer_parent != None:
+            if 'dim' in outer_parent.keys():
+              mo['parent_object'] = outer_parent['name']
+    
+          self.append_to_model_obj_list(mo)
+    
+      if '~children' in obj.keys():
+        children = obj['~children']
+        if len(children) > 0:
+          for k in children.keys():
+            child = children[k]
+            self.append_objects(child, obj, inner_parent)
+
 #### Helper Functions ####
 dump_depth = 0;
 def dump_data_model ( name, dm ):
@@ -512,58 +569,6 @@ def create_rectangle ( xmin, xmax, ymin, ymax, zmin, zmax ):
     return [ points, faces ]
 
 
-def append_objects ( obj, inner_parent, outer_parent, dm_geom_obj_list, dm_model_obj_list ):
-  # Append this object (if 3D) and its 3D children to the data model object list
-  print ( "append_objects called with obj = " + str(obj['name']) )
-  if 'dim' in obj.keys():
-    if obj['dim'] == '3':
-
-      xr = obj['xdim'] / 2.0
-      yr = obj['ydim'] / 2.0
-      zr = obj['zdim'] / 2.0
-      points,faces = create_rectangle (-xr, xr, -yr, yr, -zr, zr )
-
-      inner_parent_name = ""
-      if inner_parent != None:
-        if 'dim' in inner_parent.keys():
-          inner_parent_name = inner_parent['name']
-
-      go = {
-          'name' : obj['name'],
-          'location' : [obj['x'], obj['y'], obj['z']],
-          'material_names' : ['membrane_mat'],
-          'vertex_list' : points,
-          'element_connections' : faces }
-
-      if len(inner_parent_name) > 0:
-        go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : inner_parent_name } ]
-      else:
-        go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : obj['name']+'_outer_wall' } ]
-
-      dm_geom_obj_list.append ( go )
-
-      mo = {
-          'name' : obj['name'],
-          'parent_object' : "",
-          'membrane_name' : inner_parent_name,
-          'description' : "",
-          'object_source' : "blender",
-          'dynamic' : False,
-          'dynamic_display_source' : "script",
-          'script_name' : "" }
-
-      if outer_parent != None:
-        if 'dim' in outer_parent.keys():
-          mo['parent_object'] = outer_parent['name']
-
-      dm_model_obj_list.append ( mo )
-
-  if '~children' in obj.keys():
-    children = obj['~children']
-    if len(children) > 0:
-      for k in children.keys():
-        child = children[k]
-        append_objects ( child, obj, inner_parent, dm_geom_obj_list, dm_model_obj_list )
 
 
 
@@ -720,7 +725,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
         assign_nested_coordinates ( topology, 0, 0, 0 )
 
 
-      append_objects ( topology, None, None, dm.dm['mcell']['geometrical_objects']['object_list'], dm.dm['mcell']['model_objects']['model_object_list'] )
+      dm.append_objects ( topology, None, None )  
 
       print ( "Max depth = " + str(get_max_depth(topology)) )
 
@@ -1112,8 +1117,7 @@ def read_data_model_from_bngsim( model ):
     assign_nested_dimensions ( topology )
     assign_nested_coordinates ( topology, 0, 0, 0 )
 
-
-    append_objects ( topology, None, None, dm.dm['mcell']['geometrical_objects']['object_list'], dm.dm['mcell']['model_objects']['model_object_list'] )
+    dm.append_objects (topology, None, None)
 
     print ( "Max depth = " + str(get_max_depth(topology)) )
 
