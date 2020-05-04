@@ -1177,7 +1177,7 @@ def read_data_model_from_bngsim( model ):
 
       compartment = find_object_by_name ( topology, compartment_name )
       compartment_expression = ""
-      if compartment['dim'] == '3':
+      if int(compartment['dim']) == 3:
         # The compartment of interest is a volume
         # The volume's children will be surfaces
         # The volume's grandchildren will be volumes (which is what MCell expects)
@@ -1188,7 +1188,7 @@ def read_data_model_from_bngsim( model ):
         print ( "    GrandChildren: " + str(grandchild_names) )
         for cn in grandchild_names:
           compartment_expression += " - " + cn + "[ALL]"
-      elif compartment['dim'] == '2':
+      elif int(compartment['dim']) == 2:
         # The OUTER compartment of interest is a surface.
         # In CBNGL, the enclosed volume is the INNER object.
         # In MCell, the surface is referenced as a part of the volume object: vol[surf]
