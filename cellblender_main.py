@@ -29,7 +29,7 @@
 #     @staticmethod upgrade_data_model - Produces a current data model from an older version
 #     build_properties_from_data_model - Calls init_properties and builds properties from a data model
 #     check_properties_after_building - Used to resolve dependencies
-#     
+#
 #
 # ############
 
@@ -62,7 +62,7 @@ from . import cellblender_release
 from . import cellblender_surface_classes
 from . import cellblender_surface_regions
 from . import cellblender_partitions
-from . import cellblender_pbc 
+from . import cellblender_pbc
 from . import cellblender_simulation
 from . import cellblender_mol_viz
 from . import cellblender_reaction_output
@@ -183,7 +183,7 @@ class PP_OT_init_mcell(bpy.types.Operator):
         return {'FINISHED'}
 
 
-    
+
 
 # My panel class (which happens to augment 'Scene' properties)
 class MCELL_PT_main_panel(bpy.types.Panel):
@@ -192,7 +192,7 @@ class MCELL_PT_main_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_category = "CellBlender"
-    
+
     @classmethod
     def poll(cls, context):
         return (context.scene is not None)
@@ -201,7 +201,7 @@ class MCELL_PT_main_panel(bpy.types.Panel):
     def draw_header(self, context):
         # LOOK HERE!! This is where the icon is actually included in the panel layout!
         # The icon() method takes the image data-block in and returns an integer that
-        # gets passed to the 'icon_value' argument of your label/prop constructor or 
+        # gets passed to the 'icon_value' argument of your label/prop constructor or
         # within a UIList subclass
         img = bpy.data.images.get('cellblender_icon')
         #could load multiple images and animate the icon too.
@@ -386,11 +386,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     mol_viz_select = BoolProperty ( name="mviz_sel", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
     viz_select = BoolProperty ( name="viz_sel", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
     reload_viz = BoolProperty ( name="reload", description="Reload Simulation Data", default=False, subtype='NONE', update=select_callback)
-    
+
     select_multiple = BoolProperty ( name="multiple", description="Show Multiple Panels", default=False, subtype='NONE', update=select_callback)
-    
+
     last_state = BoolVectorProperty ( size=22 ) # Keeps track of previous button state to detect transitions
-    
+
     dummy_bool = BoolProperty( name="DummyBool", default=True )
     dummy_string = StringProperty( name="DummyString", default=" " )
     dummy_float = FloatProperty ( name="DummyFloat", default=12.34 )
@@ -398,7 +398,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     def remove_properties ( self, context ):
         print ( "Removing all CellBlender Main Panel Properties... no collections to remove." )
 
-    
+
     def select_callback ( self, context ):
         """
         Desired Logic:
@@ -410,12 +410,12 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             Illegal state
           pin_state 1->0 :
             Hide all panels ... always
-            
+
         """
         prop_keys = [ 'examples_select', 'preferences_select', 'scripting_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'pbc_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
-        
+
         pin_state = False
-        
+
         """
         try:
             pin_state = (self['select_multiple'] != 0)
@@ -427,7 +427,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         if self.get('select_multiple'):
             pin_state = (self['select_multiple'] != 0)
         old_pin_state = (self.last_state[prop_keys.index('select_multiple')] != 0)
-        
+
         # print ( "Select Called without try/except with pin state:" + str(pin_state) + ", and old pin state = " + str(old_pin_state) )
 
         if (old_pin_state and (not pin_state)):
@@ -444,7 +444,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     pass
                 """
             self.last_state[prop_keys.index('select_multiple')] = False
-            
+
         elif ((not old_pin_state) and pin_state):
             # Pin has been pushed
             # Find out how many panels are currently shown
@@ -476,9 +476,9 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     except:
                         pass
                     """
-        
+
             self.last_state[prop_keys.index('select_multiple')] = True
-        
+
         else:
             # Pin state has not changed, so assume some other button has been toggled
 
@@ -509,7 +509,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
         mcell = context.scene.mcell
-        
+
         if not mcell.get ( 'saved_by_source_id' ):
             # This .blend file has no CellBlender data at all or was created with CellBlender RC3 / RC4
             if not mcell.initialized:  # if not mcell['initialized']:
@@ -655,7 +655,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     # Use an operator rather than a property to make it an action button
                     # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
                     if mcell.cellblender_preferences.show_button_num[0]: row.operator ( "cbm.refresh_operator", icon='FILE_REFRESH', text="")
-                        
+
                 else:
 
                     # Draw all the selection buttons with labels in 2 columns (Long format):
@@ -745,7 +745,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="Surface Classes" )
                     bcol = brow.column()
                     bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
-                    
+
 
                     brow = layout.row()  ##############################################################
 
@@ -868,7 +868,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     context.scene.mcell.viz_output.draw_layout ( context, layout )
                     layout.box() # Use as a separator
                     context.scene.mcell.mol_viz.draw_layout ( context, layout )
-                    
+
                 if self.init_select:
                     layout.box() # Use as a separator
                     layout.label ( "Run Simulation", icon='COLOR_RED' )
@@ -878,7 +878,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.box() # Use as a separator
                     layout.label ( "Examples", icon='MOD_BUILD' )
                     context.scene.mcell.cellblender_examples.draw_layout ( context, layout )
-                    
+
         # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
 
 
@@ -1032,6 +1032,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm['define_release_patterns'] = self.release_patterns.build_data_model_from_properties(context)
         dm['define_surface_classes'] = self.surface_classes.build_data_model_from_properties(context)
         dm['modify_surface_regions'] = self.mod_surf_regions.build_data_model_from_properties(context)
+        dm['periodic_boundary_conditions'] = self.pbc.build_data_model_from_properties(context)
         dm['model_objects'] = self.model_objects.build_data_model_from_properties(context)
         dm['viz_output'] = self.viz_output.build_data_model_from_properties(context)
         dm['simulation_control'] = self.run_simulation.build_data_model_from_properties(context)
@@ -1123,6 +1124,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             if dm[group_name] == None:
                 return None
 
+        group_name = "periodic_boundary_conditions"
+        if group_name in dm:
+            dm[group_name] = cellblender_pbc.MCellPBCPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
         group_name = "model_objects"
         if group_name in dm:
             dm[group_name] = cellblender_objects.MCellModelObjectsPropertyGroup.upgrade_data_model ( dm[group_name] )
@@ -1191,12 +1198,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "parameter_system" in dm:
             print ( "Overwriting the parameter_system properties" )
             self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
-        
+
 
         ### __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        
+
         #return ##############  See what we have at this point...
-                                                                                                         
+
 
 
         # Move below model objects?
@@ -1249,6 +1256,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "modify_surface_regions" in dm:
             print ( "Overwriting the modify_surface_regions properties" )
             self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
+        if "periodic_boundary_conditions" in dm:
+            print ( "Overwriting the periodic_boundary_conditions properties" )
+            self.pbc.build_properties_from_data_model ( context, dm["periodic_boundary_conditions"] )
         if "viz_output" in dm:
             print ( "Overwriting the viz_output properties" )
             self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
@@ -1293,7 +1303,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         cellblender_objects.model_objects_update(context)
 
         print ( "Done building properties from the data model." )
-        
+
 
 
     def draw_uninitialized ( self, layout ):

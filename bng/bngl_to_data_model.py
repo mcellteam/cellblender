@@ -293,7 +293,11 @@ def write_data_model ( dm, file_name ):
     # Assume this is a JSON format file
     print ( "Saving a JSON file" )
     f = open ( file_name, 'w' )
-    status = f.write ( json.dumps ( dm ) )
+    jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
+    json_string = jde.encode ( dm )
+    status = f.write ( json_string )
+    f.write ( "\n" )
+    # status = f.write ( json.dumps ( dm ) )
   else:
     # Assume this is a pickled format file
     print ( "Saving to a Pickle file" )
@@ -561,6 +565,8 @@ def append_objects ( obj, inner_parent, outer_parent, dm_geom_obj_list, dm_model
 
 
 def read_data_model_from_bngl_text ( bngl_model_text ):
+  print("\n\n\nReading BNGL Model\n\n\n")
+
   # First split by lines to remove comments and whitespace on ends
   # lines = re.split(r'\n', bngl_model_text)
   lines = r'\n'.join(re.split(r'\r', bngl_model_text))
@@ -568,6 +574,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   lines = re.split('\n', lines)
   i = 0
   for i in range(len(lines)):
+    lines[i] = lines[i].strip()
     l = lines[i]
     if '#' in l:
       lines[i] = l.split('#')[0].strip()
@@ -636,7 +643,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
     if ' '.join(block[0].split()[1:]) == 'parameters':
       # Process parameters
       for line in block[1:-1]:
-        # Pull MCellR special items out of the BNGL file (they appear to be coded as regular parameters such as ITERATIONS...)
+        # Pull MCellR special items out of the BNGL file (they will appear as regular parameters such as MCELL_ITERATIONS...)
         print("++++++" + line)
         name_val = line.split()
         if name_val[0] in dm.special_parameters.keys():
@@ -648,14 +655,24 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
           # Note that taking this section out of the "else" would also include the special parameters in par_val_dict
           # It's not clear whether that is what should be done.
           par = {}
-          par['par_name'] = name_val[0]
+          if name_val[0].startswith('MCELL_REDEFINE_'):
+            par['par_name'] = name_val[0][len('MCELL_REDEFINE_'):]
+          else:
+            par['par_name'] = name_val[0]
           if len(name_val) == 3:
             par['par_expression'] = ' '.join ( name_val[2:] )
           else:
             par['par_expression'] = ' '.join ( name_val[1:] )
           par['par_description'] = ""
           par['par_units'] = ""
-          par_list.append ( par )
+          if name_val[0].startswith('MCELL_REDEFINE_'):
+            # Replace the value which should already be in the list
+            for i in range(len(par_list)):
+              if par_list[i]['par_name'] == par['par_name']:
+                par_list[i] = par
+          else:
+            # Insert as a new parameter
+            par_list.append ( par )
           # Store an evaluated copy of this parameter in the parameter/value dictionary
           # This assumes that parameters are defined before being used
           par_expr_dict[par['par_name']] = par['par_expression']
@@ -1382,7 +1399,6 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
   #   bngl_model_text = bngl_model_file.read()
   #   return read_data_model_from_bngl_text ( bngl_model_text )
 
-
 if __name__ == "__main__":
 
     dmf = {}
@@ -1505,6 +1521,123 @@ if __name__ == "__main__":
         print ( "Writing CellBlender Data Model: " + sys.argv[2] )
         write_data_model ( dm, sys.argv[2] )
         print ( "Wrote BioNetGen file found in \"" + sys.argv[1] + "\" to CellBlender data model \"" + sys.argv[2] + "\"" )
+        # Drop into an interactive python session
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    elif len(sys.argv) > 1:
+        print
+        bngl =  """
+                begin model
+                begin parameters
+                  diff_const_multiplier = 1e-10
+                  MCELL_REDEFINE_diff_const_multiplier = 1
+                  km2  0.00
+                  pLbs  100
+                  km1  0.00
+                  mu_wall  1e-9    # Viscosity in compartment wall, kg/um.s    units=kg/um.s
+                  pLS  30
+                  KB  1.3806488e-19    # Boltzmann constant, cm^2.kg/K.s^2    units=cm^2.kg/K.s^2
+                  mu_PM  1e-9    # Viscosity in compartment PM, kg/um.s    units=kg/um.s
+                  Nav  6.022e8    # Avogadro number based on a volume size of 1 cubic um
+                  kmS  0.13
+                  kpS  0.0166057788110262*Nav
+                  vol_CP  1
+                  pLgs  3
+                  pSSs  200
+                  pSS  100
+                  dc  0.1
+                  dm  0.1
+                  Rc  0.0015    # Radius of a (cylindrical) molecule in 2D compartment, um    units=um
+                  gamma  0.5722    # Euler's constant
+                  mu_CP  1e-9    # Viscosity in compartment CP, kg/um.s    units=kg/um.s
+                  pLSs  100
+                  kmLs  0.12
+                  vol_EC  39
+                  T  298.15    # Temperature, K    units=K
+                  Rs  0.002564    # Radius of a (spherical) molecule in 3D compartment, um    units=um
+                  mu_EC  1e-9    # Viscosity in compartment EC, kg/um.s    units=kg/um.s
+                  rxn_layer_t  0.01
+                  vol_wall  0.88/rxn_layer_t    # Surface area
+                  pLg  1
+                  kmL  20
+                  pLb  30
+                  Scale_Totals  1    # 0.00358 gives at least one each,   0.5 gives 2 of some
+                  kp1  0.000166057788110262*Nav
+                  Lig_tot  6.0e3 * Scale_Totals    # Default: 6.0e3
+                  kpL  0.0166057788110262/rxn_layer_t
+                  kp2  1.66057788110262e-06/rxn_layer_t
+                  Syk_tot  4e2 * Scale_Totals    # Default: 4e2
+                  Rec_tot  4.0e2 * Scale_Totals    # Default: 4.0e2
+                  Lyn_tot  2.8e2 * Scale_Totals    # Default: 2.8e2
+                  kpLs  0.0166057788110262/rxn_layer_t
+                  vol_PM  0.01/rxn_layer_t    # Surface area
+                  h  rxn_layer_t    # Thickness of 2D compartment, um    units=um
+                  MCELL_ITERATIONS  1000
+                  MCELL_TIME_STEP 1e-6
+                  MCELL_VACANCY_SEARCH_DISTANCE  10
+                  MCELL_DEFAULT_DIFFUSION_CONSTANT_2D  1.7e-7 * diff_const_multiplier
+                  MCELL_DEFAULT_DIFFUSION_CONSTANT_3D  8.51e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_2D_Lyn  1.7e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_2D_Rec  1.7e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_3D_Lig  8.51e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_3D_Syk  8.51e-7 * diff_const_multiplier
+                end parameters
+                begin molecule types
+                  Lig(l,l)
+                  Lyn(SH2,U)
+                  Syk(a~Y~pY,l~Y~pY,tSH2)
+                  Rec(a,b~Y~pY,g~Y~pY)
+                end molecule types
+                begin compartments
+                  EC 3 vol_EC
+                  PM 2 vol_PM EC
+                  CP 3 vol_CP PM
+                end compartments
+                begin seed species
+                   @EC::Lig(l,l)  Lig_tot
+                   @PM::Lyn(SH2,U)  Lyn_tot
+                   @CP::Syk(a~Y,l~Y,tSH2)  Syk_tot
+                   @PM::Rec(a,b~Y,g~Y)  Rec_tot
+                end seed species
+                begin observables
+                  Molecules LycFree_MDLString Lyn(SH2,U)                                              # Should be: "COUNT[Lyn(U,SH2), WORLD]"
+                  Molecules RecPbeta_MDLString Rec(b~pY!?)                                            # Should be: "COUNT[Rec(b~pY!?), WORLD]"
+                  Molecules RecMon_MDLString Lig(l!1,l).Rec(a!1)                                      # Should be: "COUNT[Rec(a!1).Lig(l!1,l), WORLD]"
+                  Molecules RecDim_MDLString Lig(l!1,l!2).Rec(a!1).Rec(a!2)                           # Should be: "COUNT[Rec(a!1).Lig(l!1,l!2).Rec(a!2), WORLD]"
+                  Molecules RecRecLigLyn_MDLString Rec(a!1,b).Lig(l!1,l!2).Rec(a!2,b!3).Lyn(SH2,U!3)  # Should be: "COUNT[Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b!3).Rec(a!1,b), WORLD]"
+                  Molecules RecPgamma_MDLString Rec(g~pY), Rec(g~pY!+)                                # Should be: "COUNT[Rec(g~pY),WORLD] + COUNT[Rec(g~pY!+), WORLD]"
+                  Molecules RecSyk_MDLString Syk(tSH2!1).Rec(g~pY!1)                                  # Should be: "COUNT[Rec(g~pY!1).Syk(tSH2!1), WORLD]"
+                  Molecules RecSykPS_MDLString Syk(a~pY,tSH2!1).Rec(g~pY!1)                           # Should be: "COUNT[Rec(g~pY!1).Syk(tSH2!1,a~pY), WORLD]"
+                  Molecules Lig_MDLString Lig                                                         # Should be: "COUNT[Lig,WORLD]"
+                  Molecules Lyn_MDLString Lyn                                                         # Should be: "COUNT[Lyn,WORLD]"
+                end observables
+                begin reaction rules
+                  Rec(a) + Lig(l,l) <-> Lig(l!1,l).Rec(a!1) kp1,km1
+                  Rec(b~Y) + Lyn(SH2,U) <-> Lyn(SH2,U!1).Rec(b~Y!1) kpL,kmL
+                  Rec(a!1,b~Y).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) -> Rec(a!1,b~pY).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) pLb
+                  Rec(a!1,g~Y).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) -> Rec(a!1,g~pY).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) pLg
+                  Rec(b~pY) + Lyn(SH2,U) <-> Lyn(SH2!1,U).Rec(b~pY!1) kpLs,kmLs
+                  Rec(a!1,b~Y).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) -> Rec(a!1,b~pY).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) pLbs
+                  Rec(a!1,g~Y).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) -> Rec(a!1,g~pY).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) pLgs
+                  Rec(g~pY) + Syk(tSH2) <-> Syk(tSH2!1).Rec(g~pY!1) kpS,kmS
+                  Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3).Syk(l~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3).Syk(l~pY,tSH2!4) pLS
+                  Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U).Syk(l~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U).Syk(l~pY,tSH2!4) pLSs
+                  Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~Y,tSH2!3).Syk(a~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~Y,tSH2!3).Syk(a~pY,tSH2!4) pSS
+                  Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~pY,tSH2!3).Syk(a~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~pY,tSH2!3).Syk(a~pY,tSH2!4) pSSs
+                  Rec(b~pY) -> Rec(b~Y) dm
+                  Rec(g~pY) -> Rec(g~Y) dm
+                  Syk(l~pY,tSH2!+) -> Syk(l~Y,tSH2!+) dm
+                  Syk(a~pY,tSH2!+) -> Syk(a~Y,tSH2!+) dm
+                  Syk(l~pY,tSH2) -> Syk(l~Y,tSH2) dc
+                  Syk(a~pY,tSH2) -> Syk(a~Y,tSH2) dc
+                end reaction rules
+                end model
+                """
+
+        dm = read_data_model_from_bngl_text ( bngl )
+
+        print ( "Writing Test CellBlender Data Model to " + sys.argv[1] )
+        write_data_model ( dm, sys.argv[1] )
+        print ( "Wrote internal BioNetGen file to CellBlender data model \"" + sys.argv[1] + "\"" )
         # Drop into an interactive python session
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
