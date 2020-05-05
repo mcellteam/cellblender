@@ -1060,13 +1060,13 @@ def read_data_model_from_bngsim( model ):
   par_list = []
   for param in model.parameters: 
     if "MCELL_" in param:
-      dm.special_parameters[param] = model.parameters[param]
+      dm.special_parameters[param] = model.parameters.expressions[param]
     par = {}
     par['par_name'] = param
-    par['par_expression'] = model.parameters[param]
+    par['par_expression'] = model.parameters.expressions[param]
     par['par_description'] = ""
     par['par_units'] = ""
-    par_list.append ( par )
+    par_list.append (par)
     # we no longer need expression evaluation, XML exporting handles that
     par_val_dict[param] = model.parameters[param]
 
