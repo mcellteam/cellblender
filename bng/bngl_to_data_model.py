@@ -1060,10 +1060,16 @@ def read_data_model_from_bngsim( model ):
   par_list = []
   for param in model.parameters: 
     if "MCELL_" in param:
-      dm.special_parameters[param] = model.parameters.expressions[param]
+      if param in model.parameters.expressions:
+        dm.special_parameters[param] = model.parameters.expressions[param]
+      else:
+        dm.special_parameters[param] = model.parameters[param]
     par = {}
     par['par_name'] = param
-    par['par_expression'] = model.parameters.expressions[param]
+    if param in model.parameters.expressions:
+      par['par_expression'] = model.parameters.expressions[param]
+    else:
+      par['par_expression'] = model.parameters[param]
     par['par_description'] = ""
     par['par_units'] = ""
     par_list.append (par)
