@@ -1167,10 +1167,10 @@ def read_data_model_from_bngsim( model ):
     # Release based on compartment names and parent/child relationships in the object topology
 
     # replacing parsing with info from molecule pattern
-    mol_dict = list(mol_patt.molecules.values())[0]
+    mol_dict = mol_patt.molecules[0]
     if 'compartment' in mol_dict:
-      mol_name = list(mol_patt.molecules.keys())[0]
-      compartment_name = mol_dict['compartment'][0]
+      mol_name = mol_dict['name']
+      compartment_name = mol_dict['compartment']
       if not (mol_name in molecule_type_dict):
         molecule_type_dict[mol_name] = []
       # Note that a molecule may be of multiple types if used in different contexts!!
@@ -1233,10 +1233,11 @@ def read_data_model_from_bngsim( model ):
   surf_glyphs = ['Torus', 'Cone', 'Receptor', 'Cylinder', 'Pyramid', 'Tetrahedron']
   vol_glyph_index = 0
   surf_glyph_index = 0
+
   for mtype in model.moltypes:
     mol = {}
     mol['data_model_version'] = "DM_2018_01_11_1330"
-    mol['mol_name'] = mtype.string.split('(')[0].strip()
+    mol['mol_name'] = mtype.molecules[0]['name']
     mol['mol_type'] = '3D'
     if mol['mol_name'] in molecule_type_dict.keys():
       print ( "Assigning molecule {} based on type of : ".format(mol['mol_name']) + str(molecule_type_dict[mol['mol_name']]) )
@@ -1276,15 +1277,13 @@ def read_data_model_from_bngsim( model ):
       vol_glyph_index += 1
 
     mol['bngl_component_list'] = []
-    if "(" in mtype.string:
-      mol_comps = mtype.string.split('(')[1].split(')')[0].split(',')
-      for c in mol_comps:
+    if len(mtype.molecules[0]['components']) > 0:
+      for c in mtype.molecules[0]['components']:
         comp = {}
-        cparts = c.split('~')
-        comp['cname'] = cparts[0]
+        comp['cname'] = c['name']
         comp['cstates'] = []
-        if len(cparts) > 1:
-          comp['cstates'] = cparts[1:]
+        if 'states' in c:
+          comp['cstates'] = c['states']
         mol['bngl_component_list'].append ( comp )
     mol_list.append ( mol )
 
@@ -1352,11 +1351,12 @@ def read_data_model_from_bngsim( model ):
             'variable_rate_text' : "",
             'variable_rate_valid' : False
           }
-    if '<->' in model.rules[rule][1]:
+    if model.rules[rule].bidirectional:
       # Process as a reversible reaction
-      reactants = model.rules[rule][0]
-      products = model.rules[rule][2]
-      frate,rrate = model.rules[rule][3]
+      reactants = model.rules[rule].lhs
+      products = model.rules[rule].rhs
+      frate = model.rules[rule].rate_law[0]
+      rrate = model.rules[rule].rate_law[1]
 
       rxn['reactants'] = reactants
       rxn['products'] = products
@@ -1364,11 +1364,11 @@ def read_data_model_from_bngsim( model ):
       rxn['bkwd_rate'] = rrate
       rxn['rxn_type'] = "reversible"
       rxn['name'] = reactants + " <-> " + products
-    elif '->' in model.rules[rule][1]:
+    else:
       # Process as an irreversible reaction
-      reactants = model.rules[rule][0]
-      products = model.rules[rule][2]
-      frate = model.rules[rule][3]
+      reactants = model.rules[rule].lhs
+      products = model.rules[rule].rhs
+      frate = model.rules[rule].rate_law[0]
 
       rxn['reactants'] = reactants
       rxn['products'] = products
@@ -1376,10 +1376,6 @@ def read_data_model_from_bngsim( model ):
       rxn['bkwd_rate'] = ""
       rxn['rxn_type'] = "irreversible"
       rxn['name'] = reactants + " -> " + products
-    else:
-      # Error?
-      print ( "Reaction definition \"" + line + "\" does not specify '->' or '<->'" )
-
     react_list.append ( rxn )
  
   dm.add_rules(react_list)
@@ -1393,7 +1389,8 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
     return read_data_model_from_bngsim( model )
   # we might have to catch more than the import error here
   # e.g. if BNGSim fails to find BNG2.pl 
-  except:
+  except ImportError:
+    print("XML parsing via BNGSim failed, using fallback parser")
     bngl_model_file = open ( bngl_file_name, 'r' )
     bngl_model_text = bngl_model_file.read()
     return read_data_model_from_bngl_text ( bngl_model_text )
