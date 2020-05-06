@@ -569,9 +569,6 @@ def create_rectangle ( xmin, xmax, ymin, ymax, zmin, zmax ):
     return [ points, faces ]
 
 
-
-
-
 def read_data_model_from_bngl_text ( bngl_model_text ):
   print("\n\n\nReading BNGL Model\n\n\n")
 
@@ -705,7 +702,6 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
       cdefs = []
       for line in block[1:-1]:
-        # FIXME: spaces in expressions break this 
         parts = [ p for p in line.strip().split() ]
         # Evaluate the volume expression string (3rd value, parts[2]) to a float
         parts[2] = eval(parts[2],globals(),par_val_dict)
@@ -898,15 +894,16 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
           vol_glyph_index += 1
 
         mol['bngl_component_list'] = []
-        mol_comps = line.split('(')[1].split(')')[0].split(',')
-        for c in mol_comps:
-          comp = {}
-          cparts = c.split('~')
-          comp['cname'] = cparts[0]
-          comp['cstates'] = []
-          if len(cparts) > 1:
-            comp['cstates'] = cparts[1:]
-          mol['bngl_component_list'].append ( comp )
+        if "(" in line:
+          mol_comps = line.split('(')[1].split(')')[0].split(',')
+          for c in mol_comps:
+            comp = {}
+            cparts = c.split('~')
+            comp['cname'] = cparts[0]
+            comp['cstates'] = []
+            if len(cparts) > 1:
+              comp['cstates'] = cparts[1:]
+            mol['bngl_component_list'].append ( comp )
         mol_list.append ( mol )
 
   dm.add_molecules(mol_list)
@@ -1136,7 +1133,7 @@ def read_data_model_from_bngsim( model ):
     print ( "  Compartment " + str(k) + " is type " + str(compartment_type_dict[k]) )
 
 
-  # TODO: check if these need info
+  # adjusting materials 
   dm.add_materials()
   dm.mod_surface_regions()
 
@@ -1279,15 +1276,16 @@ def read_data_model_from_bngsim( model ):
       vol_glyph_index += 1
 
     mol['bngl_component_list'] = []
-    mol_comps = mtype.string.split('(')[1].split(')')[0].split(',')
-    for c in mol_comps:
-      comp = {}
-      cparts = c.split('~')
-      comp['cname'] = cparts[0]
-      comp['cstates'] = []
-      if len(cparts) > 1:
-        comp['cstates'] = cparts[1:]
-      mol['bngl_component_list'].append ( comp )
+    if "(" in mtype.string:
+      mol_comps = mtype.string.split('(')[1].split(')')[0].split(',')
+      for c in mol_comps:
+        comp = {}
+        cparts = c.split('~')
+        comp['cname'] = cparts[0]
+        comp['cstates'] = []
+        if len(cparts) > 1:
+          comp['cstates'] = cparts[1:]
+        mol['bngl_component_list'].append ( comp )
     mol_list.append ( mol )
 
   dm.add_molecules(mol_list)
@@ -1389,14 +1387,13 @@ def read_data_model_from_bngsim( model ):
   return dm.dm
 
 def read_data_model_from_bngl_file ( bngl_file_name ):
-  # bngl_model_file = open ( bngl_file_name, 'r' )
-  # bngl_model_text = bngl_model_file.read()
-  # return read_data_model_from_bngl_text ( bngl_model_text )
   try: 
     import BNGSim
     model = BNGSim.BNGModel(bngl_file_name)
     return read_data_model_from_bngsim( model )
-  except ImportError:
+  # we might have to catch more than the import error here
+  # e.g. if BNGSim fails to find BNG2.pl 
+  except:
     bngl_model_file = open ( bngl_file_name, 'r' )
     bngl_model_text = bngl_model_file.read()
     return read_data_model_from_bngl_text ( bngl_model_text )
