@@ -1105,7 +1105,8 @@ def read_data_model_from_bngsim( model ):
         cdefs.append( [compartment, dim, vol] )
     else:
         cdefs.append( [compartment, dim, vol, parent] )
-
+  # FIXME: If this topology is out of order, next command fails
+  print(cdefs)
   topology = build_topology_from_list ( cdefs, { '~children':{}, 'name':"World" } )
   check_legal ( topology )
   update_compartment_defs ( topology, compartment_type_dict )
