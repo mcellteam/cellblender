@@ -1060,17 +1060,16 @@ def read_data_model_from_bngsim( model ):
       if param in model.parameters.expressions:
         dm.special_parameters[param] = model.parameters.expressions[param]
       else:
-        dm.special_parameters[param] = model.parameters[param]
+        dm.special_parameters[param] = str(model.parameters[param])
     par = {}
     par['par_name'] = param
     if param in model.parameters.expressions:
       par['par_expression'] = model.parameters.expressions[param]
     else:
-      par['par_expression'] = model.parameters[param]
+      par['par_expression'] = str(model.parameters[param])
     par['par_description'] = ""
     par['par_units'] = ""
     par_list.append (par)
-    # we no longer need expression evaluation, XML exporting handles that
     par_val_dict[param] = model.parameters[param]
 
   dm.add_parameters(par_list)
@@ -1098,8 +1097,8 @@ def read_data_model_from_bngsim( model ):
 
   cdefs = []
   for compartment in model.compartments:
-    dim = int(model.compartments[compartment][0])
-    vol = float(model.compartments[compartment][1])
+    dim = model.compartments[compartment][0]
+    vol = model.compartments[compartment][1]
     parent = model.compartments[compartment][2]
     if parent is None:
         cdefs.append( [compartment, dim, vol] )
@@ -1157,7 +1156,7 @@ def read_data_model_from_bngsim( model ):
       'orient' : "'",
       'pattern' : "",
       'points_list' : [],
-      'quantity' : mol_quant,
+      'quantity' : str(mol_quant),
       'quantity_type' : "NUMBER_TO_RELEASE",
       'release_probability' : "1",
       'shape' : "OBJECT",
@@ -1180,7 +1179,7 @@ def read_data_model_from_bngsim( model ):
 
       compartment = find_object_by_name ( topology, compartment_name )
       compartment_expression = ""
-      if int(compartment['dim']) == 3:
+      if compartment['dim'] == str(3):
         # The compartment of interest is a volume
         # The volume's children will be surfaces
         # The volume's grandchildren will be volumes (which is what MCell expects)
@@ -1191,7 +1190,7 @@ def read_data_model_from_bngsim( model ):
         print ( "    GrandChildren: " + str(grandchild_names) )
         for cn in grandchild_names:
           compartment_expression += " - " + cn + "[ALL]"
-      elif int(compartment['dim']) == 2:
+      elif compartment['dim'] == str(2):
         # The OUTER compartment of interest is a surface.
         # In CBNGL, the enclosed volume is the INNER object.
         # In MCell, the surface is referenced as a part of the volume object: vol[surf]
