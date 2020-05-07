@@ -1384,6 +1384,11 @@ def read_data_model_from_bngsim( model ):
 
 def read_data_model_from_bngl_file ( bngl_file_name ):
   try: 
+    path = os.path.dirname(__file__)
+    path = [:-1]
+    bngpath = path + ("extensions", "mcell", "bng2")
+    path = os.path.join(*bngpath)
+    os.environ["BNGPATH"] = path
     import BNGSim
     model = BNGSim.BNGModel(bngl_file_name)
     return read_data_model_from_bngsim( model )
