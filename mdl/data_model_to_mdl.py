@@ -53,9 +53,9 @@ def read_data_model ( file_name ):
       header = f.read(20)
     except  UnicodeDecodeError:
       pass # The header value shouldn't contain "'mcell:'" in this case anyway
-    if '"mcell":' in header:
+    if '"mcell"' in header:
       is_json = True
-    elif "'mcell':" in header:
+    elif "'mcell'" in header:
       is_json = True
     f.close()
     # Open as appropriate
