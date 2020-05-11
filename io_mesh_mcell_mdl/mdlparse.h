@@ -3,6 +3,8 @@
 
 #include <sys/types.h>
 
+typedef unsigned int u_int;
+
 #define YY_DECL int mdllex \
   (YYSTYPE * yylval_param , yyscan_t yyscanner)
 
