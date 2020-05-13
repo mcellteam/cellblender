@@ -148,11 +148,11 @@ class DataModel:
     def handle_special_params(self):
         for sp, spv in self.special_parameters.items():
             if sp == "MCELL_ITERATIONS":
-                self.dm['mcell']['initialization']['iterations'] = spv
+                self.dm['mcell']['initialization']['iterations'] = str(spv)
             elif sp == "MCELL_TIME_STEP":
-                self.dm['mcell']['initialization']['time_step'] = spv
+                self.dm['mcell']['initialization']['time_step'] = str(spv)
             elif sp == "MCELL_VACANCY_SEARCH_DISTANCE":
-                self.dm['mcell']['initialization']['vacancy_search_distance'] = spv
+                self.dm['mcell']['initialization']['vacancy_search_distance'] = str(spv)
             elif "MCELL_REDEFINE_" in sp:
                 # this is a MCELL_REDEFINE 
                 param_name = sp.replace("MCELL_REDEFINE_","")
@@ -162,7 +162,7 @@ class DataModel:
                 # we already have
                 for pdict in ps:
                     if pdict['par_name'] == param_name:
-                        pdict['par_expression'] = spv
+                        pdict['par_expression'] = str(spv)
                         print("redefined parameter: {} to {}".format(param_name, spv))
             else:
                 print("Not handled special parameter")
@@ -1063,10 +1063,11 @@ def read_data_model_from_bngsim( model ):
     par['par_expression'] = str(model.parameters[param])
     par['par_description'] = ""
     par['par_units'] = ""
-    par_list.append (par)
+    par_list.append(par)
     par_val_dict[param] = model.parameters[param]
 
   dm.add_parameters(par_list)
+  import IPython;IPython.embed()
 
   for k in sorted(par_val_dict.keys()):
     print ( "  " + str(k) + " = " + str(par_val_dict[k]) )
@@ -1378,11 +1379,12 @@ def read_data_model_from_bngsim( model ):
 
 def read_data_model_from_bngl_file ( bngl_file_name ):
   try: 
-    path = os.path.split(os.path.dirname(__file__))
-    path = path[:-1]
-    bngpath = path + ("extensions", "mcell", "bng2")
-    path = os.path.join(*bngpath)
-    os.environ["BNGPATH"] = path
+    if "BNGPATH" not in os.environ:
+      path = os.path.split(os.path.dirname(__file__))
+      path = path[:-1]
+      bngpath = path + ("extensions", "mcell", "bng2")
+      path = os.path.join(*bngpath)
+      os.environ["BNGPATH"] = path
     import BNGSim
     model = BNGSim.BNGModel(bngl_file_name)
     return read_data_model_from_bngsim( model )
