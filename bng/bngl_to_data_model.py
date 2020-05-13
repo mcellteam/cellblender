@@ -1067,7 +1067,6 @@ def read_data_model_from_bngsim( model ):
     par_val_dict[param] = model.parameters[param]
 
   dm.add_parameters(par_list)
-  import IPython;IPython.embed()
 
   for k in sorted(par_val_dict.keys()):
     print ( "  " + str(k) + " = " + str(par_val_dict[k]) )
