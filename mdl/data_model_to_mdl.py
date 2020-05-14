@@ -33,6 +33,12 @@ import json
 import os
 import re
 
+# global control, set to True by argument -data_model_from_mdl 
+# needed to handle certain aspects of conversion that are impossible to control from 
+# datamodel   
+DATA_MODEL_FROM_MDL = False
+
+
 #### Helper Functions ####
 
 def pickle_data_model ( dm ):
@@ -833,7 +839,8 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
                 # Trouble with first two approaches:
                 # f.write ( "  { %s } => \"./react_data/seed_\" & seed & \"/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
                 # f.write ( "  { %s } => \"./react_data/seed_00001/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
-                f.write ( "  { %s } => \"./react_data/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+                file_suffix = '_MDLString' if not DATA_MODEL_FROM_MDL else ''
+                f.write ( "  { %s } => \"./react_data/%s%s.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix'], file_suffix) )
           f.write ( "}\n" )
           f.write("\n")
 
@@ -2274,7 +2281,8 @@ def write_react_out ( scene_name, rout, mols, time_step, f ):
                     outputStr = rxn_output["mdl_string"]
                     output_file = rxn_output["mdl_file_prefix"]
                     if outputStr not in ['', None]:
-                        outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
+                        file_suffix = '_MDLString' if not DATA_MODEL_FROM_MDL else ''
+                        outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s%s.dat\"\n' % (outputStr, output_file, file_suffix)
                         f.write(outputStr)
                     else:
                         print('Found invalid reaction output {0}'.format(rxn_output["name"]))
@@ -2334,18 +2342,22 @@ if __name__ == "__main__":
         print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
 
         fail_on_error = False
-        if len(sys.argv) == 4:
+        if len(sys.argv) == 4 or len(sys.argv) == 5:
             # needed for testing
-            if sys.argv[3] == '-fail-on-error':
-                fail_on_error = True
-            else:
-                print( "Warning: unuexpected argument " + sys.argv[2])
+            for arg in sys.argv[3:]:
+                if arg == '-fail-on-error':
+                    fail_on_error = True
+                elif arg == '-data-model-from-mdl':
+                    # global setup
+                    DATA_MODEL_FROM_MDL = True
+                else:
+                    print( "Warning: invalid argument '" + arg + "'")
 
         print ( "Reading Data Model: " + sys.argv[1] )
         dm = read_data_model ( sys.argv[1] )
         # dump_data_model ( dm )
         print ( "Writing MDL: " + sys.argv[2] )
-        write_mdl ( dm, sys.argv[2], fail_on_error=fail_on_error )
+        write_mdl ( dm, sys.argv[2], fail_on_error=fail_on_error)
         print ( "Wrote Data Model found in \"" + sys.argv[1] + "\" to MDL file \"" + sys.argv[2] + "\"" )
         # Drop into an interactive python session
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
