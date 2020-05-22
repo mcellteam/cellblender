@@ -1140,8 +1140,6 @@ def read_data_model_from_bngsim( model ):
     species.outer_comp = None
     mol_expr = str(species) 
     mol_quant = model.species[species]
-    if mol_quant in model.parameters.values:
-        mol_quant = model.parameters.values[mol_quant]
     rel_item = {
       'data_model_version' : "DM_2018_01_11_1330",
       'description' : "",
