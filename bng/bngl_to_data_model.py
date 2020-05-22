@@ -1136,8 +1136,12 @@ def read_data_model_from_bngsim( model ):
   rel_list = []
  
   for species in model.species:
-    mol_patt, mol_quant = species, model.species[species]
-    mol_expr = mol_patt.string
+    outer_comp = species.outer_comp
+    species.outer_comp = None
+    mol_expr = str(species) 
+    mol_quant = model.species[species]
+    if mol_quant in model.parameters.values:
+        mol_quant = model.parameters.values[mol_quant]
     rel_item = {
       'data_model_version' : "DM_2018_01_11_1330",
       'description' : "",
@@ -1159,12 +1163,18 @@ def read_data_model_from_bngsim( model ):
     }
 
     # Release based on compartment names and parent/child relationships in the object topology
-
-    # replacing parsing with info from molecule pattern
-    mol_dict = mol_patt.molecules[0]
-    if 'compartment' in mol_dict:
-      mol_name = mol_dict['name']
-      compartment_name = mol_dict['compartment']
+    
+    if outer_comp is None:
+      comp = None
+      for molec in species:
+        if molec.compartment is not None:
+          comp = molec.compartment
+    else:
+      comp = outer_comp
+    # replacing parsing with info from pattern
+    if comp is not None:
+      mol_name = species[0].name
+      compartment_name = comp
       if not (mol_name in molecule_type_dict):
         molecule_type_dict[mol_name] = []
       # Note that a molecule may be of multiple types if used in different contexts!!
@@ -1231,7 +1241,7 @@ def read_data_model_from_bngsim( model ):
   for mtype in model.moltypes:
     mol = {}
     mol['data_model_version'] = "DM_2018_01_11_1330"
-    mol['mol_name'] = mtype.molecules[0]['name']
+    mol['mol_name'] = mtype.molecule.name
     mol['mol_type'] = '3D'
     if mol['mol_name'] in molecule_type_dict.keys():
       print ( "Assigning molecule {} based on type of : ".format(mol['mol_name']) + str(molecule_type_dict[mol['mol_name']]) )
@@ -1271,8 +1281,8 @@ def read_data_model_from_bngsim( model ):
       vol_glyph_index += 1
 
     mol['bngl_component_list'] = []
-    if len(mtype.molecules[0]['components']) > 0:
-      for c in mtype.molecules[0]['components']:
+    if len(mtype.molecule.components) > 0:
+      for c in mtype.molecule.components:
         comp = {}
         comp['cname'] = c['name']
         comp['cstates'] = []
@@ -1286,23 +1296,23 @@ def read_data_model_from_bngsim( model ):
   dm.init_observables()
 
   # Fill in the reaction output list
-  for obs in model.observables:
+  for obs_name in model.observables._item_dict:
     # obs is the name of the observable
     # model.observables is tuple (type, expression)
-    keyword = model.observables[obs][0]
+    keyword, patterns = model.observables._item_dict[obs_name]
     if keyword != "Molecules":
       print ( "Warning: Conversion only supports Molecule observables" )
-    label = obs
+    label = obs_name
 
-    mols_part = model.observables[obs][1].string
+    mols_part = str(patterns)
     print ( "  Mols part: " + mols_part )
 
     things_to_count = []
     # can read the molecules directly from the 
     # parsed xml here
-    for molec in model.observables[obs][1].molecule_list:
-      print("  Found: \"" + molec + "\"")
-      things_to_count.append ( molec )
+    for pattern in patterns:
+      print("  Found: \"" + str(pattern) + "\"")
+      things_to_count.append ( str(pattern) )
 
     count_parts = [ "COUNT[" + thing + ",WORLD]" for thing in things_to_count ]
     count_expr = ' + '.join(count_parts)
@@ -1345,31 +1355,50 @@ def read_data_model_from_bngsim( model ):
             'variable_rate_text' : "",
             'variable_rate_valid' : False
           }
-    if model.rules[rule].bidirectional:
+    if rule.bidirectional:
       # Process as a reversible reaction
-      reactants = model.rules[rule].lhs
-      products = model.rules[rule].rhs
-      frate = model.rules[rule].rate_law[0]
-      rrate = model.rules[rule].rate_law[1]
-
-      rxn['reactants'] = reactants
-      rxn['products'] = products
+      reactants = rule.reactants
+      products = rule.products
+      react_str = ""
+      for ir, r in enumerate(reactants):
+          if ir > 0:
+              react_str += "+"
+          react_str += str(r)
+      prod_str = ""
+      for ip, p in enumerate(products):
+        if ip > 0:
+          prod_str += "+"
+        prod_str += str(p)
+      frate = rule.rate_constants[0]
+      rrate = rule.rate_constants[1]
+      rxn['reactants'] = react_str
+      rxn['products'] = prod_str 
       rxn['fwd_rate'] = frate
       rxn['bkwd_rate'] = rrate
       rxn['rxn_type'] = "reversible"
-      rxn['name'] = reactants + " <-> " + products
+      rxn['name'] = react_str + " <-> " + prod_str
     else:
       # Process as an irreversible reaction
-      reactants = model.rules[rule].lhs
-      products = model.rules[rule].rhs
-      frate = model.rules[rule].rate_law[0]
+      reactants = rule.reactants
+      products = rule.products
+      frate = rule.rate_constants[0]
+      react_str = ""
+      for ir, r in enumerate(reactants):
+          if ir > 0:
+              react_str += "+"
+          react_str += str(r)
+      prod_str = ""
+      for ip, p in enumerate(products):
+        if ip > 0:
+          prod_str += "+"
+        prod_str += str(p)
 
-      rxn['reactants'] = reactants
-      rxn['products'] = products
+      rxn['reactants'] = react_str
+      rxn['products'] = prod_str
       rxn['fwd_rate'] = frate
       rxn['bkwd_rate'] = ""
       rxn['rxn_type'] = "irreversible"
-      rxn['name'] = reactants + " -> " + products
+      rxn['name'] = react_str + " -> " + prod_str
     react_list.append ( rxn )
  
   dm.add_rules(react_list)
