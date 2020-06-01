@@ -1136,8 +1136,8 @@ def read_data_model_from_bngsim( model ):
   rel_list = []
  
   for species in model.species:
-    outer_comp = species.outer_comp
-    species.outer_comp = None
+    outer_comp = species.compartment
+    species._compartment = None
     mol_expr = str(species) 
     mol_quant = model.species[species]
     rel_item = {
@@ -1282,10 +1282,10 @@ def read_data_model_from_bngsim( model ):
     if len(mtype.molecule.components) > 0:
       for c in mtype.molecule.components:
         comp = {}
-        comp['cname'] = c['name']
+        comp['cname'] = c.name
         comp['cstates'] = []
-        if 'states' in c:
-          comp['cstates'] = c['states']
+        if len(c.states) > 0:
+          comp['cstates'] = c.states
         mol['bngl_component_list'].append ( comp )
     mol_list.append ( mol )
 
