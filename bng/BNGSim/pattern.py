@@ -5,46 +5,17 @@ class Pattern:
     '''
     def __init__(self, pattern_xml):
         self._bonds = Bonds()
-        self._compartment = None
-        self._label = None
         self.molecules = []
         # sets self.molecules up 
-        self._parse_xml(pattern_xml)
-
-    @property
-    def compartment(self):
-        return self._compartment 
-
-    @compartment.setter
-    def compartment(self, value):
-        # TODO: Build in logic to set the 
-        # outer compartment
-        # print("Warning: Logical checks are not complete")
-        self._compartment = value
-        # by default, once the outer compartment is set
-        # we will set the compartment of each molecule
-        # to that new compartment. 
-        for molec in self.molecules:
-            molec.compartment = value
-
-    @property
-    def label(self):
-        return self._label
-
-    @label.setter
-    def label(self, value):
-        # TODO: Build in logic to set 
-        # the outer label
-        # print("Warning: Logical checks are not complete")
-        self._label = value
+        self.parse_xml(pattern_xml)
 
     def __str__(self):
         sstr = ""
         for imol, mol in enumerate(self.molecules):
-            if imol == 0 and self.compartment is not None:
-                sstr += "@{}:".format(self.compartment)
-            if imol == 0 and self.label is not None:
-                sstr += "%{}:".format(self.label)
+            if imol == 0 and self.outer_comp is not None:
+                sstr += "@{}:".format(self.outer_comp)
+            if imol == 0 and self.outer_label is not None:
+                sstr += "%{}:".format(self.outer_label)
             if imol > 0:
                 sstr += "."
             sstr += str(mol)
@@ -59,247 +30,138 @@ class Pattern:
     def __iter__(self):
         return self.molecules.__iter__()
 
-    # TODO: Implement __contains__
-
-    def _parse_xml(self, xml):
+    def parse_xml(self, xml):
         if '@compartment' in xml:
-            self.compartment = xml['@compartment']
+            self.outer_comp = xml['@compartment']
+        else:
+            self.outer_comp = None
         if "@label" in xml:
-            self.label = xml["@label"]
+            self.outer_label = xml["@label"]
+        else: 
+            self.outer_label = None
         if "ListOfBonds" in xml:
             self._bonds.set_xml(xml["ListOfBonds"]["Bond"])
         mols = xml['ListOfMolecules']['Molecule']
         if isinstance(mols, list):
             # list of molecules
             for imol, mol in enumerate(mols):
-                mol_obj = self._process_mol(mol)
-                self.molecules.append(mol_obj)
+                mol_obj = self.process_mol(mol)
+                self.molecules.append(self.process_mol(mol))
         else:
             # a single molecule
-            mol_obj = self._process_mol(mols)
+            mol_obj = self.process_mol(mols)
             self.molecules.append(mol_obj)
 
-    def _process_mol(self, mol_xml):
+    def process_mol(self, mol_xml):
         # we are going to store molecules, components
         # and compartments in a separate dictionary 
         # for use later
-        mol_obj = Molecule()
-        mol_obj.name = mol_xml['@name'] 
+        name = mol_xml['@name'] 
         if "@label" in mol_xml:
-            mol_obj.label = mol_xml["@label"]
+            label = mol_xml["@label"]
+        else:
+            label = None
+        # molecule dictionary
+        mol_dict = {"name": name, "components": [], "compartment": None, "label": label} 
         if "ListOfComponents" in mol_xml:
             # Single molecule can't have bonds
-            mol_obj.components = self._process_comp(mol_xml["ListOfComponents"]["Component"])
+            mol_dict['components'] = self.process_comp(mol_xml["ListOfComponents"]["Component"])
         if '@compartment' in mol_xml:
-            mol_obj.compartment = mol_xml['@compartment']
+            mol_dict['compartment'] = mol_xml['@compartment']
+        mol_obj = Molecule(mol_dict)
         return mol_obj
 
-    def _process_comp(self, comp_xml):
+    def process_comp(self, comp_xml):
         # bonds = compartment id, bond id 
         # comp xml can be a list or a dict
         comp_list = []
         if isinstance(comp_xml, list):
             # we have multiple and this is a list
             for icomp, comp in enumerate(comp_xml):
-                comp_obj = Component()
-                comp_obj.name = comp['@name']
+                comp_dict = {}
+                comp_dict['name'] = comp['@name']
                 if "@label" in comp:
-                    comp_obj.label = comp['@label']
+                    comp_dict['label'] = comp['@label']
                 if "@state" in comp:
-                    comp_obj.state = comp['@state']
+                    comp_dict['state'] = comp['@state']
                 if comp["@numberOfBonds"] != '0':
+                    comp_dict['bonds'] = []
                     bond_id = self._bonds.get_bond_id(comp)
                     for bi in bond_id:
-                        comp_obj.bonds.append(bi)
-                comp_list.append(comp_obj)
+                        comp_dict['bonds'].append(bi)
+                comp_list.append(comp_dict)
         else:
             # single comp, this is a dict
-            comp_obj = Component()
-            comp_obj.name = comp_xml['@name']
+            comp_dict = {}
+            comp_dict['name'] = comp_xml['@name']
             if "@label" in comp_xml:
-                comp_obj.label = comp_xml['@label']
+                comp_dict['label'] = comp_xml['@label']
             if "@state" in comp_xml:
-                comp_obj.state = comp_xml['@state']
+                comp_dict['state'] = comp_xml['@state']
             if comp_xml['@numberOfBonds'] != '0':
+                comp_dict['bonds'] = []
                 bond_id = self._bonds.get_bond_id(comp_xml)
                 for bi in bond_id:
-                    comp_obj.bonds.append(bi)
-            comp_list.append(comp_obj)
+                    comp_dict['bonds'].append(bi)
+            comp_list.append(comp_dict)
         return comp_list
 
 class Molecule:
-    def __init__(self):
-        self._name = "0"
-        self._components = []
-        self._compartment = None
-        self._label = None
+    def __init__(self,  mol_dict=None):
+        if mol_dict is not None:
+            self.mol_dict = mol_dict
+            self.__dict__.update(mol_dict)
+        else:
+            self.mol_dict = {"name": "0", 
+                    "components": [], 
+                    "compartment": None,
+                    "label": None} 
 
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return self.components[key]
-
-    def __iter__(self):
-        return self.components.__iter__()
-
-    # TODO: implement __setitem__,  __contains__
+    def __repr__(self):
+        return str(self)
 
     def __str__(self):
-        mol_str = self.name
-        if self.label is not None:
-            mol_str += "%{}".format(self.label)
-        if len(self.components) > 0:
+        mol = self.mol_dict
+        mol_str = mol["name"]
+        if mol["label"] is not None:
+            mol_str += "%{}".format(mol["label"])
+        if len(mol["components"]) > 0:
             mol_str += "("
-            for icomp, comp in enumerate(self.components):
+            for icomp, comp in enumerate(mol["components"]):
                 if icomp > 0:
                     mol_str += ","
-                mol_str += str(comp)
+                comp_str = comp["name"]
+                # only for moltypes
+                if "states" in comp:
+                    for istate, state in enumerate(comp["states"]):
+                        comp_str += "~{}".format(state)
+                # for any other pattern
+                if "state" in comp:
+                    comp_str += "~{}".format(comp["state"])
+                if "label" in comp:
+                    comp_str += "%{}".format(comp["label"])
+                if "bonds" in comp:
+                    for bond in comp["bonds"]:
+                        comp_str += "!{}".format(bond)
+                mol_str += comp_str 
             mol_str += ")"
-        if self.compartment is not None:
-            mol_str += "@{}".format(self.compartment)
+        if mol["compartment"] is not None:
+            mol_str += "@{}".format(mol["compartment"])
         return mol_str
+
+    def add_component(self, name, state=None, states=None):
+        comp_dict = {"name": name}
+        if state is not None:
+            comp_dict["state"] = state
+        if states is not None:
+            comp_dict["states"] = states
+        self.mol_dict['components'].append(comp_dict)
+
+    def set_compartment(self, compt):
+        self.mol_dict['compartment'] = compt
     
-    ### PROPERTIES ### 
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, value):
-        # print("Warning: Logical checks are not complete")
-        # TODO: Check for invalid characters
-        self._name = value
-
-    @property
-    def components(self):
-        return self._components
-
-    @components.setter
-    def components(self, value):
-        # print("Warning: Logical checks are not complete")
-        self._components = value
-
-    def __repr__(self):
-        return str(self)
-
-    @property
-    def compartment(self):
-        return self._compartment
-
-    @compartment.setter
-    def compartment(self, value):
-        # print("Warning: Logical checks are not complete")
-        self._compartment = value
-
-    @property
-    def label(self):
-        return self._label
-
-    @label.setter
-    def label(self, value):
-        # print("Warning: Logical checks are not complete")
-        self._label = value
-
-    def _add_component(self, name, state=None, states=[]):
-        comp_obj = Component()
-        comp_obj.name = name
-        comp_obj.state = state
-        comp_obj.states = states
-        self.components.append(comp_obj)
-
-    def add_component(self, name, state=None, states=[]):
-        # TODO: Add built-in logic here
-        # print("Warning: Logical checks are not complete")
-        self._add_component(name, state, states)
-
-class Component:
-    def __init__(self):
-        self._name = ""
-        self._label = None
-        self._state = None
-        self._states = []
-        self._bonds = []
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        comp_str = self.name
-        # only for moltypes
-        if len(self.states) > 0:
-            for istate, state in enumerate(self.states):
-                comp_str += "~{}".format(state)
-        # for any other pattern
-        if self.state is not None:
-            comp_str += "~{}".format(self.state)
-        if self.label is not None:
-            comp_str += "%{}".format(self.label)
-        if len(self.bonds) > 0:
-            for bond in self.bonds:
-                comp_str += "!{}".format(bond)
-        return comp_str
-
-    ### PROPERTIES ### 
-    @property
-    def name(self):
-        return self._name
-   
-    @name.setter
-    def name(self, value):
-        # TODO: Add built-in logic here
-        # print("Warning: Logical checks are not complete")
-        self._name = value
-
-    @property
-    def label(self):
-        return self._label
-   
-    @label.setter
-    def label(self, value):
-        # TODO: Add built-in logic here
-        # print("Warning: Logical checks are not complete")
-        self._label = value
-
-    @property
-    def state(self):
-        return self._state
-   
-    @state.setter
-    def state(self, value):
-        # TODO: Add built-in logic here
-        # print("Warning: Logical checks are not complete")
-        self._state = value
-
-    @property
-    def states(self):
-        return self._states
-   
-    @states.setter
-    def states(self, value):
-        # TODO: Add built-in logic here
-        # print("Warning: Logical checks are not complete")
-        self._states = value
-
-    @property
-    def bonds(self):
-        return self._bonds
-   
-    @bonds.setter
-    def bonds(self, value):
-        # TODO: Add built-in logic here
-        # print("Warning: Logical checks are not complete")
-        self._bonds = value
-
-    def _add_state(self):
-        raise NotImplemented
-
-    def add_state(self):
-        self._add_state()
-
-    def _add_bond(self):
-        raise NotImplemented
-
-    def add_bond(self):
-        self._add_bond()
+    def set_label(self, label):
+        self.mol_dict['label'] = label
 
 ###### BONDS #####
 class Bonds:

@@ -156,8 +156,8 @@ class BNGSimulator:
         # Save results
         if self.path is None:
             os.chdir(self.cur_dir)
-        # if self.combined:
-        #     self.combine_results()
-        #     self.save_results(self.outname, combined=True)
-        # else:
-        #     self.save_results(self.outname)
+        if self.combined:
+            self.combine_results()
+            self.save_results(self.outname, combined=True)
+        else:
+            self.save_results(self.outname)
