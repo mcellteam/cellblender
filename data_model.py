@@ -639,15 +639,9 @@ try:
 
         def execute(self, context):
             print ( "Loading CellBlender model from JSON file: " + self.filepath + " ..." )
-            f = open ( self.filepath, 'r' )
-            json_string = f.read()
-            f.close()
-
-            dm = {}
-            dm['mcell'] = data_model_from_json ( json_string ) ['mcell']
-            dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
-            context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True, scripts=True )
-
+            
+            import_datamodel_all_json(self.filepath, context);
+            
             print ( "Done loading CellBlender model." )
             return {'FINISHED'}
 
@@ -655,6 +649,17 @@ except:
     # Unable to import Blender classses
     print ( "Unable to import Blender classes ... running outside of Blender." )
     pass
+
+
+def import_datamodel_all_json(filepath, context):
+    f = open ( filepath, 'r' )
+    json_string = f.read()
+    f.close()
+
+    dm = {}
+    dm['mcell'] = data_model_from_json ( json_string ) ['mcell']
+    dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
+    context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True, scripts=True )
 
 
 def save_mcell_preferences ( mcell ):

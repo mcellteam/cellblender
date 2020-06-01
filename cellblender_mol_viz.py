@@ -46,10 +46,11 @@ import json
 
 # CellBlender imports
 import cellblender
-from . import parameter_system
-from . import cellblender_release
-from . import cellblender_utils
 
+import cellblender.parameter_system as parameter_system 
+import cellblender.cellblender_release as cellblender_release 
+import cellblender.cellblender_utils as cellblender_utils 
+    
 from cellblender.cellblender_utils import timeline_view_all
 from cellblender.cellblender_utils import mcell_files_path
 
@@ -480,7 +481,7 @@ def get_mol_file_dir():
 
     return filepath
 
-
+# Note: why is self here? This isn't a class method...
 def mol_viz_update(self, context):
     """ Clear the old viz data. Draw the new viz data. """
     global global_mol_file_list
@@ -489,8 +490,11 @@ def mol_viz_update(self, context):
 
 #    if len(mcell.mol_viz.mol_file_list) > 0:
     if len(global_mol_file_list) > 0:
-#        filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
-        filename = global_mol_file_list[mcell.mol_viz.mol_file_index]
+        for file in global_mol_file_list:
+            print(str(file))
+            
+        # -2 is used to match cell number with frame number
+        filename = global_mol_file_list[mcell.mol_viz.mol_file_index-2]
         mcell.mol_viz.mol_file_name = filename
         filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
 
@@ -1025,8 +1029,13 @@ def mol_viz_file_read(mcell, filepath):
                 mol_mat = mats.get(mol_mat_name)
                 if not mol_mat:
                     mol_mat = mats.new(mol_mat_name)
-                    mol_mat.diffuse_color = mcell.mol_viz.color_list[
-                        mcell.mol_viz.color_index].vec
+                        
+                    # use default color if no colors are defined
+                    if mcell.mol_viz.color_list:
+                        mol_mat.diffuse_color = mcell.mol_viz.color_list[mcell.mol_viz.color_index].vec
+                    else:
+                        mol_mat.diffuse_color = (1, 0, 0)
+                        
                     mcell.mol_viz.color_index = mcell.mol_viz.color_index + 1
                     if (mcell.mol_viz.color_index >
                             len(mcell.mol_viz.color_list)-1):
