@@ -42,7 +42,7 @@ begin parameters
     vol_PM  0.01/rxn_layer_t    # Surface area
     h  rxn_layer_t    # Thickness of 2D compartment, um    units=um
     ITERATIONS  1000
-    TIME_STEP  1e-6
+    #TIME_STEP  1e-6 # this value is generated from cellblender and must not be set
     VACANCY_SEARCH_DISTANCE  10
     MCELL_DEFAULT_DIFFUSION_CONSTANT_2D  1.7e-7
     MCELL_DEFAULT_DIFFUSION_CONSTANT_3D  8.51e-7

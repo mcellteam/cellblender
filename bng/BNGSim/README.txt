@@ -2,6 +2,6 @@ A temporary copy of BNGSim,
 
 cloned from 
 https://github.com/ASinanSaglam/BNGSim
-commit ee2fb3099d133f78494dd734404705bd46e9462f - file setup.py contains version="0.3.1", 
+commit 1b4a66958436167d636c2796eb882812956126df 
 
 removed unnecessary dependence on h5df and added xmltodict.py.

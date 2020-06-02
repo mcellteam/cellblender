@@ -1,4 +1,4 @@
-from BNGSim.pattern import Pattern, Molecule, Bonds
+from BNGSim.pattern import Pattern, Molecule, Component, Bonds
 
 ###### XMLObjs ###### 
 class XMLObj:
@@ -50,11 +50,13 @@ class SpeciesXML(Pattern):
     A species is a list of molecules
     '''
     def __init__(self, xml):
-        self.xml = xml
+        self._xml = xml
         self._bonds = Bonds()
+        self._label = None
+        self._compartment = None
         self.molecules = []
         # sets self.molecules up 
-        self.parse_xml(xml)
+        self._parse_xml(xml)
 
 class MolTypeXML(XMLObj):
     def __init__(self, xml):
@@ -67,37 +69,37 @@ class MolTypeXML(XMLObj):
         return str(self.molecule)
 
     def resolve_xml(self, molt_xml):
-        molt_name = molt_xml['@id'] 
-        mol_dict = {"name": molt_name, "components": [], "compartment": None, "label": None}
+        mol_obj = Molecule()
+        mol_obj.name = molt_xml['@id'] 
         if 'ListOfComponentTypes' in molt_xml:
+            comp_obj = Component()
             comp_dict = molt_xml['ListOfComponentTypes']['ComponentType']
             if '@id' in comp_dict:
-                cd = {"name": comp_dict["@id"]}
+                comp_obj.name = comp_dict["@id"]
                 if "ListOfAllowedStates" in comp_dict:
                     # we have states
                     al_states = comp_dict['ListOfAllowedStates']['AllowedState']
-                    cd["states"] = []
                     if isinstance(al_states, list):
                         for istate, state in enumerate(al_states):
-                            cd["states"].append(state["@id"])
+                            comp_obj.states.append(state["@id"])
                     else:
-                        cd["states"].append(state["@id"])
-                mol_dict["components"].append(cd)
+                        comp_obj.states.append(state["@id"])
+                mol_obj.components.append(comp_obj)
             else:
                 # multiple components
                 for icomp, comp in enumerate(comp_dict):
-                    cd = {"name": comp['@id']}
+                    comp_obj = Component()
+                    comp_obj.name = comp['@id']
                     if "ListOfAllowedStates" in comp:
                         # we have states
                         al_states = comp['ListOfAllowedStates']['AllowedState']
-                        cd['states'] = []
                         if isinstance(al_states, list):
                             for istate, state in enumerate(al_states):
-                                cd['states'].append(state['@id'])
+                                comp_obj.states.append(state['@id'])
                         else:
-                            cd['states'].append(al_states['@id'])
-                    mol_dict['components'].append(cd)
-        self.molecule = Molecule(mol_dict)
+                            comp_obj.states.append(al_states['@id'])
+                    mol_obj.components.append(comp_obj)
+        self.molecule = mol_obj
 
 class RuleXML(XMLObj):
     '''

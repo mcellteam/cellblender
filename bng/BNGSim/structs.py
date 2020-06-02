@@ -153,9 +153,16 @@ class Species(ModelBlock):
         return self._item_dict[key]
 
     def __setitem__(self, key, value):
-        for ikey in self._item_dict:
-            if key == str(ikey):
-                self._item_dict[ikey] = value
+        if isinstance(key, str):
+            for ikey in self._item_dict:
+                if key == str(ikey):
+                    self._item_dict[ikey] = value
+            return
+        if isinstance(key, int):
+            k = list(self._item_dict.keys())[key]
+            self._item_dict[k] = value
+            return
+        self._item_dict[key] = value
 
     def __contains__(self, key):
         for ikey in self._item_dict:
