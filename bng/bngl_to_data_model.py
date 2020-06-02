@@ -1411,6 +1411,9 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
       bngpath = path + ("extensions", "mcell", "bng2")
       path = os.path.join(*bngpath)
       os.environ["BNGPATH"] = path
+    # for some reason, python does not want to import the BNGSim module that is in the 
+    # current subdir
+    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     import BNGSim
     model = BNGSim.BNGModel(bngl_file_name)
     return read_data_model_from_bngsim( model )
