@@ -30,8 +30,286 @@ import os
 import re
 import math
 
-#### Helper Functions ####
+#### DataModel class ####
+class DataModel:
+    def __init__(self):
+        # Define special parameters that appear to be MCell Specific
+        self.special_parameters = { 'MCELL_ITERATIONS': 1000, 'MCELL_TIME_STEP': 1e-6, 'MCELL_VACANCY_SEARCH_DISTANCE': 10 }
+        # populate defaults 
+        dm = { 'mcell': { 'api_version': 0, 'blender_version': [2,78,0], 'data_model_version': "DM_2017_06_23_1300" } }
+        dm['mcell']['cellblender_source_sha1'] = "61cc8da7bfe09b42114982616ce284301adad4cc"
+        dm['mcell']['cellblender_version'] = "0.1.54"
+        dm['mcell']['model_language'] = "mcell3r"
+        # Force a reflective surface class
+        dm['mcell']['define_surface_classes'] = {
+          'data_model_version' : "DM_2014_10_24_1638",
+          'surface_class_list' : [
+            {
+              'data_model_version' : "DM_2018_01_11_1330",
+              'description' : "",
+              'name' : "reflect",
+              'surface_class_prop_list' : [
+                {
+                  'affected_mols' : "ALL_MOLECULES",
+                  'clamp_value' : "0",
+                  'data_model_version' : "DM_2015_11_08_1756",
+                  'molecule' : "",
+                  'name' : "Molec.: ALL_MOLECULES   Orient.: Ignore   Type: Reflective",
+                  'surf_class_orient' : ";",
+                  'surf_class_type' : "REFLECTIVE"
+                }
+              ]
+            }
+          ]
+        }
+        # Add a default object material (may be augmented later)
+        dm['mcell']['materials'] = {
+          'material_dict' : {
+            'membrane_mat' : {
+              'diffuse_color' : {
+                'a' : 0.1,
+                'b' : 0.43,
+                'g' : 0.43,
+                'r' : 0.43
+              }
+            }
+          }
+        }
+        dm['mcell']['geometrical_objects'] = {
+          'object_list' : []
+        }
+        dm['mcell']['model_objects'] = {
+          'data_model_version' : "DM_2018_01_11_1330",
+          'model_object_list' : []
+        }
+        # initialization
+        dm['mcell']['initialization'] = {
+          'accurate_3d_reactions' : True,
+          'center_molecules_on_grid' : False,
+          'data_model_version' : "DM_2017_11_18_0130",
+          'export_all_ascii' : False,
+          'interaction_radius' : "",
+          'iterations' : "1000",
+          'microscopic_reversibility' : "OFF",
+          'notifications' : {
+            'all_notifications' : "INDIVIDUAL",
+            'box_triangulation_report' : False,
+            'diffusion_constant_report' : "BRIEF",
+            'file_output_report' : False,
+            'final_summary' : True,
+            'iteration_report' : True,
+            'molecule_collision_report' : False,
+            'partition_location_report' : False,
+            'probability_report' : "ON",
+            'probability_report_threshold' : "0",
+            'progress_report' : True,
+            'release_event_report' : True,
+            'varying_probability_report' : True
+          },
+          'partitions' : {
+            'data_model_version' : "DM_2016_04_15_1600",
+            'include' : False,
+            'recursion_flag' : False,
+            'x_end' : "1",
+            'x_start' : "-1",
+            'x_step' : "0.02",
+            'y_end' : "1",
+            'y_start' : "-1",
+            'y_step' : "0.02",
+            'z_end' : "1",
+            'z_start' : "-1",
+            'z_step' : "0.02"
+          },
+          'radial_directions' : "",
+          'radial_subdivisions' : "",
+          'space_step' : "",
+          'surface_grid_density' : "10000",
+          'time_step' : "1e-6",
+          'time_step_max' : "",
+          'vacancy_search_distance' : "",
+          'warnings' : {
+            'all_warnings' : "INDIVIDUAL",
+            'degenerate_polygons' : "WARNING",
+            'high_probability_threshold' : "1",
+            'high_reaction_probability' : "IGNORED",
+            'large_molecular_displacement' : "WARNING",
+            'lifetime_threshold' : "50",
+            'lifetime_too_short' : "WARNING",
+            'missed_reaction_threshold' : "0.001",
+            'missed_reactions' : "WARNING",
+            'missing_surface_orientation' : "ERROR",
+            'negative_diffusion_constant' : "WARNING",
+            'negative_reaction_rate' : "WARNING",
+            'useless_volume_orientation' : "WARNING"
+          }
+        }
+        self.dm = dm
 
+    def handle_special_params(self):
+        for sp, spv in self.special_parameters.items():
+            if sp == "MCELL_ITERATIONS":
+                self.dm['mcell']['initialization']['iterations'] = str(spv)
+            elif sp == "MCELL_TIME_STEP":
+                self.dm['mcell']['initialization']['time_step'] = str(spv)
+            elif sp == "MCELL_VACANCY_SEARCH_DISTANCE":
+                self.dm['mcell']['initialization']['vacancy_search_distance'] = str(spv)
+            elif "MCELL_REDEFINE_" in sp:
+                # this is a MCELL_REDEFINE 
+                param_name = sp.replace("MCELL_REDEFINE_","")
+                ps = self.dm['mcell']['parameter_system']['model_parameters']
+                # this _only_ changes the parameter
+                # if it exists in the set of parameters
+                # we already have
+                for pdict in ps:
+                    if pdict['par_name'] == param_name:
+                        pdict['par_expression'] = str(spv)
+                        print("redefined parameter: {} to {}".format(param_name, spv))
+            else:
+                print("Not handled special parameter")
+                print(sp, spv)
+
+    def add_parameters(self, par_list):
+        self.dm['mcell']['parameter_system'] = { 'model_parameters': par_list }
+
+    def add_materials(self):
+        # Change the materials to add a new one for each object
+        mat_name_number = 1
+        for obj in self.dm['mcell']['geometrical_objects']['object_list']:
+          if len(obj['material_names']) > 0:
+            if obj['material_names'][0] == 'membrane_mat':
+              # Make a new material to replace the defaulted "membrane_mat"
+              mat_name = obj['name'] + '_mat_' + str(mat_name_number)
+              self.dm['mcell']['materials']['material_dict'][mat_name] = { 'diffuse_color' : { 'a':0.1, 'r':mat_name_number&1, 'g':mat_name_number&2, 'b':mat_name_number&4 } }
+              obj['material_names'][0] = mat_name
+              mat_name_number += 1
+
+    def mod_surface_regions(self):
+        # Make a "Modify Surface Regions" "ALL" entry for every object
+        self.dm['mcell']['modify_surface_regions'] = {
+          'data_model_version' : "DM_2014_10_24_1638",
+          'modify_surface_regions_list' : []
+        }
+
+        # Make a "Modify Surface Regions" entry for every named surface in an object
+        for obj in self.dm['mcell']['geometrical_objects']['object_list']:
+          msr = {
+              'data_model_version' : "DM_2018_01_11_1330",
+              'description' : "",
+              'name' : "Surface Class: reflect   Object: " + obj['name'] + "   ALL",
+              'object_name' : obj['name'],
+              'region_name' : "",
+              'region_selection' : "ALL",
+              'surf_class_name' : "reflect"
+            }
+          self.dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
+
+          if 'define_surface_regions' in obj:
+            for surf in obj['define_surface_regions']:
+              msr = {
+                  'data_model_version' : "DM_2018_01_11_1330",
+                  'description' : "",
+                  'name' : "Surface Class: reflect   Object: " + obj['name'] + "   Region: " + surf['name'],
+                  'object_name' : obj['name'],
+                  'region_name' : surf['name'],
+                  'region_selection' : "SEL",
+                  'surf_class_name' : "reflect"
+                }
+              self.dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
+
+    def add_release_sites(self, rel_list):
+        self.dm['mcell']['release_sites'] = { 'data_model_version' : "DM_2014_10_24_1638" }
+        self.dm['mcell']['release_sites']['release_site_list'] = rel_list
+
+    def add_molecules(self, mol_list):
+        self.dm['mcell']['define_molecules'] = { 'molecule_list': mol_list, 'data_model_version': "DM_2014_10_24_1638" }
+
+    def init_observables(self):
+        # observables
+        self.dm['mcell']['viz_output'] = {
+          'all_iterations' : True,
+          'data_model_version' : "DM_2014_10_24_1638",
+          'end' : "1000",
+          'export_all' : True,
+          'start' : "0",
+          'step' : "5"
+        }
+        self.dm['mcell']['reaction_data_output'] = {
+          'always_generate' : True,
+          'combine_seeds' : True,
+          'data_model_version' : "DM_2016_03_15_1800",
+          'mol_colors' : False,
+          'output_buf_size' : "",
+          'plot_layout' : " plot ",
+          'plot_legend' : "0",
+          'rxn_step' : "",
+          'reaction_output_list' : []
+        }
+
+    def add_observable(self, item):
+        self.dm['mcell']['reaction_data_output']['reaction_output_list'].append(item)
+    
+    def add_rules(self, react_list):
+        self.dm['mcell']['define_reactions'] = { 'data_model_version' : "DM_2014_10_24_1638" }
+        self.dm['mcell']['define_reactions']['reaction_list'] = react_list
+
+    def append_to_geom_obj_list(self, item):
+        self.dm['mcell']['geometrical_objects']['object_list'].append(item)
+    def append_to_model_obj_list(self, item):
+        self.dm['mcell']['model_objects']['model_object_list'].append(item)
+
+    def append_objects(self, obj, inner_parent, outer_parent):
+      # Append this object (if 3D) and its 3D children to the data model object list
+      print ( "append_objects called with obj = " + str(obj['name']) )
+      if 'dim' in obj.keys():
+        if int(obj['dim']) == 3:
+          xr = obj['xdim'] / 2.0
+          yr = obj['ydim'] / 2.0
+          zr = obj['zdim'] / 2.0
+          points,faces = create_rectangle (-xr, xr, -yr, yr, -zr, zr )
+    
+          inner_parent_name = ""
+          if inner_parent != None:
+            if 'dim' in inner_parent.keys():
+              inner_parent_name = inner_parent['name']
+    
+          go = {
+              'name' : obj['name'],
+              'location' : [obj['x'], obj['y'], obj['z']],
+              'material_names' : ['membrane_mat'],
+              'vertex_list' : points,
+              'element_connections' : faces }
+    
+          if len(inner_parent_name) > 0:
+            go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : inner_parent_name } ]
+          else:
+            go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : obj['name']+'_outer_wall' } ]
+    
+          self.append_to_geom_obj_list(go)
+    
+          mo = {
+              'name' : obj['name'],
+              'parent_object' : "",
+              'membrane_name' : inner_parent_name,
+              'description' : "",
+              'object_source' : "blender",
+              'dynamic' : False,
+              'dynamic_display_source' : "script",
+              'script_name' : "" }
+    
+          if outer_parent != None:
+            if 'dim' in outer_parent.keys():
+              mo['parent_object'] = outer_parent['name']
+    
+          self.append_to_model_obj_list(mo)
+    
+      if '~children' in obj.keys():
+        children = obj['~children']
+        if len(children) > 0:
+          for k in children.keys():
+            child = children[k]
+            self.append_objects(child, obj, inner_parent)
+
+#### Helper Functions ####
 dump_depth = 0;
 def dump_data_model ( name, dm ):
     global dump_depth
@@ -75,7 +353,11 @@ def write_data_model ( dm, file_name ):
     # Assume this is a JSON format file
     print ( "Saving a JSON file" )
     f = open ( file_name, 'w' )
-    status = f.write ( json.dumps ( dm ) )
+    jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
+    json_string = jde.encode ( dm )
+    status = f.write ( json_string )
+    f.write ( "\n" )
+    # status = f.write ( json.dumps ( dm ) )
   else:
     # Assume this is a pickled format file
     print ( "Saving to a Pickle file" )
@@ -83,8 +365,6 @@ def write_data_model ( dm, file_name ):
     status = f.write ( pickle.dumps(dm,protocol=0).decode('latin1') )
     f.close()
   return status
-
-
 
 def get_max_depth ( parent ):
   # Count the depth of the tree
@@ -289,62 +569,8 @@ def create_rectangle ( xmin, xmax, ymin, ymax, zmin, zmax ):
     return [ points, faces ]
 
 
-def append_objects ( obj, inner_parent, outer_parent, dm_geom_obj_list, dm_model_obj_list ):
-  # Append this object (if 3D) and its 3D children to the data model object list
-  print ( "append_objects called with obj = " + str(obj['name']) )
-  if 'dim' in obj.keys():
-    if obj['dim'] == '3':
-
-      xr = obj['xdim'] / 2.0
-      yr = obj['ydim'] / 2.0
-      zr = obj['zdim'] / 2.0
-      points,faces = create_rectangle (-xr, xr, -yr, yr, -zr, zr )
-
-      inner_parent_name = ""
-      if inner_parent != None:
-        if 'dim' in inner_parent.keys():
-          inner_parent_name = inner_parent['name']
-
-      go = {
-          'name' : obj['name'],
-          'location' : [obj['x'], obj['y'], obj['z']],
-          'material_names' : ['membrane_mat'],
-          'vertex_list' : points,
-          'element_connections' : faces }
-
-      if len(inner_parent_name) > 0:
-        go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : inner_parent_name } ]
-      else:
-        go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : obj['name']+'_outer_wall' } ]
-
-      dm_geom_obj_list.append ( go )
-
-      mo = {
-          'name' : obj['name'],
-          'parent_object' : "",
-          'membrane_name' : inner_parent_name,
-          'description' : "",
-          'object_source' : "blender",
-          'dynamic' : False,
-          'dynamic_display_source' : "script",
-          'script_name' : "" }
-
-      if outer_parent != None:
-        if 'dim' in outer_parent.keys():
-          mo['parent_object'] = outer_parent['name']
-
-      dm_model_obj_list.append ( mo )
-
-  if '~children' in obj.keys():
-    children = obj['~children']
-    if len(children) > 0:
-      for k in children.keys():
-        child = children[k]
-        append_objects ( child, obj, inner_parent, dm_geom_obj_list, dm_model_obj_list )
-
-
-
 def read_data_model_from_bngl_text ( bngl_model_text ):
+  print("\n\n\nReading BNGL Model\n\n\n")
 
   # First split by lines to remove comments and whitespace on ends
   # lines = re.split(r'\n', bngl_model_text)
@@ -353,6 +579,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   lines = re.split('\n', lines)
   i = 0
   for i in range(len(lines)):
+    lines[i] = lines[i].strip()
     l = lines[i]
     if '#' in l:
       lines[i] = l.split('#')[0].strip()
@@ -409,19 +636,10 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
       exit(1)
 
   # Now start building the data model
-  dm = { 'mcell': { 'api_version': 0, 'blender_version': [2,78,0], 'data_model_version': "DM_2017_06_23_1300" } }
-  dm['mcell']['cellblender_source_sha1'] = "61cc8da7bfe09b42114982616ce284301adad4cc"
-  dm['mcell']['cellblender_version'] = "0.1.54"
-  dm['mcell']['model_language'] = "mcell3r"
-
-
-  # Define special parameters that appear to be MCell Specific
-
-  special_parameters = { 'ITERATIONS': 1000, 'TIME_STEP': 1e-6, 'VACANCY_SEARCH_DISTANCE': 10 }
+  dm = DataModel()
 
   # Add the parameter system and build a parameter/value dictionary for future use
   # This assumes that parameters are defined before being used
-
   par_expr_dict = {}
   par_val_dict = {}
 
@@ -430,14 +648,14 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
     if ' '.join(block[0].split()[1:]) == 'parameters':
       # Process parameters
       for line in block[1:-1]:
-        # Pull MCellR special items out of the BNGL file (they appear to be coded as regular parameters such as ITERATIONS...)
+        # Pull MCellR special items out of the BNGL file (they will appear as regular parameters such as MCELL_ITERATIONS...)
         print("++++++" + line)
         name_val = line.split()
-        if name_val[0] in special_parameters.keys():
+        if name_val[0] in dm.special_parameters.keys():
           if len(name_val) == 3:
-            special_parameters[name_val[0]] = name_val[2]
+            dm.special_parameters[name_val[0]] = name_val[2]
           else:
-            special_parameters[name_val[0]] = name_val[1]
+            dm.special_parameters[name_val[0]] = name_val[1]
         else:
           # Note that taking this section out of the "else" would also include the special parameters in par_val_dict
           # It's not clear whether that is what should be done.
@@ -454,56 +672,11 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
           # This assumes that parameters are defined before being used
           par_expr_dict[par['par_name']] = par['par_expression']
           par_val_dict[par['par_name']] = eval(par['par_expression'],globals(),par_val_dict)
-  dm['mcell']['parameter_system'] = { 'model_parameters': par_list }
+
+  dm.add_parameters(par_list)
+
   for k in sorted(par_val_dict.keys()):
     print ( "  " + str(k) + " = " + str(par_expr_dict[k]) + " = " + str(par_val_dict[k]) )
-
-  # Force a reflective surface class
-  dm['mcell']['define_surface_classes'] = {
-    'data_model_version' : "DM_2014_10_24_1638",
-    'surface_class_list' : [
-      {
-        'data_model_version' : "DM_2018_01_11_1330",
-        'description' : "",
-        'name' : "reflect",
-        'surface_class_prop_list' : [
-          {
-            'affected_mols' : "ALL_MOLECULES",
-            'clamp_value' : "0",
-            'data_model_version' : "DM_2015_11_08_1756",
-            'molecule' : "",
-            'name' : "Molec.: ALL_MOLECULES   Orient.: Ignore   Type: Reflective",
-            'surf_class_orient' : ";",
-            'surf_class_type' : "REFLECTIVE"
-          }
-        ]
-      }
-    ]
-  }
-
-  # Add a default object material (may be augmented later)
-  dm['mcell']['materials'] = {
-    'material_dict' : {
-      'membrane_mat' : {
-        'diffuse_color' : {
-          'a' : 0.1,
-          'b' : 0.43,
-          'g' : 0.43,
-          'r' : 0.43
-        }
-      }
-    }
-  }
-
-  dm['mcell']['geometrical_objects'] = {
-    'object_list' : []
-  }
-
-  dm['mcell']['model_objects'] = {
-    'data_model_version' : "DM_2018_01_11_1330",
-    'model_object_list' : []
-  }
-
 
   # Add the compartments
   # Format:   Name Dimension Volume [outside compartment]
@@ -548,7 +721,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
         assign_nested_coordinates ( topology, 0, 0, 0 )
 
 
-      append_objects ( topology, None, None, dm['mcell']['geometrical_objects']['object_list'], dm['mcell']['model_objects']['model_object_list'] )
+      dm.append_objects ( topology, None, None )  
 
       print ( "Max depth = " + str(get_max_depth(topology)) )
 
@@ -561,54 +734,10 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   for k in compartment_type_dict.keys():
     print ( "  Compartment " + str(k) + " is type " + str(compartment_type_dict[k]) )
 
-
-  # Change the materials to add a new one for each object
-  mat_name_number = 1
-  for obj in dm['mcell']['geometrical_objects']['object_list']:
-    if len(obj['material_names']) > 0:
-      if obj['material_names'][0] == 'membrane_mat':
-        # Make a new material to replace the defaulted "membrane_mat"
-        mat_name = obj['name'] + '_mat_' + str(mat_name_number)
-        dm['mcell']['materials']['material_dict'][mat_name] = { 'diffuse_color' : { 'a':0.1, 'r':mat_name_number&1, 'g':mat_name_number&2, 'b':mat_name_number&4 } }
-        obj['material_names'][0] = mat_name
-        mat_name_number += 1
-
-  # Make a "Modify Surface Regions" "ALL" entry for every object
-  dm['mcell']['modify_surface_regions'] = {
-    'data_model_version' : "DM_2014_10_24_1638",
-    'modify_surface_regions_list' : []
-  }
-
-  # Make a "Modify Surface Regions" entry for every named surface in an object
-  for obj in dm['mcell']['geometrical_objects']['object_list']:
-    msr = {
-        'data_model_version' : "DM_2018_01_11_1330",
-        'description' : "",
-        'name' : "Surface Class: reflect   Object: " + obj['name'] + "   ALL",
-        'object_name' : obj['name'],
-        'region_name' : "",
-        'region_selection' : "ALL",
-        'surf_class_name' : "reflect"
-      }
-    dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
-
-    if 'define_surface_regions' in obj:
-      for surf in obj['define_surface_regions']:
-        msr = {
-            'data_model_version' : "DM_2018_01_11_1330",
-            'description' : "",
-            'name' : "Surface Class: reflect   Object: " + obj['name'] + "   Region: " + surf['name'],
-            'object_name' : obj['name'],
-            'region_name' : surf['name'],
-            'region_selection' : "SEL",
-            'surf_class_name' : "reflect"
-          }
-        dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
-
+  dm.add_materials()
+  dm.mod_surface_regions()
 
   # Add the seed species as release sites
-
-  dm['mcell']['release_sites'] = { 'data_model_version' : "DM_2014_10_24_1638" }
   rel_list = []
   site_num = 1
   for block in blocks:
@@ -648,6 +777,8 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
             compartment_name = mol_expr[mol_expr.find('@')+1:mol_expr.find(':')].strip()
             mol_name = mol_expr[mol_expr.find(':')+1:]
             mol_name = mol_name[0:mol_name.find('(')].strip()
+            # some notations will use double :: for compartments
+            mol_name = mol_name.replace(":","")
           else:
             compartment_name = mol_expr[mol_expr.find('@')+1:].split()[0].strip()
             if '(' in mol_expr:
@@ -694,7 +825,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   for rel_item in rel_list:
     print ( "  Release " + str(rel_item['molecule']) + " at " + str(rel_item['object_expr']) )
 
-  dm['mcell']['release_sites']['release_site_list'] = rel_list
+  dm.add_release_sites(rel_list)
 
   for k in molecule_type_dict.keys():
     print ( "  Molecule " + str(k) + " is of types: " + str(molecule_type_dict[k]) )
@@ -705,11 +836,10 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   default_vol_dc = "1e-6"
   default_surf_dc = "1e-8"
 
-  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in par_expr_dict:
-    default_vol_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_3D']
-
-  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in par_expr_dict:
-    default_surf_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_2D']
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in dm.special_parameters:
+    default_vol_dc = dm.special_parameters.pop('MCELL_DEFAULT_DIFFUSION_CONSTANT_3D')
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in dm.special_parameters:
+    default_surf_dc = dm.special_parameters.pop('MCELL_DEFAULT_DIFFUSION_CONSTANT_2D')
 
   mol_list = []
   color_index = 1
@@ -727,9 +857,9 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
         mol['mol_type'] = '3D'
         if mol['mol_name'] in molecule_type_dict.keys():
-          print ( "Assigning molecule based on type of : " + str(molecule_type_dict[mol['mol_name']]) )
+          print ( "Assigning molecule {} based on type of : ".format(mol['mol_name']) + str(molecule_type_dict[mol['mol_name']]) )
           # Use the first item in the list for now. Eventually may need to create two mols (for vol & surf)
-          if molecule_type_dict[mol['mol_name']][0] == '2':
+          if int(molecule_type_dict[mol['mol_name']][0]) == 2:
             mol['mol_type'] = '2D'
         else:
           print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
@@ -741,13 +871,13 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
         if mol['mol_type'] == '3D':
           mol['diffusion_constant'] = default_vol_dc
           key = 'MCELL_DIFFUSION_CONSTANT_3D_' + mol['mol_name']
-          if key in par_expr_dict:
-            mol['diffusion_constant'] = par_expr_dict[key]
+          if key in dm.special_parameters:
+            mol['diffusion_constant'] = dm.special_parameters.pop(key)
         else:
           mol['diffusion_constant'] = default_surf_dc
           key = 'MCELL_DIFFUSION_CONSTANT_2D_' + mol['mol_name']
-          if key in par_expr_dict:
-            mol['diffusion_constant'] = par_expr_dict[key]
+          if key in dm.special_parameters:
+            mol['diffusion_constant'] = dm.special_parameters.pop(key)
 
         mol['export_viz'] = False
         mol['maximum_step_length'] = ""
@@ -764,40 +894,19 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
           vol_glyph_index += 1
 
         mol['bngl_component_list'] = []
-        mol_comps = line.split('(')[1].split(')')[0].split(',')
-        for c in mol_comps:
-          comp = {}
-          cparts = c.split('~')
-          comp['cname'] = cparts[0]
-          comp['cstates'] = []
-          if len(cparts) > 1:
-            comp['cstates'] = cparts[1:]
-          mol['bngl_component_list'].append ( comp )
+        if "(" in line:
+          mol_comps = line.split('(')[1].split(')')[0].split(',')
+          for c in mol_comps:
+            comp = {}
+            cparts = c.split('~')
+            comp['cname'] = cparts[0]
+            comp['cstates'] = []
+            if len(cparts) > 1:
+              comp['cstates'] = cparts[1:]
+            mol['bngl_component_list'].append ( comp )
         mol_list.append ( mol )
-  dm['mcell']['define_molecules'] = { 'molecule_list': mol_list, 'data_model_version': "DM_2014_10_24_1638" }
 
-
-
-  # observables
-  dm['mcell']['viz_output'] = {
-    'all_iterations' : True,
-    'data_model_version' : "DM_2014_10_24_1638",
-    'end' : "1000",
-    'export_all' : True,
-    'start' : "0",
-    'step' : "5"
-  }
-  dm['mcell']['reaction_data_output'] = {
-    'always_generate' : True,
-    'combine_seeds' : True,
-    'data_model_version' : "DM_2016_03_15_1800",
-    'mol_colors' : False,
-    'output_buf_size' : "",
-    'plot_layout' : " plot ",
-    'plot_legend' : "0",
-    'rxn_step' : "",
-    'reaction_output_list' : []
-  }
+  dm.add_molecules(mol_list)
 
   # This regular expression seems to find BNGL molecules with parens: \b\w+\([\w,~\!\?\+]+\)+([.]\w+\([\w,~\!\?\+]+\))*
   mol_regx = "\\b\\w+\\([\\w,~\\!\\?\\+]+\\)+([.]\\w+\\([\\w,~\\!\\?\\+]+\\))*"
@@ -807,6 +916,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
   compiled_mol_regx = re.compile(mol_regx)
 
+  dm.init_observables()
   # Fill in the reaction output list
   for block in blocks:
     if ' '.join(block[0].split()[1:]) == 'observables':
@@ -857,8 +967,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
             'region_name' : "",
             'rxn_or_mol' : "MDLString"
           }
-        dm['mcell']['reaction_data_output']['reaction_output_list'].append ( count_item )
-
+        dm.add_observable(count_item)
 
   # reaction rules
 
@@ -869,7 +978,6 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   compiled_last_rate_regx = re.compile(last_rate_regx)
   compiled_last_2_rates_regx = re.compile(last_2_rates_regx)
 
-  dm['mcell']['define_reactions'] = { 'data_model_version' : "DM_2014_10_24_1638" }
   react_list = []
   for block in blocks:
     if ' '.join(block[0].split()[1:]) == 'reaction rules':
@@ -931,202 +1039,518 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
         react_list.append ( rxn )
 
-  dm['mcell']['define_reactions']['reaction_list'] = react_list
+  dm.add_rules(react_list)
+  dm.handle_special_params()
+  return dm.dm
 
 
-  # initialization
-  dm['mcell']['initialization'] = {
-    'accurate_3d_reactions' : True,
-    'center_molecules_on_grid' : False,
-    'data_model_version' : "DM_2017_11_18_0130",
-    'export_all_ascii' : False,
-    'interaction_radius' : "",
-    'iterations' : "1000",
-    'microscopic_reversibility' : "OFF",
-    'notifications' : {
-      'all_notifications' : "INDIVIDUAL",
-      'box_triangulation_report' : False,
-      'diffusion_constant_report' : "BRIEF",
-      'file_output_report' : False,
-      'final_summary' : True,
-      'iteration_report' : True,
-      'molecule_collision_report' : False,
-      'partition_location_report' : False,
-      'probability_report' : "ON",
-      'probability_report_threshold' : "0",
-      'progress_report' : True,
-      'release_event_report' : True,
-      'varying_probability_report' : True
-    },
-    'partitions' : {
-      'data_model_version' : "DM_2016_04_15_1600",
-      'include' : False,
-      'recursion_flag' : False,
-      'x_end' : "1",
-      'x_start' : "-1",
-      'x_step' : "0.02",
-      'y_end' : "1",
-      'y_start' : "-1",
-      'y_step' : "0.02",
-      'z_end' : "1",
-      'z_start' : "-1",
-      'z_step' : "0.02"
-    },
-    'radial_directions' : "",
-    'radial_subdivisions' : "",
-    'space_step' : "",
-    'surface_grid_density' : "10000",
-    'time_step' : "1e-6",
-    'time_step_max' : "",
-    'vacancy_search_distance' : "",
-    'warnings' : {
-      'all_warnings' : "INDIVIDUAL",
-      'degenerate_polygons' : "WARNING",
-      'high_probability_threshold' : "1",
-      'high_reaction_probability' : "IGNORED",
-      'large_molecular_displacement' : "WARNING",
-      'lifetime_threshold' : "50",
-      'lifetime_too_short' : "WARNING",
-      'missed_reaction_threshold' : "0.001",
-      'missed_reactions' : "WARNING",
-      'missing_surface_orientation' : "ERROR",
-      'negative_diffusion_constant' : "WARNING",
-      'negative_reaction_rate' : "WARNING",
-      'useless_volume_orientation' : "WARNING"
+def read_data_model_from_bngsim( model ):
+  # Now start building the data model
+  dm = DataModel()
+
+  # Add the parameter system and build a parameter/value dictionary for future use
+  # This assumes that parameters are defined before being used
+
+  par_expr_dict = {}
+  par_val_dict = {}
+
+  par_list = []
+  for param in model.parameters: 
+    if "MCELL_" in param:
+      dm.special_parameters[param] = str(model.parameters[param])
+    par = {}
+    par['par_name'] = param
+    par['par_expression'] = str(model.parameters[param])
+    par['par_description'] = ""
+    par['par_units'] = ""
+    par_list.append(par)
+    par_val_dict[param] = model.parameters[param]
+
+  dm.add_parameters(par_list)
+
+  for k in sorted(par_val_dict.keys()):
+    print ( "  " + str(k) + " = " + str(par_val_dict[k]) )
+
+  # Add the compartments
+  # Format:   Name Dimension Volume [outside compartment]
+  # Compartment Topology Rules
+  #  (generally analogous to SBML compartment topology)
+  #    The outside of a surface must be volume (or undefined).
+  #    The outside of a volume must be a surface (or undefined).
+  #    A compartment may only have one outside.
+  #    A volume may be outside of multiple surfaces.
+  #    A surface may be outside of only one volume.
+  #  The outside compartment must be defined before it is referenced
+
+  nesting_space = 0.05 # Note that this should be half of desired because of the intervening 2D surfaces
+  inner_cube_dim = 0.5
+
+  compartment_type_dict = {} # This will be a dictionary of name:type for each compartment
+  molecule_type_dict = {}    # This will be a dictionary of name:[types] for each molecule
+  topology = None            # This will be a recursive tree dictionary of nested objects
+
+  cdefs = []
+  for compartment in model.compartments:
+    dim = model.compartments[compartment][0]
+    vol = model.compartments[compartment][1]
+    parent = model.compartments[compartment][2]
+    if parent is None:
+        cdefs.append( [compartment, dim, vol] )
+    else:
+        cdefs.append( [compartment, dim, vol, parent] )
+  # FIXME: If this topology is out of order, next command fails
+  print(cdefs)
+  topology = build_topology_from_list ( cdefs, { '~children':{}, 'name':"World" } )
+  check_legal ( topology )
+  update_compartment_defs ( topology, compartment_type_dict )
+  if contains_siblings(topology):
+    print ( "Topology contains siblings" )
+    print ( "***** WARNING: Compartment Volumes are not used with siblings" )
+    assign_linear_dimensions ( topology, inner_cube_dim, nesting_space )
+    assign_linear_coordinates ( topology, 0, 0, 0, nesting_space )
+  else:
+    print ( "Topology does not contain siblings. Create nested volumes." )
+    assign_nested_dimensions ( topology )
+    assign_nested_coordinates ( topology, 0, 0, 0 )
+
+    dm.append_objects (topology, None, None)
+
+    print ( "Max depth = " + str(get_max_depth(topology)) )
+
+    # Print the compartments:
+    print ( "Topology = " + str(topology) )
+
+    dump_data_model ( "Topology", topology )
+
+
+  for k in compartment_type_dict.keys():
+    print ( "  Compartment " + str(k) + " is type " + str(compartment_type_dict[k]) )
+
+
+  # adjusting materials 
+  dm.add_materials()
+  dm.mod_surface_regions()
+
+  # Add the seed species as release sites
+  site_num = 1
+  rel_list = []
+ 
+  for species in model.species:
+    outer_comp = species.compartment
+    species._compartment = None
+    mol_expr = str(species) 
+    mol_quant = model.species[species]
+    rel_item = {
+      'data_model_version' : "DM_2018_01_11_1330",
+      'description' : "",
+      'location_x' : "0",
+      'location_y' : "0",
+      'location_z' : "0",
+      'molecule' : mol_expr,
+      'name' : "Rel_Site_" + str(site_num),
+      'object_expr' : "",
+      'orient' : "'",
+      'pattern' : "",
+      'points_list' : [],
+      'quantity' : str(mol_quant),
+      'quantity_type' : "NUMBER_TO_RELEASE",
+      'release_probability' : "1",
+      'shape' : "OBJECT",
+      'site_diameter' : "0",
+      'stddev' : "0"
     }
-  }
 
-  return dm
+    # Release based on compartment names and parent/child relationships in the object topology
+    
+    if outer_comp is None:
+      comp = None
+      for molec in species:
+        if molec.compartment is not None:
+          comp = molec.compartment
+    else:
+      comp = outer_comp
+    # replacing parsing with info from pattern
+    if comp is not None:
+      mol_name = species[0].name
+      compartment_name = comp
+      if not (mol_name in molecule_type_dict):
+        molecule_type_dict[mol_name] = []
+      # Note that a molecule may be of multiple types if used in different contexts!!
+      # This might be better implemented as a set, but using a dictionary for now
+      molecule_type_dict[mol_name].append ( compartment_type_dict[compartment_name] )
 
+      compartment = find_object_by_name ( topology, compartment_name )
+      compartment_expression = ""
+      if compartment['dim'] == str(3):
+        # The compartment of interest is a volume
+        # The volume's children will be surfaces
+        # The volume's grandchildren will be volumes (which is what MCell expects)
+        # Each of these grandchildren will need to be subtracted from the volume
+        compartment_expression = compartment['name'] + "[ALL]"
+        grandchild_names = get_grandchild_names ( compartment )
+        print ( "  " + str(compartment['name']) + " is " + str(compartment['dim']) + "D" )
+        print ( "    GrandChildren: " + str(grandchild_names) )
+        for cn in grandchild_names:
+          compartment_expression += " - " + cn + "[ALL]"
+      elif compartment['dim'] == str(2):
+        # The OUTER compartment of interest is a surface.
+        # In CBNGL, the enclosed volume is the INNER object.
+        # In MCell, the surface is referenced as a part of the volume object: vol[surf]
+        # In mixed MCell/CBNGL syntax, this becomes INNER[OUTER]
+        child_names = get_child_names ( compartment )
+        print ( "  " + str(compartment['name']) + " is " + str(compartment['dim']) + "D" )
+        print ( "    Children: " + str(child_names) )
+        if len(child_names) > 1:
+          print ( "***** WARNING: Surface should not contain more than one volume!!" )
+        compartment_expression = child_names[0] + "[" + compartment['name'] + "]"
+      print ( "  " + "Releasing " + rel_item['molecule'] + " in " + compartment_expression )
+      print ( "  " )
+      rel_item['object_expr'] = compartment_expression
+
+    rel_list.append(rel_item)
+    site_num += 1
+
+  for rel_item in rel_list:
+    print ( "  Release " + str(rel_item['molecule']) + " at " + str(rel_item['object_expr']) )
+
+  dm.add_release_sites(rel_list)
+
+  for k in molecule_type_dict.keys():
+    print ( "  Molecule " + str(k) + " is of types: " + str(molecule_type_dict[k]) )
+
+
+  # Add the molecules list here since the vol/surf type is deduced from compatments and seed species (above)
+
+  default_vol_dc = "1e-6"
+  default_surf_dc = "1e-8"
+
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in dm.special_parameters:
+    default_vol_dc = dm.special_parameters.pop('MCELL_DEFAULT_DIFFUSION_CONSTANT_3D')
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in dm.special_parameters:
+    default_surf_dc = dm.special_parameters.pop('MCELL_DEFAULT_DIFFUSION_CONSTANT_2D')
+
+  mol_list = []
+  color_index = 1
+  vol_glyphs = ['Icosahedron', 'Sphere_1', 'Sphere_2', 'Octahedron', 'Cube']
+  surf_glyphs = ['Torus', 'Cone', 'Receptor', 'Cylinder', 'Pyramid', 'Tetrahedron']
+  vol_glyph_index = 0
+  surf_glyph_index = 0
+
+  for mtype in model.moltypes:
+    mol = {}
+    mol['data_model_version'] = "DM_2018_01_11_1330"
+    mol['mol_name'] = mtype.molecule.name
+    mol['mol_type'] = '3D'
+    if mol['mol_name'] in molecule_type_dict.keys():
+      print ( "Assigning molecule {} based on type of : ".format(mol['mol_name']) + str(molecule_type_dict[mol['mol_name']]) )
+      # Use the first item in the list for now. Eventually may need to create two mols (for vol & surf)
+      if int(molecule_type_dict[mol['mol_name']][0]) == 2:
+        mol['mol_type'] = '2D'
+    else:
+      print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
+
+    mol['custom_space_step'] = ""
+    mol['custom_time_step'] = ""
+    mol['description'] = ""
+
+    if mol['mol_type'] == '3D':
+      mol['diffusion_constant'] = default_vol_dc
+      key = 'MCELL_DIFFUSION_CONSTANT_3D_' + mol['mol_name']
+      if key in dm.special_parameters:
+        mol['diffusion_constant'] = dm.special_parameters.pop(key)
+    else:
+      mol['diffusion_constant'] = default_surf_dc
+      key = 'MCELL_DIFFUSION_CONSTANT_2D_' + mol['mol_name']
+      if key in dm.special_parameters:
+        mol['diffusion_constant'] = dm.special_parameters.pop(key)
+
+    mol['export_viz'] = False
+    mol['maximum_step_length'] = ""
+    mol['mol_bngl_label'] = ""
+    mol['target_only'] = False
+
+    mol['display'] = { 'color': [color_index&1, color_index&2, color_index&4], 'emit': 0.0, 'glyph': "Cube", 'scale': 1.0 }
+    color_index += 1
+    if mol['mol_type'] == '2D':
+      mol['display']['glyph'] = surf_glyphs[surf_glyph_index%len(surf_glyphs)]
+      surf_glyph_index += 1
+    else:
+      mol['display']['glyph'] = vol_glyphs[vol_glyph_index%len(vol_glyphs)]
+      vol_glyph_index += 1
+
+    mol['bngl_component_list'] = []
+    if len(mtype.molecule.components) > 0:
+      for c in mtype.molecule.components:
+        comp = {}
+        comp['cname'] = c.name
+        comp['cstates'] = []
+        if len(c.states) > 0:
+          comp['cstates'] = c.states
+        mol['bngl_component_list'].append ( comp )
+    mol_list.append ( mol )
+
+  dm.add_molecules(mol_list)
+
+  dm.init_observables()
+
+  # Fill in the reaction output list
+  for obs_name in model.observables._item_dict:
+    # obs is the name of the observable
+    # model.observables is tuple (type, expression)
+    keyword, patterns = model.observables._item_dict[obs_name]
+    if keyword != "Molecules":
+      print ( "Warning: Conversion only supports Molecule observables" )
+    label = obs_name
+
+    mols_part = str(patterns)
+    print ( "  Mols part: " + mols_part )
+
+    things_to_count = []
+    # can read the molecules directly from the 
+    # parsed xml here
+    for pattern in patterns:
+      print("  Found: \"" + str(pattern) + "\"")
+      things_to_count.append ( str(pattern) )
+
+    count_parts = [ "COUNT[" + thing + ",WORLD]" for thing in things_to_count ]
+    count_expr = ' + '.join(count_parts)
+
+    mdl_prefix = label
+    if label.endswith ( '_MDLString' ):
+      mdl_prefix = label[0:len(label)-len('_MDLString')]
+    count_item = {
+        'count_location' : "World",
+        'data_file_name' : "",
+        'data_model_version' : "DM_2018_01_11_1330",
+        'description' : "",
+        'mdl_file_prefix' : mdl_prefix,
+        'mdl_string' : count_expr,
+        'molecule_name' : "",
+        'name' : "MDL: " + count_expr,
+        'object_name' : "",
+        'plotting_enabled' : True,
+        'reaction_name' : "",
+        'region_name' : "",
+        'rxn_or_mol' : "MDLString"
+      }
+    dm.add_observable(count_item)
+
+  # reaction rules
+  react_list = []
+  for rule in model.rules:
+    rxn = {
+            'bkwd_rate' : "",
+            'data_model_version' : "DM_2018_01_11_1330",
+            'description' : "",
+            'fwd_rate' : "",
+            'name' : "",
+            'products' : "",
+            'reactants' : "",
+            'rxn_name' : "",
+            'rxn_type' : "",
+            'variable_rate' : "",
+            'variable_rate_switch' : False,
+            'variable_rate_text' : "",
+            'variable_rate_valid' : False
+          }
+    if rule.bidirectional:
+      # Process as a reversible reaction
+      reactants = rule.reactants
+      products = rule.products
+      react_str = ""
+      for ir, r in enumerate(reactants):
+          if ir > 0:
+              react_str += "+"
+          react_str += str(r)
+      prod_str = ""
+      for ip, p in enumerate(products):
+        if ip > 0:
+          prod_str += "+"
+        prod_str += str(p)
+      frate = rule.rate_constants[0]
+      rrate = rule.rate_constants[1]
+      rxn['reactants'] = react_str
+      rxn['products'] = prod_str 
+      rxn['fwd_rate'] = frate
+      rxn['bkwd_rate'] = rrate
+      rxn['rxn_type'] = "reversible"
+      rxn['name'] = react_str + " <-> " + prod_str
+    else:
+      # Process as an irreversible reaction
+      reactants = rule.reactants
+      products = rule.products
+      frate = rule.rate_constants[0]
+      react_str = ""
+      for ir, r in enumerate(reactants):
+          if ir > 0:
+              react_str += "+"
+          react_str += str(r)
+      prod_str = ""
+      for ip, p in enumerate(products):
+        if ip > 0:
+          prod_str += "+"
+        prod_str += str(p)
+
+      rxn['reactants'] = react_str
+      rxn['products'] = prod_str
+      rxn['fwd_rate'] = frate
+      rxn['bkwd_rate'] = ""
+      rxn['rxn_type'] = "irreversible"
+      rxn['name'] = react_str + " -> " + prod_str
+    react_list.append ( rxn )
+ 
+  dm.add_rules(react_list)
+  dm.handle_special_params()
+  return dm.dm
 
 def read_data_model_from_bngl_file ( bngl_file_name ):
-  bngl_model_file = open ( bngl_file_name, 'r' )
-  bngl_model_text = bngl_model_file.read()
-  return read_data_model_from_bngl_text ( bngl_model_text )
-
-
+  try: 
+    if "BNGPATH" not in os.environ:
+      path = os.path.split(os.path.dirname(__file__))
+      path = path[:-1]
+      bngpath = path + ("extensions", "mcell", "bng2")
+      path = os.path.join(*bngpath)
+      os.environ["BNGPATH"] = path
+    # for some reason, python does not want to import the BNGSim module that is in the 
+    # current subdir
+    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+    import BNGSim
+    model = BNGSim.BNGModel(bngl_file_name)
+    return read_data_model_from_bngsim( model )
+  # we might have to catch more than the import error here
+  # e.g. if BNGSim fails to find BNG2.pl 
+  except ImportError:
+    print("XML parsing via BNGSim failed, using fallback parser")
+    bngl_model_file = open ( bngl_file_name, 'r' )
+    bngl_model_text = bngl_model_file.read()
+    return read_data_model_from_bngl_text ( bngl_model_text )
 
 if __name__ == "__main__":
-
-    dmf = {}
-
     if len(sys.argv) > 2:
         print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
         print ( "Reading BioNetGen File: " + sys.argv[1] )
-
         dm = read_data_model_from_bngl_file ( sys.argv[1] )
-
-        # This is the FceRI BNGL file used to test this code:
-
-        """
-        begin model
-        begin parameters
-	        km2  0.00
-	        pLbs  100
-	        km1  0.00
-	        mu_wall  1e-9    # Viscosity in compartment wall, kg/um.s    units=kg/um.s
-	        pLS  30
-	        KB  1.3806488e-19    # Boltzmann constant, cm^2.kg/K.s^2    units=cm^2.kg/K.s^2
-	        mu_PM  1e-9    # Viscosity in compartment PM, kg/um.s    units=kg/um.s
-	        Nav  6.022e8    # Avogadro number based on a volume size of 1 cubic um
-	        kmS  0.13
-	        kpS  0.0166057788110262*Nav
-	        vol_CP  1
-	        pLgs  3
-	        pSSs  200
-	        pSS  100
-	        dc  0.1
-	        dm  0.1
-	        Rc  0.0015    # Radius of a (cylindrical) molecule in 2D compartment, um    units=um
-	        gamma  0.5722    # Euler's constant
-	        mu_CP  1e-9    # Viscosity in compartment CP, kg/um.s    units=kg/um.s
-	        pLSs  100
-	        kmLs  0.12
-	        vol_EC  39
-	        T  298.15    # Temperature, K    units=K
-	        Rs  0.002564    # Radius of a (spherical) molecule in 3D compartment, um    units=um
-	        mu_EC  1e-9    # Viscosity in compartment EC, kg/um.s    units=kg/um.s
-	        rxn_layer_t  0.01
-	        vol_wall  0.88/rxn_layer_t    # Surface area
-	        pLg  1
-	        kmL  20
-	        pLb  30
-	        Scale_Totals  1    # 0.00358 gives at least one each,   0.5 gives 2 of some
-	        kp1  0.000166057788110262*Nav
-	        Lig_tot  6.0e3 * Scale_Totals    # Default: 6.0e3
-	        kpL  0.0166057788110262/rxn_layer_t
-	        kp2  1.66057788110262e-06/rxn_layer_t
-	        Syk_tot  4e2 * Scale_Totals    # Default: 4e2
-	        Rec_tot  4.0e2 * Scale_Totals    # Default: 4.0e2
-	        Lyn_tot  2.8e2 * Scale_Totals    # Default: 2.8e2
-	        kpLs  0.0166057788110262/rxn_layer_t
-	        vol_PM  0.01/rxn_layer_t    # Surface area
-	        h  rxn_layer_t    # Thickness of 2D compartment, um    units=um
-	        ITERATIONS  1000
-	        TIME_STEP  1e-6
-	        VACANCY_SEARCH_DISTANCE  10
-	        MCELL_DEFAULT_DIFFUSION_CONSTANT_2D  1.7e-7
-	        MCELL_DEFAULT_DIFFUSION_CONSTANT_3D  8.51e-7
-	        MCELL_DIFFUSION_CONSTANT_2D_Lyn  1.7e-7
-	        MCELL_DIFFUSION_CONSTANT_2D_Rec  1.7e-7
-	        MCELL_DIFFUSION_CONSTANT_3D_Lig  8.51e-7
-	        MCELL_DIFFUSION_CONSTANT_3D_Syk  8.51e-7
-        end parameters
-        begin molecule types
-	        Lig(l,l)
-	        Lyn(SH2,U)
-	        Syk(a~Y~pY,l~Y~pY,tSH2)
-	        Rec(a,b~Y~pY,g~Y~pY)
-        end molecule types
-        begin compartments
-	        EC 3 vol_EC
-	        PM 2 vol_PM EC
-	        CP 3 vol_CP PM
-        end compartments
-        begin seed species
-	         @EC::Lig(l,l)  Lig_tot
-	         @PM::Lyn(SH2,U)  Lyn_tot
-	         @CP::Syk(a~Y,l~Y,tSH2)  Syk_tot
-	         @PM::Rec(a,b~Y,g~Y)  Rec_tot
-        end seed species
-        begin observables
-	        Molecules LycFree_MDLString Lyn(SH2,U)                                              # Should be: "COUNT[Lyn(U,SH2), WORLD]"
-	        Molecules RecPbeta_MDLString Rec(b~pY!?)                                            # Should be: "COUNT[Rec(b~pY!?), WORLD]"
-	        Molecules RecMon_MDLString Lig(l!1,l).Rec(a!1)                                      # Should be: "COUNT[Rec(a!1).Lig(l!1,l), WORLD]"
-	        Molecules RecDim_MDLString Lig(l!1,l!2).Rec(a!1).Rec(a!2)                           # Should be: "COUNT[Rec(a!1).Lig(l!1,l!2).Rec(a!2), WORLD]"
-	        Molecules RecRecLigLyn_MDLString Rec(a!1,b).Lig(l!1,l!2).Rec(a!2,b!3).Lyn(SH2,U!3)  # Should be: "COUNT[Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b!3).Rec(a!1,b), WORLD]"
-	        Molecules RecPgamma_MDLString Rec(g~pY), Rec(g~pY!+)                                # Should be: "COUNT[Rec(g~pY),WORLD] + COUNT[Rec(g~pY!+), WORLD]"
-	        Molecules RecSyk_MDLString Syk(tSH2!1).Rec(g~pY!1)                                  # Should be: "COUNT[Rec(g~pY!1).Syk(tSH2!1), WORLD]"
-	        Molecules RecSykPS_MDLString Syk(a~pY,tSH2!1).Rec(g~pY!1)                           # Should be: "COUNT[Rec(g~pY!1).Syk(tSH2!1,a~pY), WORLD]"
-	        Molecules Lig_MDLString Lig                                                         # Should be: "COUNT[Lig,WORLD]"
-	        Molecules Lyn_MDLString Lyn                                                         # Should be: "COUNT[Lyn,WORLD]"
-        end observables
-        begin reaction rules
-	        Rec(a) + Lig(l,l) <-> Lig(l!1,l).Rec(a!1) kp1,km1
-	        Rec(b~Y) + Lyn(SH2,U) <-> Lyn(SH2,U!1).Rec(b~Y!1) kpL,kmL
-	        Rec(a!1,b~Y).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) -> Rec(a!1,b~pY).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) pLb
-	        Rec(a!1,g~Y).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) -> Rec(a!1,g~pY).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) pLg
-	        Rec(b~pY) + Lyn(SH2,U) <-> Lyn(SH2!1,U).Rec(b~pY!1) kpLs,kmLs
-	        Rec(a!1,b~Y).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) -> Rec(a!1,b~pY).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) pLbs
-	        Rec(a!1,g~Y).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) -> Rec(a!1,g~pY).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) pLgs
-	        Rec(g~pY) + Syk(tSH2) <-> Syk(tSH2!1).Rec(g~pY!1) kpS,kmS
-	        Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3).Syk(l~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3).Syk(l~pY,tSH2!4) pLS
-	        Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U).Syk(l~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U).Syk(l~pY,tSH2!4) pLSs
-	        Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~Y,tSH2!3).Syk(a~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~Y,tSH2!3).Syk(a~pY,tSH2!4) pSS
-	        Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~pY,tSH2!3).Syk(a~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~pY,tSH2!3).Syk(a~pY,tSH2!4) pSSs
-	        Rec(b~pY) -> Rec(b~Y) dm
-	        Rec(g~pY) -> Rec(g~Y) dm
-	        Syk(l~pY,tSH2!+) -> Syk(l~Y,tSH2!+) dm
-	        Syk(a~pY,tSH2!+) -> Syk(a~Y,tSH2!+) dm
-	        Syk(l~pY,tSH2) -> Syk(l~Y,tSH2) dc
-	        Syk(a~pY,tSH2) -> Syk(a~Y,tSH2) dc
-        end reaction rules
-        end model
-        """
 
         print ( "Writing CellBlender Data Model: " + sys.argv[2] )
         write_data_model ( dm, sys.argv[2] )
+
         print ( "Wrote BioNetGen file found in \"" + sys.argv[1] + "\" to CellBlender data model \"" + sys.argv[2] + "\"" )
+        # Drop into an interactive python session
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    elif len(sys.argv) > 1:
+        bngl =  """
+                begin model
+                begin parameters
+                  diff_const_multiplier = 1e-10
+                  MCELL_REDEFINE_diff_const_multiplier = 1
+                  km2  0.00
+                  pLbs  100
+                  km1  0.00
+                  mu_wall  1e-9    # Viscosity in compartment wall, kg/um.s    units=kg/um.s
+                  pLS  30
+                  KB  1.3806488e-19    # Boltzmann constant, cm^2.kg/K.s^2    units=cm^2.kg/K.s^2
+                  mu_PM  1e-9    # Viscosity in compartment PM, kg/um.s    units=kg/um.s
+                  Nav  6.022e8    # Avogadro number based on a volume size of 1 cubic um
+                  kmS  0.13
+                  kpS  0.0166057788110262*Nav
+                  vol_CP  1
+                  pLgs  3
+                  pSSs  200
+                  pSS  100
+                  dc  0.1
+                  dm  0.1
+                  Rc  0.0015    # Radius of a (cylindrical) molecule in 2D compartment, um    units=um
+                  gamma  0.5722    # Euler's constant
+                  mu_CP  1e-9    # Viscosity in compartment CP, kg/um.s    units=kg/um.s
+                  pLSs  100
+                  kmLs  0.12
+                  vol_EC  39
+                  T  298.15    # Temperature, K    units=K
+                  Rs  0.002564    # Radius of a (spherical) molecule in 3D compartment, um    units=um
+                  mu_EC  1e-9    # Viscosity in compartment EC, kg/um.s    units=kg/um.s
+                  rxn_layer_t  0.01
+                  vol_wall  0.88/rxn_layer_t    # Surface area
+                  pLg  1
+                  kmL  20
+                  pLb  30
+                  Scale_Totals  1    # 0.00358 gives at least one each,   0.5 gives 2 of some
+                  kp1  0.000166057788110262*Nav
+                  Lig_tot  6.0e3 * Scale_Totals    # Default: 6.0e3
+                  kpL  0.0166057788110262/rxn_layer_t
+                  kp2  1.66057788110262e-06/rxn_layer_t
+                  Syk_tot  4e2 * Scale_Totals    # Default: 4e2
+                  Rec_tot  4.0e2 * Scale_Totals    # Default: 4.0e2
+                  Lyn_tot  2.8e2 * Scale_Totals    # Default: 2.8e2
+                  kpLs  0.0166057788110262/rxn_layer_t
+                  vol_PM  0.01/rxn_layer_t    # Surface area
+                  h  rxn_layer_t    # Thickness of 2D compartment, um    units=um
+                  MCELL_ITERATIONS  1000
+                  MCELL_TIME_STEP 1e-6
+                  MCELL_VACANCY_SEARCH_DISTANCE  10
+                  MCELL_DEFAULT_DIFFUSION_CONSTANT_2D  1.7e-7 * diff_const_multiplier
+                  MCELL_DEFAULT_DIFFUSION_CONSTANT_3D  8.51e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_2D_Lyn  1.7e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_2D_Rec  1.7e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_3D_Lig  8.51e-7 * diff_const_multiplier
+                  MCELL_DIFFUSION_CONSTANT_3D_Syk  8.51e-7 * diff_const_multiplier
+                end parameters
+                begin molecule types
+                  Lig(l,l)
+                  Lyn(SH2,U)
+                  Syk(a~Y~pY,l~Y~pY,tSH2)
+                  Rec(a,b~Y~pY,g~Y~pY)
+                end molecule types
+                begin compartments
+                  EC 3 vol_EC
+                  PM 2 vol_PM EC
+                  CP 3 vol_CP PM
+                end compartments
+                begin seed species
+                   @EC::Lig(l,l)  Lig_tot
+                   @PM::Lyn(SH2,U)  Lyn_tot
+                   @CP::Syk(a~Y,l~Y,tSH2)  Syk_tot
+                   @PM::Rec(a,b~Y,g~Y)  Rec_tot
+                end seed species
+                begin observables
+                  Molecules LycFree_MDLString Lyn(SH2,U)                                              # Should be: "COUNT[Lyn(U,SH2), WORLD]"
+                  Molecules RecPbeta_MDLString Rec(b~pY!?)                                            # Should be: "COUNT[Rec(b~pY!?), WORLD]"
+                  Molecules RecMon_MDLString Lig(l!1,l).Rec(a!1)                                      # Should be: "COUNT[Rec(a!1).Lig(l!1,l), WORLD]"
+                  Molecules RecDim_MDLString Lig(l!1,l!2).Rec(a!1).Rec(a!2)                           # Should be: "COUNT[Rec(a!1).Lig(l!1,l!2).Rec(a!2), WORLD]"
+                  Molecules RecRecLigLyn_MDLString Rec(a!1,b).Lig(l!1,l!2).Rec(a!2,b!3).Lyn(SH2,U!3)  # Should be: "COUNT[Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b!3).Rec(a!1,b), WORLD]"
+                  Molecules RecPgamma_MDLString Rec(g~pY), Rec(g~pY!+)                                # Should be: "COUNT[Rec(g~pY),WORLD] + COUNT[Rec(g~pY!+), WORLD]"
+                  Molecules RecSyk_MDLString Syk(tSH2!1).Rec(g~pY!1)                                  # Should be: "COUNT[Rec(g~pY!1).Syk(tSH2!1), WORLD]"
+                  Molecules RecSykPS_MDLString Syk(a~pY,tSH2!1).Rec(g~pY!1)                           # Should be: "COUNT[Rec(g~pY!1).Syk(tSH2!1,a~pY), WORLD]"
+                  Molecules Lig_MDLString Lig                                                         # Should be: "COUNT[Lig,WORLD]"
+                  Molecules Lyn_MDLString Lyn                                                         # Should be: "COUNT[Lyn,WORLD]"
+                end observables
+                begin reaction rules
+                  Rec(a) + Lig(l,l) <-> Lig(l!1,l).Rec(a!1) kp1,km1
+                  Rec(b~Y) + Lyn(SH2,U) <-> Lyn(SH2,U!1).Rec(b~Y!1) kpL,kmL
+                  Rec(a!1,b~Y).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) -> Rec(a!1,b~pY).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) pLb
+                  Rec(a!1,g~Y).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) -> Rec(a!1,g~pY).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) pLg
+                  Rec(b~pY) + Lyn(SH2,U) <-> Lyn(SH2!1,U).Rec(b~pY!1) kpLs,kmLs
+                  Rec(a!1,b~Y).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) -> Rec(a!1,b~pY).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) pLbs
+                  Rec(a!1,g~Y).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) -> Rec(a!1,g~pY).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) pLgs
+                  Rec(g~pY) + Syk(tSH2) <-> Syk(tSH2!1).Rec(g~pY!1) kpS,kmS
+                  Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3).Syk(l~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3).Syk(l~pY,tSH2!4) pLS
+                  Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U).Syk(l~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U).Syk(l~pY,tSH2!4) pLSs
+                  Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~Y,tSH2!3).Syk(a~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~Y,tSH2!3).Syk(a~pY,tSH2!4) pSS
+                  Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~pY,tSH2!3).Syk(a~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~pY,tSH2!3).Syk(a~pY,tSH2!4) pSSs
+                  Rec(b~pY) -> Rec(b~Y) dm
+                  Rec(g~pY) -> Rec(g~Y) dm
+                  Syk(l~pY,tSH2!+) -> Syk(l~Y,tSH2!+) dm
+                  Syk(a~pY,tSH2!+) -> Syk(a~Y,tSH2!+) dm
+                  Syk(l~pY,tSH2) -> Syk(l~Y,tSH2) dc
+                  Syk(a~pY,tSH2) -> Syk(a~Y,tSH2) dc
+                end reaction rules
+                end model
+                """
+          
+        dm = read_data_model_from_bngl_text ( bngl )
+
+        print ( "Writing Test CellBlender Data Model to " + sys.argv[1] )
+        write_data_model ( dm, sys.argv[1] )
+        print ( "Wrote internal BioNetGen file to CellBlender data model \"" + sys.argv[1] + "\"" )
         # Drop into an interactive python session
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -1139,4 +1563,3 @@ if __name__ == "__main__":
         print ( "   data_model_file_name - A Data Model file name for output" )
         # print ( "Use Control-D to exit the interactive mode" )
         print ( "=======================================\n" )
-

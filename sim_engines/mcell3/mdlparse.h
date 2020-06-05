@@ -5,8 +5,8 @@
 
 struct element_list {
   struct element_list *next;
-  u_int begin;
-  u_int end;
+  unsigned int begin;
+  unsigned int end;
 };
 
 int mdlparse(void);

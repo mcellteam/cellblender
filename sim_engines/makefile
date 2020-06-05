@@ -1,13 +1,21 @@
-SUBDIRS =  mcell3 mcell3dm mcell3r cBNGL limited_python limited_cpp smoldyn248 Proto_Andreas_1
+SUBDIRS =  mcell3 mcell3dm mcell3r cBNGL limited_python smoldyn248 Proto_Andreas_1
+
+
+ifneq ($(OS),Windows_NT)
+  # limited_cpp uses obsoleted drand48 call
+  SUBDIRS_ALL = $(SUBDIRS) limited_cpp  
+else
+  SUBDIRS_ALL = $(SUBDIRS)
+endif 
 
 .PHONY: all
 all: subdirs
 
 
-.PHONY: subdirs $(SUBDIRS)
-subdirs: makefile $(SUBDIRS)
+.PHONY: subdirs $(SUBDIRS_ALL)
+subdirs: makefile $(SUBDIRS_ALL)
 
-$(SUBDIRS):
+$(SUBDIRS_ALL):
 	$(MAKE) -C $@
 
 
