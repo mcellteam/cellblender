@@ -191,8 +191,26 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
         files_path = mcell_files_path()  # This will include the "mcell" on the end
 
-        # Determine if this data structure is in the newer sweep format or not
-        use_sweep = 'output_data' in os.listdir(files_path)
+        DATA_LAYOUT_FILE = "data_layout.json"
+        KEY_MCELL4_MODE = "mcell4_mode"
+
+        mcell4_mode = False 
+        if os.path.exists(DATA_LAYOUT_FILE):
+            f = open ( os.path.join(DATA_LAYOUT_FILE), 'r' )
+            layout_spec = json.loads ( f.read() )
+            f.close()
+            mcell4_mode = KEY_MCELL4_MODE in layout_spec and layout_spec[KEY_MCELL4_MODE]
+
+        
+        if not mcell4_mode:
+            # output obtained by running simulation in cellblender
+            # Determine if this data structure is in the newer sweep format or not
+            use_sweep = 'output_data' in os.listdir(files_path)
+        else:
+            # output obtained from mcell4 - expecting current directory to contain 
+            # data_layout.json
+            files_path = os.getcwd()
+            use_sweep = True
 
         root_path = files_path
         data_paths = []
@@ -202,7 +220,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
           # Build the list from the sweep data file
 
           root_path = files_path
-          f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
+          f = open ( os.path.join(files_path, DATA_LAYOUT_FILE), 'r' )
           layout_spec = json.loads ( f.read() )
           f.close()
 
@@ -343,6 +361,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
         for data_path in data_paths:
 
             for rxn_output in mcell.rxn_output.rxn_output_list:
+                print("mdl_file_prefix: " + rxn_output.mdl_file_prefix)
 
                 if rxn_output.plotting_enabled:
 
@@ -370,7 +389,11 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                                                    object_name, region_name)
 
                     elif rxn_output.rxn_or_mol == 'MDLString':
-                        file_name = rxn_output.mdl_file_prefix + "_MDLString.dat"
+                        if not mcell4_mode:
+                            file_name = rxn_output.mdl_file_prefix + "_MDLString.dat"
+                        else:
+                            # in MCell4, we need to keep the name of the file the user entered
+                            file_name = rxn_output.mdl_file_prefix + ".dat"
 
                     elif rxn_output.rxn_or_mol == 'File':
                         file_name = rxn_output.data_file_name
@@ -400,7 +423,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                             candidate_file_list.sort()
                             #print("Candidate file list for %s:" % (file_name))
                             #print("  ", candidate_file_list)
-                            if not mcell.rxn_output.ignore_start_time:
+                            if not mcell4_mode and not mcell.rxn_output.ignore_start_time:
                               # Use the start_time.txt file to find files modified since MCell was started
                               start_time = os.stat(os.path.join(project_files_path(), "start_time.txt")).st_mtime
                               # This file is both in the list and newer than the run time for MCell
