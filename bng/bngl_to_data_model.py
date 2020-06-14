@@ -30,6 +30,10 @@ import os
 import re
 import math
 
+# special object created for releases in case 
+# when there are no compartments
+BOX_NO_COMPARTMENT = 'box_no_compartment'
+
 #### DataModel class ####
 class DataModel:
     def __init__(self):
@@ -720,7 +724,6 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
         assign_nested_dimensions ( topology )
         assign_nested_coordinates ( topology, 0, 0, 0 )
 
-
       dm.append_objects ( topology, None, None )  
 
       print ( "Max depth = " + str(get_max_depth(topology)) )
@@ -1043,6 +1046,31 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
   dm.handle_special_params()
   return dm.dm
 
+# in case when there are no compartments, we need to create at least some geometry 
+def define_single_box(dm):
+    
+  d = 8 # should be power of 2 for precise representation
+  points, faces = create_rectangle(-1/d, 1/d, -1/d, 1/d, -1/d, 1/d)    
+  go = {
+    'name': BOX_NO_COMPARTMENT,
+    'vertex_list' : points,
+    'element_connections' : faces, 
+    'material_names' : ['membrane_mat'],    
+  }
+  
+  dm.append_to_geom_obj_list(go)
+
+  model_object = {
+    "parent_object": "",
+    "description": "",
+    "object_source": "blender",
+    "dynamic_display_source": "script",
+    "script_name": "",
+    "membrane_name": "",
+    "dynamic": False,
+    "name": BOX_NO_COMPARTMENT
+  }
+  dm.append_to_model_obj_list(model_object) 
 
 def read_data_model_from_bngsim( model ):
   # Now start building the data model
@@ -1123,10 +1151,12 @@ def read_data_model_from_bngsim( model ):
 
     dump_data_model ( "Topology", topology )
 
-
   for k in compartment_type_dict.keys():
     print ( "  Compartment " + str(k) + " is type " + str(compartment_type_dict[k]) )
 
+  # create empty box if there are no compartments
+  if not compartment_type_dict:
+    define_single_box(dm)
 
   # adjusting materials 
   dm.add_materials()
@@ -1207,7 +1237,8 @@ def read_data_model_from_bngsim( model ):
       print ( "  " + "Releasing " + rel_item['molecule'] + " in " + compartment_expression )
       print ( "  " )
       rel_item['object_expr'] = compartment_expression
-
+    else:
+      rel_item['object_expr'] = BOX_NO_COMPARTMENT
     rel_list.append(rel_item)
     site_num += 1
 

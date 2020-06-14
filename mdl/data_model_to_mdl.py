@@ -892,7 +892,7 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
         if fail_on_error:
             sys.exit(1)  # this should happen only during testing...
     print ( "\n\n||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" )
-    print ( "\n\nProcess Finished from write_mdlr with:\n" + str(p.stdout.read().decode('utf-8')) + "\n\n" )
+    print ( "\n\nProcess Finished from write_mdlr with exit code: " + str(p.returncode) + "\n\n" )
     print ( "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n\n" )
 
 
