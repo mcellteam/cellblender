@@ -640,7 +640,7 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
               # For now, create a substitute list named "no_key_m" to use for producing this output
               # To fix this later, change "no_key_m" back to "m" and write the keys in proper syntax
               no_key_m = {}
-              no_key_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if 'is_key' in c and c['is_key'] == False ]
+              no_key_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if 'is_key' not in c or c['is_key'] == False ]
               f.write( "(" )
               num_components = len(no_key_m['bngl_component_list'])
               if num_components > 0:
@@ -885,7 +885,7 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
     print ( "wd = " + str(wd) )
     print ( "Calling Popen" )
     sys.stderr.write( "Running: " + str(mdlr_args) + " in " + wd + "\n")
-    p = subprocess.Popen(mdlr_args, cwd = wd, stdout=subprocess.PIPE)
+    p = subprocess.Popen(mdlr_args, cwd = wd)
     p.wait()
     if p.returncode != 0:
         print("Error: mdlr2mdl.py failed with exit code " + str(p.returncode) + ".")
