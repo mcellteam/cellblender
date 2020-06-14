@@ -1090,13 +1090,14 @@ def read_data_model_from_bngsim( model ):
   topology = None            # This will be a recursive tree dictionary of nested objects
 
   cdefs = []
-  for compartment in model.compartments:
-    dim = model.compartments[compartment][0]
-    vol = model.compartments[compartment][1]
-    parent = model.compartments[compartment][2]
-    if parent is None:
+  if hasattr(model, 'compartments'):
+    for compartment in model.compartments:
+      dim = model.compartments[compartment][0]
+      vol = model.compartments[compartment][1]
+      parent = model.compartments[compartment][2]
+      if parent is None:
         cdefs.append( [compartment, dim, vol] )
-    else:
+      else:
         cdefs.append( [compartment, dim, vol, parent] )
   # FIXME: If this topology is out of order, next command fails
   print(cdefs)

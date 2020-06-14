@@ -640,7 +640,7 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
               # For now, create a substitute list named "no_key_m" to use for producing this output
               # To fix this later, change "no_key_m" back to "m" and write the keys in proper syntax
               no_key_m = {}
-              no_key_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if c['is_key'] == False ]
+              no_key_m['bngl_component_list'] = [ c for c in m['bngl_component_list'] if 'is_key' in c and c['is_key'] == False ]
               f.write( "(" )
               num_components = len(no_key_m['bngl_component_list'])
               if num_components > 0:
@@ -858,8 +858,12 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
     write_viz_out_mdlr3(data_model['viz_output'], data_model['define_molecules'], f)
     f.close()
 
-    fseed = data_model['simulation_control']['start_seed']
-    lseed = data_model['simulation_control']['end_seed']
+    if 'simulation_control' in data_model: 
+        fseed = data_model['simulation_control']['start_seed']
+        lseed = data_model['simulation_control']['end_seed']
+    else:
+        fseed = 1
+        lseed = 1
 
     global start_seed
     global end_seed
@@ -958,10 +962,16 @@ def write_mdl ( dm, file_name, scene_name='Scene', fail_on_error=False ):
             if p['par_name'] == 'n0':
                 n0 = p['_extras']['par_value']
             print ( "Parameter " + p['par_name'] + " = " + str(p['par_expression']) )
-    export_cellblender_data = not dm['mcell']['scripting']['ignore_cellblender_data']
+    
+    export_cellblender_data = False # default
+    if 'scripting' in dm['mcell']:
+        export_cellblender_data = not dm['mcell']['scripting']['ignore_cellblender_data']
     if not export_cellblender_data:
       print ( "Exporting only the scripts ... ignoring all other CellBlender data" )
-    export_modular = ( dm['mcell']['simulation_control']['export_format'] == 'mcell_mdl_modular' )
+      
+    export_modular = True # default
+    if 'simulation_control' in dm['mcell']: 
+        export_modular = ( dm['mcell']['simulation_control']['export_format'] == 'mcell_mdl_modular' )
     print ( "Export Modular = " + str(export_modular) )
     modular_path = None
     if export_modular:
@@ -1556,7 +1566,9 @@ def write_parameter_system ( ps, f ):
         f.write ( "/* DEFINE PARAMETERS */\n" );
 
         for p in mplist:
-          print ( "   Parameter " + str(p['par_name']) + " = " + "%.15g"%(p['_extras']['par_value']) )
+          #print ( "   Parameter " + str(p['par_name']) + " = " + "%.15g"%(p['_extras']['par_value']) )
+          print ( "   Parameter " + str(p['par_name']) + " = " + "%s"%(p['par_expression']) )
+          
 
           # Write the name = val portion of the definition ("True" to export expressions, "False" to export values)
           if True:
