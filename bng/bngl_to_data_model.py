@@ -34,6 +34,9 @@ import math
 # when there are no compartments
 BOX_NO_COMPARTMENT = 'box_no_compartment'
 
+# special parameter name that tells the 
+MCELL_NO_COMPARTMENT_SIZE = 'MCELL_NO_COMPARTMENT_SIZE'
+
 #### DataModel class ####
 class DataModel:
     def __init__(self):
@@ -1048,9 +1051,18 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
 # in case when there are no compartments, we need to create at least some geometry 
 def define_single_box(dm):
+  
+  half_side = 1/8
+  if MCELL_NO_COMPARTMENT_SIZE in dm.special_parameters:
+      sz = eval(dm.special_parameters[MCELL_NO_COMPARTMENT_SIZE])
+      print("Using user-supplied no compartment size: " + str(sz))
+      half_side = float(sz) / 2
     
-  d = 8 # should be power of 2 for precise representation
-  points, faces = create_rectangle(-1/d, 1/d, -1/d, 1/d, -1/d, 1/d)    
+  points, faces = create_rectangle(
+      -half_side, half_side, 
+      -half_side, half_side, 
+      -half_side, half_side, 
+  )    
   go = {
     'name': BOX_NO_COMPARTMENT,
     'vertex_list' : points,
