@@ -1055,9 +1055,9 @@ def define_single_box(dm):
   half_side = 1/8
   if MCELL_NO_COMPARTMENT_SIZE in dm.special_parameters:
       sz = eval(dm.special_parameters[MCELL_NO_COMPARTMENT_SIZE])
-      print("Using user-supplied no compartment size: " + str(sz))
       half_side = float(sz) / 2
     
+  print("Creating " + BOX_NO_COMPARTMENT + " with size: " + str(half_side * 2))
   points, faces = create_rectangle(
       -half_side, half_side, 
       -half_side, half_side, 
