@@ -494,7 +494,7 @@ class SBML2JSON:
             math = kineticLaw.getMath()
             reversible = reaction.getReversible()
                 
-            rateL, rateR = self.getInstanceRate(math,compartmentList.keys(),reversible,rReactant,rProduct)
+            rateL, rateR = self.getInstanceRate(math,list(compartmentList.keys()),reversible,rReactant,rProduct)
             #finalReactant = [x[0]]    
             #testing whether we have volume-surface interactions
             rcList = []
