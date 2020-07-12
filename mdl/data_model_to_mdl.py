@@ -2182,7 +2182,23 @@ def write_modify_surf_regions ( modsurfrs, f ):
             surf = msr['region_name']
           f.write ( "  %s[%s]\n" % (msr['object_name'],surf) )
           f.write ( "  {\n" )
-          f.write ( "    SURFACE_CLASS = %s\n" % (msr['surf_class_name']) )
+          if 'surf_class_name' in msr:
+            f.write ( "    SURFACE_CLASS = %s\n" % (msr['surf_class_name']) )
+              
+          if 'initial_region_molecules_list' in msr:
+            for item in msr['initial_region_molecules_list']:
+              if 'molecule_number' in item:
+                f.write ( "    MOLECULE_NUMBER\n" )
+                val = item['molecule_number']
+              elif 'molecule_density' in item:
+                f.write ( "    MOLECULE_DENSITY\n" )
+                val = item['molecule_density']
+              else:
+                assert False, "Missing 'molecule_number' or 'molecule_density' in 'initial_region_molecules_list'"
+              f.write ( "    {\n" )
+              f.write ( "      %s%s = %s\n" % (item['molecule'], item['orient'],val))
+              f.write ( "    }\n" )
+                  
           f.write ( "  }\n" )
         f.write ( "}\n" )
         f.write("\n")
