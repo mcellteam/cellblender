@@ -1,8 +1,7 @@
 import os
 import subprocess
-import sys
-import shutil
 
+from cellblender.cellblender_utils import get_python_path
 
 def get_name():
     return("Simple Plotter")
@@ -10,44 +9,23 @@ def get_name():
 
 def requirements_met():
     ok = True
-    required_modules = ['matplotlib', 'matplotlib.pyplot', 'pylab', 'numpy',
-                        'scipy']
-    python_command = shutil.which("python", mode=os.X_OK)
+    required_modules = ['matplotlib', 'matplotlib.pyplot', 'pylab', 'numpy']
+    python_command = get_python_path(required_modules=required_modules)
     if python_command is None:
         print("  Python is needed for \"%s\"" % (get_name()))
         ok = False
-    else:
-        import_test_program = ''
-        for plot_mod in required_modules:
-            import_test_program = import_test_program + 'import %s\n' % (plot_mod)
-        
-        import_test_program = import_test_program + 'print("Found=OK")\n'
-        process = subprocess.Popen(
-            [python_command, '-c', import_test_program],
-            shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-        process.poll()
-        output = process.stdout.readline()
-        strout = str(output)
-        if (strout is not None) & (strout.find("Found=OK") >= 0):
-            # print("  ", plot_mod,
-            #       "is available through external python interpreter")
-            pass
-        else:
-            print("  One or more equired modules " + required_modules + 
-                  " are not available through the external python interpreter")
-            ok = False
     return ok
 
 
-def plot(data_path, plot_spec):
+def plot(data_path, plot_spec, python_path=None):
+    # The bundled version of python now has maplotlib, so we can use it here.
     program_path = os.path.dirname(__file__)
-    # print("Simple Plotter called with %s, %s" % (data_path, plot_spec))
-    # print("Plotter-specific files are located here: %s" %(program_path))
+    print("Simple Plotter called with %s, %s" % (data_path, plot_spec))
+    print("Plotter-specific files are located here: %s" %(program_path))
 
     # mpl_simple.py expects plain file names so translate:
 
-    python_cmd = shutil.which("python", mode=os.X_OK)
+    python_cmd = python_path
     plot_cmd = []
     plot_cmd.append(python_cmd)
 
@@ -55,9 +33,25 @@ def plot(data_path, plot_spec):
         print("Unable to plot: python not found in path")
     else:
         plot_cmd.append(os.path.join(program_path, "mpl_simple.py"))
-        for generic_param in plot_spec.split():
+
+        generic_params = plot_spec.split()
+
+        legend = False
+        for generic_param in generic_params:
+            if "legend" in generic_param:
+                legend = True
+
+        if legend:
+          plot_cmd.append ( "-legend" )
+        else:
+          plot_cmd.append ( "-no-legend" )
+
+        for generic_param in generic_params:
             if generic_param[0:2] == "f=":
                 plot_cmd.append(generic_param[2:])
+            elif generic_param[0:4] == "ppt=":
+                plot_cmd.append("-n=" + generic_param[4:])
+
         print ( "Plotting from: " + data_path )
         print ( "Plot Command:  " + " ".join(plot_cmd) )
         pid = subprocess.Popen(plot_cmd, cwd=data_path)

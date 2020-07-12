@@ -11,6 +11,7 @@ data_plotters/java_plot/PlotData.jar
 io_mesh_mcell_mdl/_mdlmesh_parser.so
 io_mesh_mcell_mdl/build/
 io_mesh_mcell_mdl/mdllex.flex.c
+io_mesh_mcell_mdl/mdllex.flex.h
 io_mesh_mcell_mdl/mdlmesh_parser.py
 io_mesh_mcell_mdl/mdlmesh_parser_wrap.c
 io_mesh_mcell_mdl/mdlparse.bison.c
@@ -18,3 +19,5 @@ io_mesh_mcell_mdl/mdlparse.bison.h
 io_mesh_mcell_mdl/mdlparse.bison.output
 bng/net.py
 cellblender.zip
+*.pyc
+*.swp

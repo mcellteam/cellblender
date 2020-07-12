@@ -122,6 +122,18 @@ class MCELL_OT_region_faces_select(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_region_faces_select_all(bpy.types.Operator):
+    bl_idname = "mcell.region_faces_select_all"
+    bl_label = "Select Faces of All Surface Regions"
+    bl_description = "Select faces of all surface regions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for reg in context.object.mcell.regions.region_list:
+            reg.select_region_faces(context)
+        return {'FINISHED'}
+
+
 class MCELL_OT_region_faces_deselect(bpy.types.Operator):
     bl_idname = "mcell.region_faces_deselect"
     bl_label = "Deselect Faces of Selected Surface Region"
@@ -134,6 +146,29 @@ class MCELL_OT_region_faces_deselect(bpy.types.Operator):
             reg.deselect_region_faces(context)
         return {'FINISHED'}
 
+class MCELL_OT_eliminate_overlapping_faces(bpy.types.Operator):
+    bl_idname = "mcell.eliminate_overlapping_faces"
+    bl_label = "Remove Faces Of This Region From All Other Regions"
+    bl_description = "Remove faces of this region from all other regions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        reg = context.object.mcell.regions.get_active_region()
+        if reg:
+            reg.eliminate_overlapping_faces(context)
+        return{'FINISHED'}
+
+class MCELL_OT_eliminate_all_overlaps(bpy.types.Operator):
+    bl_idname = "mcell.eliminate_all_overlaps"
+    bl_label = "Eliminate All Overlaps Of This Object"
+    bl_description = "Eliminate all overlaps og this object"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(slef, context):
+        for reg in bpy.data.objects[context.active_object.name].mcell.regions.region_list:
+            reg.eliminate_overlapping_faces(context)
+            print('Eliminating overlaps in', reg.name)
+        return{'FINISHED'}
 
 class MCELL_OT_face_get_regions(bpy.types.Operator):
     bl_idname = "mcell.face_get_regions"
@@ -262,6 +297,19 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
 
         return {'FINISHED'}
 
+    def eliminate_overlapping_faces(self, context):
+        bpy.ops.mesh.select_all(action = 'DESELECT')
+        #mesh = context.active_object.data
+        self.select_region_faces(context)
+        reg_names = context.object.mcell.regions.faces_get_regions(context)
+        for reg_name in reg_names:
+            if reg_name != self.name:
+                reg = bpy.data.objects[context.active_object.name].mcell.regions.region_list[reg_name]
+                reg.remove_region_faces(context)
+                #bpy.data.objects[context.active_object.name].mcell.regions.active_reg_index = bpy.data.objects[context.active_object.name].mcell.regions.region_list.find(reg)
+                #bpy.ops.mcell.region_faces_remove()
+        #bpy.data.objects[context.active_object.name].mcell.regions.active_reg_index = bpy.data.objects[context.active_object.name].mcell.regions.region_list.find(self.name)
+
 
     def destroy_region(self, context):
         """Remove all region data from mesh"""
@@ -270,10 +318,13 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
         # POSSIBLE FIXME? GET PARENT BLEND OBJECT OF THIS REGION_LIST
         obj = context.active_object
         mesh = obj.data
-        for seg_id in mesh["mcell"]["regions"][id].keys():
-            mesh["mcell"]["regions"][id][seg_id] = []
-        mesh["mcell"]["regions"][id].clear()
-        mesh["mcell"]["regions"].pop(id)
+        if mesh.get('mcell'):
+          if mesh['mcell'].get('regions'):
+            if mesh['mcell']['regions'].get(id):
+              for seg_id in mesh["mcell"]["regions"][id].keys():
+                  mesh["mcell"]["regions"][id][seg_id] = []
+              mesh["mcell"]["regions"][id].clear()
+              mesh["mcell"]["regions"].pop(id)
 
 
     def face_in_region(self, context, face_index):
@@ -297,12 +348,16 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
             mesh["mcell"]["regions"][str_id] = {}
 
 
-    def reset_region(self, context):
+    def reset_region(self, mesh):
 
         id = str(self.id)
 
-        mesh = context.active_object.data
-
+        if not mesh.get("mcell"):
+            mesh["mcell"] = {}
+        if not mesh["mcell"].get("regions"):
+            mesh["mcell"]["regions"] = {}
+        if not mesh["mcell"]["regions"].get(id):
+            mesh["mcell"]["regions"][id] = {}
         for seg_id in mesh["mcell"]["regions"][id].keys():
             mesh["mcell"]["regions"][id][seg_id] = []
         mesh["mcell"]["regions"][id].clear()
@@ -314,8 +369,12 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
         id = str(self.id)
 
         face_rle = []
-        for seg_id in mesh["mcell"]["regions"][id].keys():
-          face_rle.extend(mesh["mcell"]["regions"][id][seg_id].to_list())
+        if mesh.get('mcell'):
+          if mesh['mcell'].get('regions'):
+            if mesh['mcell']['regions'].get(id):
+              for seg_id in mesh["mcell"]["regions"][id].keys():
+                face_rle.extend(mesh["mcell"]["regions"][id][seg_id].to_list())
+
         if (len(face_rle) > 0): 
             face_set = set(self.rl_decode(face_rle))
         else:
@@ -333,7 +392,7 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
         face_rle = self.rl_encode(face_list)
 
         # Clear existing faces from this region id
-        mesh["mcell"]["regions"][id].clear()
+        self.reset_region(mesh)
 
         # segment face_rle into pieces <= max_len (i.e. <= 32767)
         #   and assign these segments to the region id
@@ -473,28 +532,33 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
     def add_region(self, context):
         """ Add a new region to the list of regions and set as the active region """
         id = self.allocate_id()
-        new_reg=self.region_list.add()
+        new_reg=self.region_list.add()  # Note that this invalidates any handles that had been obtained from this list
         new_reg.init_region(context, id)
-# FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
+        # FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
         reg_name = "Region_%d" % (new_reg.id)
-        new_reg.name = reg_name
+        new_reg.name = reg_name  # This will cause sorting via the callback to region_update on the region name
         idx = self.region_list.find(reg_name)
         self.active_reg_index = idx
+
 
 
     def add_region_by_name(self, context, reg_name):
         """ Add a new region to the list of regions and set as the active region """
         curr_reg = self.get_active_region()
+        curr_reg_name = ""
+        if curr_reg:
+            curr_reg_name = curr_reg.name
 
         id = self.allocate_id()
-        new_reg=self.region_list.add()
+        new_reg=self.region_list.add()  # Note that this invalidates any handles that had been obtained from this list
         new_reg.init_region(context, id)
-# FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
-        new_reg.name = reg_name
+        # FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
+        new_reg.name = reg_name  # This will cause sorting via the callback to region_update on the region name
 
-        if not curr_reg:
-          curr_reg = new_reg
-        idx = self.region_list.find(curr_reg.name)
+        if curr_reg_name == "":
+            curr_reg_name = reg_name
+
+        idx = self.region_list.find(curr_reg_name)
         self.active_reg_index = idx
 
 
@@ -584,51 +648,66 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
     def draw_layout(self, context, layout):
         active_obj = context.active_object
 
-        if active_obj.type == 'MESH':
-            row = layout.row()
-            # row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
-            row.label(text="Defined Surface Regions:", icon='SNAP_FACE')
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCELL_UL_check_region", "define_surf_regions",
-                          self, "region_list",
-                          self, "active_reg_index",
-                          rows=2)
-            col = row.column(align=True)
-            col.operator("mcell.region_add", icon='ZOOMIN', text="")
-            col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
-            col.operator("mcell.region_remove_all", icon='X', text="")
+        if (not (active_obj is None)) and (active_obj.type == 'MESH'):
 
-            # Could have region item draw itself in new row here:
-            row = layout.row()
-            if len(self.region_list) > 0:
-                layout.prop(self.get_active_region(), "name")
+            layout.box() # Use as a separator
 
-            if active_obj.mode == 'EDIT' and (len(self.region_list)>0):
+            # Only draw the surface addition panel if this is an mcell object
+            if active_obj.mcell.include:
+
                 row = layout.row()
-                sub = row.row(align=True)
-                sub.operator("mcell.region_faces_assign", text="Assign")
-                sub.operator("mcell.region_faces_remove", text="Remove")
-                sub = row.row(align=True)
-                sub.operator("mcell.region_faces_select", text="Select")
-                sub.operator("mcell.region_faces_deselect", text="Deselect")
+                # row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
+                row.label(text="Defined Surface Regions for %s:" % (active_obj.name), icon='SNAP_FACE')
 
-                # Option to Get Region Info
-                box = layout.box()
-                row = box.row(align=True)
-                row.alignment = 'LEFT'
-                if self.get_region_info:
-                    row.prop(self, "get_region_info", icon='TRIA_DOWN',
-                             text="Region Info for Selected Faces",
-                              emboss=False)
-                    reg_info = self.faces_get_regions(context)
-                    for reg_name in reg_info:
-                        row = box.row()
-                        row.label(text=reg_name)
-                else:
-                    row.prop(self, "get_region_info", icon='TRIA_RIGHT',
-                             text="Region Info for Selected Faces",
-                             emboss=False)
+                #row = layout.row()
+                #row.prop ( active_obj, "name", text="Active Object" )
+
+                row = layout.row()
+                col = row.column()
+                col.template_list("MCELL_UL_check_region", "define_surf_regions",
+                              self, "region_list",
+                              self, "active_reg_index",
+                              rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.region_add", icon='ZOOMIN', text="")
+                col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
+                col.operator("mcell.region_remove_all", icon='X', text="")
+
+                # Could have region item draw itself in new row here:
+                row = layout.row()
+                if len(self.region_list) > 0:
+                    layout.prop(self.get_active_region(), "name")
+
+                if active_obj.mode == 'EDIT' and (len(self.region_list)>0):
+                    row = layout.row()
+                    sub = row.row(align=True)
+                    sub.operator("mcell.region_faces_assign", text="Assign")
+                    sub.operator("mcell.region_faces_remove", text="Remove")
+                    sub = row.row(align=True)
+                    sub.operator("mcell.region_faces_select", text="Select")
+                    sub.operator("mcell.region_faces_deselect", text="Deselect")
+                    sub.operator("mcell.region_faces_select_all", text="Select All")
+                    row1 = layout.row()
+                    sub = row1.row(align = True)
+                    sub.operator("mcell.eliminate_overlapping_faces", text = "Eliminate Overlaps")
+                    sub.operator("mcell.eliminate_all_overlaps", text = "Eliminate All Overlaps")
+
+                    # Option to Get Region Info
+                    box = layout.box()
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+                    if self.get_region_info:
+                        row.prop(self, "get_region_info", icon='TRIA_DOWN',
+                                 text="Region Info for Selected Faces",
+                                  emboss=False)
+                        reg_info = self.faces_get_regions(context)
+                        for reg_name in reg_info:
+                            row = box.row()
+                            row.label(text=reg_name)
+                    else:
+                        row.prop(self, "get_region_info", icon='TRIA_RIGHT',
+                                 text="Region Info for Selected Faces",
+                                 emboss=False)
 
 
                 
@@ -709,12 +788,24 @@ class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
         for reg in obj_regs:
             id = str(reg.id)
             mesh = obj.data
-            #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+            #reg_faces = list(object_surface_regions.get_region_faces(mesh,id))
             reg_faces = list(reg.get_region_faces(mesh))
             reg_faces.sort()
             reg_dict[reg.name] = reg_faces
         return reg_dict
 
+    def get_face_regions_dictionary (self, obj):
+        """ Return a dictionary with face id keys, and list of region names as a value"""
+        face_reg_dict = {}
+        obj_regs = self.regions.region_list
+        for reg in obj_regs:
+            mesh = obj.data
+            reg_faces = list(reg.get_region_faces(mesh))
+            for face in reg_faces:
+                if not face_reg_dict.get(face):
+                    face_reg_dict[face] = []
+                face_reg_dict[face].append(reg.name)
+        return(face_reg_dict)
 
 
 # Update format of object regions

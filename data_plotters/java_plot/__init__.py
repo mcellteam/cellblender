@@ -1,8 +1,11 @@
 import os
 import subprocess
 
-def find_in_path(program_name):
+def find_in_path(program_name="java"):
+    if os.name == "nt":
+        program_name = "java.exe"
     for path in os.environ.get('PATH','').split(os.pathsep):
+        print ( "Searching " + path + " for " + program_name )
         full_name = os.path.join(path,program_name)
         if os.path.exists(full_name) and not os.path.isdir(full_name):
             return full_name
@@ -32,7 +35,7 @@ def get_name():
 
 def requirements_met():
     # print ( "Checking requirements for java plot" )
-    path = find_in_path ( "java" )
+    path = find_in_path()
     if path == None:
         print ( "Required program \"java\" was not found" )
         return False
@@ -52,7 +55,8 @@ def requirements_met():
             return False
 
 
-def plot ( data_path, plot_spec ):
+def plot ( data_path, plot_spec, python_path=None ):
+    print ( "Java plot called with \"" + data_path + "\", and \"" + plot_spec + "\"" );
     program_path = os.path.dirname(__file__)
     # print ( "Java Plotter called with %s, %s" % (data_path, plot_spec) )
     # print ( "Plotter-specific files are located here: %s" % ( program_path ) )
@@ -62,30 +66,52 @@ def plot ( data_path, plot_spec ):
     plot_spec = subdivide ( plot_spec.split(), "page" )
     color_spec = ""
     
+    any_found = False
+
     for page in plot_spec:
-    
+
         # The java program only understands color=#rrggbb and fxy=filename parameters so find "f=":
 
         found = False
         for generic_param in page:
             if generic_param[0:2] == "f=":
                 found = True
+                any_found = True
                 break
-        
+
         # Go through the entire plot command (whether found or not) to set other settings
 
         java_plot_spec = ""
         for generic_param in page:
             if generic_param[0:2] == "f=":
                 java_plot_spec = java_plot_spec + " fxy=" + generic_param[2:]
+            elif generic_param[0:4] == "ppt=":
+                java_plot_spec = java_plot_spec + " name=" + generic_param[4:]
             elif generic_param[0:7] == "color=#":
                 java_plot_spec = java_plot_spec + " color=" + generic_param[7:]
 
         if found:
-            plot_cmd = find_in_path("java")
-            plot_cmd = plot_cmd + ' -jar ' + os.path.join ( program_path, 'PlotData.jar' ) + " "
-            plot_cmd = plot_cmd + java_plot_spec
-            print ( "Plotting from: " + data_path )
-            print ( "Plotting with: " + plot_cmd )
-            pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
+            popen_list = []
+            popen_list.append ( find_in_path() )
+            popen_list.append ( "-jar" )
+            popen_list.append ( os.path.join ( program_path, "PlotData.jar" ) )
+            popen_list.append ( 'path=' + data_path )
+            for ps in java_plot_spec.split():
+              popen_list.append ( ps )
+            print ( "Calling popen with " + str(popen_list) )
+            pid = subprocess.Popen ( popen_list, cwd=data_path )
+
+    if not any_found:
+
+        # Bring up an empty plotting window (useful for pure MDL runs)
+
+        popen_list = []
+        popen_list.append ( find_in_path() )
+        popen_list.append ( "-jar" )
+        popen_list.append ( os.path.join ( program_path, "PlotData.jar" ) )
+        popen_list.append ( 'path=' + data_path )
+        for ps in java_plot_spec.split():
+          popen_list.append ( ps )
+        print ( "Calling popen with " + str(popen_list) )
+        pid = subprocess.Popen ( popen_list, cwd=data_path )
 

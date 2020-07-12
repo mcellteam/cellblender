@@ -245,7 +245,8 @@ class SBML2JSON:
                     removeList.append(element)
             for element in removeList:
                 c2.pop(element)
-        removeMembranes(tree,tree.root)
+        if tree.root:
+            removeMembranes(tree,tree.root)
         return tree
         
     def standardizeName(self,name):
@@ -291,12 +292,14 @@ class SBML2JSON:
         for idx,species in enumerate(self.model.getListOfSpecies()):
             compartment = species.getCompartment()
             outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
+            subunits = species.getName().count('.')
+            subunits = subunits + 1
             if compartmentList[compartment][0] == 3:
                 typeD = '3D'
-                diffusion = 'KB*T/(6*PI*mu_{0}*Rs)'.format(compartment)
+                diffusion = 'KB*T/(6*PI*mu_{0}*Rs*{1}^(1/3))'.format(compartment, subunits)
             else:
                 typeD = '2D'
-                diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside)
+                diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT({3})*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside, subunits)
             self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
             self.compartmentMapping[species.getId()] = compartment
             
@@ -335,7 +338,7 @@ class SBML2JSON:
             if initialConcentration != 0 and not math.isnan(initialConcentration):
                 if compartmentList[compartment][0] == 2:
                     relOrientation = "'"
-                    objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
+                    objectExpr = '{0}[ALL]'.format(inside)
                     #objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                 else:
                     relOrientation = ','
@@ -542,8 +545,8 @@ class SBML2JSON:
                 tmpR['rxn_name'] = 'rec_m{0}'.format(index+1)
                 #if its a volume molecule
                 if compartmentList[product[0][2]][0] == 3:
-                    object_expr = '{0}[ALL]'.format(product[0][2].upper())
-                    object_exprm = '{0}[ALL]'.format(reactant[0][2].upper())
+                    object_expr = '{0}[ALL]'.format(product[0][2])
+                    object_exprm = '{0}[ALL]'.format(reactant[0][2])
                     
                     #substracting inner compartments                    
                     children = compartmentTree.get_node(product[0][2]).fpointer

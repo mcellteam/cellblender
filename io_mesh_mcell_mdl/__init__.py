@@ -99,7 +99,7 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
     bl_idname = "export_mdl_mesh.mdl"
     bl_label = "Export MCell MDL"
 
-    #print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL initialization" )
+    print ( ":::::::::io_mesh_mcell_mdl/__init__.py/ExportMCellMDL initialization" )
 
     filename_ext = ".mdl"
     filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})

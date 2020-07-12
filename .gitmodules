@@ -1,0 +1,3 @@
+[submodule "data_plotters/browser_plot"]
+	path = data_plotters/browser_plot
+	url = https://github.com/mcellteam/browser_plot

@@ -39,26 +39,7 @@ import bpy
 # from cellblender import cellblender_operators  # Shouldn't need this anymore!!
 
 from cellblender import object_surface_regions
-from cellblender.utils import project_files_path
-
-# This function was moved to MCellObjectPropertyGroup in object_surface_regions.py by Bob
-# TODO: Delete this commented code ... eventually
-#def get_regions(obj):
-#    """ Return a dictionary with region names """
-#
-#    reg_dict = {}
-#
-#    obj_regs = obj.mcell.regions.region_list
-#    for reg in obj_regs:
-#        id = str(reg.id)
-#        mesh = obj.data
-#        #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
-#        reg_faces = list(reg.get_region_faces(mesh))
-#
-#        reg_faces.sort()
-#        reg_dict[reg.name] = reg_faces
-#
-#    return reg_dict
+from cellblender.cellblender_utils import mcell_files_path
 
 
 def save(context, filepath=""):
@@ -66,7 +47,7 @@ def save(context, filepath=""):
         as MDL.
 
     """
-    print("export_mcell_mdl.py/save()")
+    print("]]]]]] io_mesh_mcell_mdl/export_mcell_mdl.py/save(context,filepath=\"" + filepath + "\")")
     with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
         filedir = os.path.dirname(filepath)
         save_wrapper(context, out_file, filedir)
@@ -74,10 +55,10 @@ def save(context, filepath=""):
 
 def dontrun_filter_ignore(unfiltered_item_list):
     """ Apply selected filter/ignore policy.
-    
+
     This function helps reduce boilerplate code.
     """
-    
+
     mcell = bpy.context.scene.mcell
 
     item_list = []
@@ -121,6 +102,7 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
 
     # Save modular (e.g. Scene.molecules.mdl, Scene.reactions.mdl)
     if mcell.export_project.export_format == 'mcell_mdl_modular':
+        print ( "IO_Mesh Saving as modular MDL files" )
         main_mdl_file.write("INCLUDE_FILE = \"%s.%s.mdl\"\n\n" %
                        (settings.base_name, mdl_filename))
         filepath = ("%s/%s.%s.mdl" %
@@ -131,17 +113,19 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
             save_function(*args)
     # Or save everything in main mdl (e.g. Scene.main.mdl)
     else:
+        print ( "IO_Mesh Saving as one unified MDL file" )
         args.insert(1, main_mdl_file)
         save_function(*args)
 
 
 def save_general(mdl_filename, save_function, save_state, unfiltered_item_list):
     """ Set the filter/ignore policy and write to mdl.
-   
+
     This function helps reduce boilerplate code.
     """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: general" )
 
-    context = bpy.context    
+    context = bpy.context
     filedir = save_state['filedir']
     main_mdl_file = save_state['main_mdl_file']
 
@@ -161,6 +145,7 @@ def save_general(mdl_filename, save_function, save_state, unfiltered_item_list):
 
 def save_partitions(context, out_file):
     """Export partitions"""
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: partitions" )
 
     mcell = context.scene.mcell
 
@@ -176,12 +161,34 @@ def save_partitions(context, out_file):
             mcell.partitions.z_step))
 
 
+def save_pbc(context, out_file):
+    #Export the periodic boundary conditions
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: pbc" )
+
+    mcell = context.scene.mcell
+    ptrad = format(mcell.pbc.peri_trad)
+    px = format(mcell.pbc.peri_x)
+    py = format(mcell.pbc.peri_y)
+    pz = format(mcell.pbc.peri_z)
+
+    if mcell.pbc.include:
+        out_file.write("PERIODIC_BOX\n")
+        out_file.write("{\n")
+        out_file.write("CORNERS = [%g,%g,%g]\n,[%g,%g,%g]\n" % (mcell.pbc.x_start,mcell.pbc.y_start,mcell.pbc.z_start,mcell.pbc.x_end,mcell.pbc.y_end,mcell.pbc.z_end))
+        out_file.write("PERIODIC_TRADITIONAL = " + ptrad.upper() + "\n")
+        out_file.write("PERIODIC_X = " + px.upper() + "\n")
+        out_file.write("PERIODIC_Y = " + py.upper() + "\n")
+        out_file.write("PERIODIC_Z = " + pz.upper() + "\n")
+        out_file.write("}\n\n")
+
+
 def save_wrapper(context, out_file, filedir):
     """ This function saves the current model to MDL.
 
     It provides a wrapper assembling the final mdl piece by piece.
 
     """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: wrapper" )
 
     mcell = context.scene.mcell
     settings = mcell.project_settings
@@ -195,39 +202,31 @@ def save_wrapper(context, out_file, filedir):
     save_state = {'main_mdl_file': out_file, 'filedir': filedir}
 
 
-    # Export parameters: 
-    #par_list = mcell.parameters.parameter_list
-    #if (len(par_list) > 0):
-    #    if export_project.export_format == 'mcell_mdl_modular':
-    #        out_file.write("INCLUDE_FILE = \"%s.parameters.mdl\"\n\n" %
-    #                       (settings.base_name))
-    #        filepath = ("%s/%s.parameters.mdl" %
-    #                    (filedir, settings.base_name))
-    #        with open(filepath, "w", encoding="utf8", newline="\n") as par_file:
-    #            save_parameters(context, par_file, par_list)
-    #    else:
-    #        save_parameters(context, out_file, par_list)
-    
-    # Export parameters: 
+    scripting = mcell.scripting
+
+    dm = None
+
+    if scripting.needs_a_data_model():
+      # Only build a data model if running Python code?
+      dm = { 'mcell': mcell.build_data_model_from_properties ( context ) }
+
+
+    scripting.write_scripting_output ( 'before', 'everything', context, out_file, filedir, dm )
+
+    scripting.write_scripting_output ( 'before', 'parameters', context, out_file, filedir, dm )
+
+    # Export parameters:
     if ps and ps.general_parameter_list:
         args = [ps]
         save_modular_or_allinone(
             filedir, out_file, 'parameters', save_general_parameters, args)
-        #if export_project.export_format == 'mcell_mdl_modular':
-        #    out_file.write("INCLUDE_FILE = \"%s.parameters.mdl\"\n\n" %
-        #                   (settings.base_name))
-        #    filepath = ("%s/%s.parameters.mdl" %
-        #                (filedir, settings.base_name))
-        #    with open(filepath, "w", encoding="utf8", newline="\n") as par_file:
-        #        save_general_parameters(ps, par_file)
-        #else:
-        #    save_general_parameters(ps, out_file)
-    
 
+    scripting.write_scripting_output ( 'after', 'parameters', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'initialization', context, out_file, filedir, dm )
 
     # Export model initialization:
     out_file.write("ITERATIONS = %s\n" % (mcell.initialization.iterations.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-    
+
     out_file.write("TIME_STEP = %s\n" % (mcell.initialization.time_step.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
     if mcell.initialization.vacancy_search_distance.get_expr(ps.panel_parameter_list) != '':
@@ -237,164 +236,73 @@ def save_wrapper(context, out_file, filedir):
 
     # Export optional initialization commands:
     args = [context]
+
     save_modular_or_allinone(filedir, out_file, 'initialization', save_initialization_commands, args)
-    #if export_project.export_format == 'mcell_mdl_modular':
-    #    out_file.write("INCLUDE_FILE = \"%s.initialization.mdl\"\n\n" %
-    #                   (settings.base_name))
-    #    filepath = ("%s/%s.initialization.mdl" %
-    #                (filedir, settings.base_name))
-    #    with open(filepath, "w", encoding="utf8", newline="\n") as init_file:
-    #        save_initialization_commands(context, init_file)
-    #else:
-    #    save_initialization_commands(context, out_file)
-    
+
+    scripting.write_scripting_output ( 'after', 'initialization', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'partitions', context, out_file, filedir, dm )
+
     save_partitions(context, out_file)
 
-    ## Export partitions:
-    #if mcell.partitions.include:
-    #    out_file.write("PARTITION_X = [[%.15g TO %.15g STEP %.15g]]\n" % (
-    #        mcell.partitions.x_start, mcell.partitions.x_end,
-    #        mcell.partitions.x_step))
-    #    out_file.write("PARTITION_Y = [[%.15g TO %.15g STEP %.15g]]\n" % (
-    #        mcell.partitions.y_start, mcell.partitions.y_end,
-    #        mcell.partitions.y_step))
-    #    out_file.write("PARTITION_Z = [[%.15g TO %.15g STEP %.15g]]\n\n" % (
-    #        mcell.partitions.z_start, mcell.partitions.z_end,
-    #        mcell.partitions.z_step))
-	    
+    scripting.write_scripting_output ( 'after', 'partitions', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'pbc', context, out_file, filedir, dm )
+
+    save_pbc(context, out_file)
+
+    scripting.write_scripting_output ( 'after', 'pbc', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'molecules', context, out_file, filedir, dm )
+
     # Export molecules:
     unfiltered_mol_list = mcell.molecules.molecule_list
     save_general('molecules', save_molecules, save_state, unfiltered_mol_list)
-    #if mcell.cellblender_preferences.filter_invalid:
-    #    mol_list = [mol for mol in unfiltered_mol_list if not mol.status]
-    #else:
-    #    mol_list = unfiltered_mol_list
 
-    #if export_project.export_format == 'mcell_mdl_modular':
-    #    out_file.write("INCLUDE_FILE = \"%s.molecules.mdl\"\n\n" %
-    #                   (settings.base_name))
-    #    filepath = ("%s/%s.molecules.mdl" %
-    #                (filedir, settings.base_name))
-    #    with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
-    #        save_molecules(context, mol_file, mol_list)
-    #else:
-    #    save_molecules(context, out_file, mol_list)
+    scripting.write_scripting_output ( 'after', 'molecules', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'surface_classes', context, out_file, filedir, dm )
 
     # Export surface classes:
     unfiltered_surf_class_list = mcell.surface_classes.surf_class_list
     surf_class_list = save_general(
         'surface_classes', save_surface_classes, save_state,
         unfiltered_surf_class_list)
-    #if mcell.cellblender_preferences.filter_invalid:
-    #    surf_class_list = [
-    #        sc for sc in unfiltered_surf_class_list if not sc.status]
-    #else:
-    #    surf_class_list = unfiltered_surf_class_list
 
-    #if surf_class_list and export_project.export_format == 'mcell_mdl_modular':
-    #    out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" %
-    #                   (settings.base_name))
-    #    filepath = ("%s/%s.surface_classes.mdl" %
-    #                (filedir, settings.base_name))
-    #    with open(filepath, "w", encoding="utf8", newline="\n") as sc_file:
-    #        save_surface_classes(context, sc_file, surf_class_list)
-    #else:
-    #    save_surface_classes(context, out_file, surf_class_list)
+    scripting.write_scripting_output ( 'after', 'surface_classes', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'reactions', context, out_file, filedir, dm )
 
     # Export reactions:
     unfiltered_rxn_list = mcell.reactions.reaction_list
     save_general('reactions', save_reactions, save_state, unfiltered_rxn_list)
-    #if mcell.cellblender_preferences.filter_invalid:
-    #    rxn_list = [rxn for rxn in unfiltered_rxn_list if not rxn.status]
-    #else:
-    #    rxn_list = unfiltered_rxn_list
 
-    #if rxn_list and export_project.export_format == 'mcell_mdl_modular':
-    #    out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" %
-    #                   (settings.base_name))
-    #    filepath = ("%s/%s.reactions.mdl" %
-    #               (filedir, settings.base_name))
-    #    with open(filepath, "w", encoding="utf8", newline="\n") as react_file:
-    #        save_reactions(context, react_file, rxn_list, filedir)
-    #else:
-    #    save_reactions(context, out_file, rxn_list, filedir)
+    scripting.write_scripting_output ( 'after', 'reactions', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'geometry', context, out_file, filedir, dm )
 
     # Export model geometry:
     unfiltered_object_list = context.scene.mcell.model_objects.object_list
     object_list = save_general(
         'geometry', save_geometry, save_state, unfiltered_object_list)
-    #if mcell.cellblender_preferences.filter_invalid:
-    #    object_list = [obj for obj in unfiltered_object_list if not obj.status]
-    #else:
-    #    object_list = unfiltered_object_list
 
-    #if object_list and export_project.export_format == 'mcell_mdl_modular':
-    #    out_file.write("INCLUDE_FILE = \"%s.geometry.mdl\"\n\n" %
-    #                   (settings.base_name))
-    #    filepath = ("%s/%s.geometry.mdl" %
-    #                (filedir, settings.base_name))
-    #    with open(filepath, "w", encoding="utf8", newline="\n") as geom_file:
-    #        save_geometry(context, geom_file, object_list)
-    #else:
-    #    save_geometry(context, out_file, object_list)
+    scripting.write_scripting_output ( 'after', 'geometry', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'mod_surf_regions', context, out_file, filedir, dm )
 
     # Export modify surface regions:
     if surf_class_list:
         unfiltered_msr_list = mcell.mod_surf_regions.mod_surf_regions_list
         save_general('mod_surf_regions', save_mod_surf_regions, save_state,
                      unfiltered_msr_list)
-        #if mcell.cellblender_preferences.filter_invalid:
-        #    mod_surf_regions_list = [
-        #        msr for msr in unfiltered_msr_list if not msr.status]
-        #else:
-        #    mod_surf_regions_list = unfiltered_msr_list
 
-        #if (mod_surf_regions_list and
-        #        export_project.export_format == 'mcell_mdl_modular'):
-        #    out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" %
-        #                   (settings.base_name))
-        #    filepath = ("%s/%s.mod_surf_regions.mdl" %
-        #                (filedir, settings.base_name))
-        #    with open(filepath, "w", encoding="utf8",
-        #              newline="\n") as mod_sr_file:
-        #        save_mod_surf_regions(
-        #            context, mod_sr_file, mod_surf_regions_list)
-        #else:
-        #    save_mod_surf_regions(context, out_file, mod_surf_regions_list)
+    scripting.write_scripting_output ( 'after', 'mod_surf_regions', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'release_patterns', context, out_file, filedir, dm )
 
     # Export release patterns:
     unfiltered_rel_pattern_list = mcell.release_patterns.release_pattern_list
     save_general('release_patterns', save_rel_patterns, save_state,
                  unfiltered_rel_pattern_list)
-    #if mcell.release_patterns.release_pattern_list:
-    #    unfiltered_rel_pattern_list = mcell.release_patterns.release_pattern_list
-    #    if mcell.cellblender_preferences.filter_invalid:
-    #        rel_patterns_list = [
-    #            rel_pattern for rel_pattern in unfiltered_rel_pattern_list if not rel_pattern.status]
-    #    else:
-    #        rel_patterns_list = unfiltered_rel_pattern_list
 
-    #    if (rel_patterns_list and
-    #            export_project.export_format == 'mcell_mdl_modular'):
-    #        out_file.write("INCLUDE_FILE = \"%s.release_patterns.mdl\"\n\n" %
-    #                       (settings.base_name))
-    #        filepath = ("%s/%s.release_patterns.mdl" %
-    #                    (filedir, settings.base_name))
-    #        with open(filepath, "w", encoding="utf8",
-    #                  newline="\n") as rel_pattern_file:
-    #            save_rel_patterns(
-    #                context, rel_pattern_file, rel_patterns_list)
-    #    else:
-    #        save_rel_patterns(context, out_file, rel_patterns_list)
+    scripting.write_scripting_output ( 'after', 'release_patterns', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'instantiate', context, out_file, filedir, dm )
 
     # Instantiate Model Geometry and Release sites:
     unfiltered_release_site_list = mcell.release_sites.mol_release_list
     release_site_list, _ = dontrun_filter_ignore(unfiltered_release_site_list)
-    #if mcell.cellblender_preferences.filter_invalid:
-    #    release_site_list = [
-    #        rel for rel in unfiltered_release_site_list if not rel.status]
-    #else:
-    #    release_site_list = unfiltered_release_site_list
 
     if object_list or release_site_list:
         out_file.write("INSTANTIATE %s OBJECT\n" % (context.scene.name))
@@ -403,13 +311,22 @@ def save_wrapper(context, out_file, filedir):
         if object_list:
             save_object_list(context, out_file, object_list)
 
+        scripting.write_scripting_output ( 'before', 'release_sites', context, out_file, filedir, dm )
+
         if release_site_list:
-            save_release_site_list(context, out_file, release_site_list,
-                                   mcell)
+            save_release_site_list(context, out_file, release_site_list, mcell)
+
+        scripting.write_scripting_output ( 'after', 'release_sites', context, out_file, filedir, dm )
 
         out_file.write("}\n\n")
 
+    scripting.write_scripting_output ( 'after', 'instantiate', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'seed', context, out_file, filedir, dm )
+
     out_file.write("sprintf(seed,\"%05g\",SEED)\n\n")
+
+    scripting.write_scripting_output ( 'after', 'seed', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'viz_output', context, out_file, filedir, dm )
 
     # Export viz output:
 
@@ -420,51 +337,37 @@ def save_wrapper(context, out_file, filedir):
     molecule_viz_str_list = [mol.name for mol in molecule_viz_list]
 
     export_all = mcell.viz_output.export_all
-    if export_all or molecule_viz_list:
-        args = [context, molecule_viz_str_list, export_all]
+    export_all_ascii = mcell.initialization.export_all_ascii
+    if export_all or molecule_viz_list or export_all_ascii:
+        args = [context, molecule_viz_str_list, export_all, export_all_ascii]
         save_modular_or_allinone(
             filedir, out_file, 'viz_output', save_viz_output_mdl, args)
 
-    #if mcell.cellblender_preferences.filter_invalid:
-    #    molecule_viz_list = [
-    #        mol.name for mol in unfiltered_mol_list if mol.export_viz and not
-    #        mol.status]
-    #else:
-    #    molecule_viz_list = [
-    #        mol.name for mol in unfiltered_mol_list if mol.export_viz]
-
-    #export_all = mcell.viz_output.export_all
-    ##if (export_all or (molecule_viz_list and
-    ##__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    #if ((molecule_viz_list or export_all) and export_project.export_format == 'mcell_mdl_modular'):
-    #    out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" %
-    #                   (settings.base_name))
-    #    filepath = ("%s/%s.viz_output.mdl" % (filedir, settings.base_name))
-    #    with open(filepath, "w", encoding="utf8", newline="\n") as viz_file:
-    #        save_viz_output_mdl(context, viz_file, molecule_viz_list, export_all)
-    #else:
-    #    save_viz_output_mdl(context, out_file, molecule_viz_list, export_all)
+    scripting.write_scripting_output ( 'after', 'viz_output', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'rxn_output', context, out_file, filedir, dm )
 
     # Export reaction output:
     settings = mcell.project_settings
     unfiltered_rxn_output_list = mcell.rxn_output.rxn_output_list
-    
-        
-    
-    save_general('rxn_output', save_rxn_output_mdl, save_state,
-                 unfiltered_rxn_output_list)
-                 
-    
+
+    save_general('rxn_output', save_rxn_output_mdl, save_state, unfiltered_rxn_output_list)
+
+    scripting.write_scripting_output ( 'after', 'rxn_output', context, out_file, filedir, dm )
+
+    scripting.write_scripting_output ( 'after', 'everything', context, out_file, filedir, dm )
+
+    """
+    #deprecated
     #JJT:temporary solution for complex output expressions
     complex_rxn_output_list = mcell.rxn_output.complex_rxn_output_list
     if len(complex_rxn_output_list) > 0:
         save_modular_or_allinone(filedir, out_file, 'rxn_output',
                                  save_rxn_output_temp_mdl,[context, complex_rxn_output_list])
-
+    """
 
     if error_list and invalid_policy == 'dont_run':
         # If anything is invalid, delete all the MDLs.
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         try:
             shutil.rmtree(project_dir)
         except:
@@ -493,6 +396,7 @@ def save_initialization_commands(context, out_file):
         This also includes notifications and warnings.
 
     """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: initialization_commands" )
 
     mcell = context.scene.mcell
     init = mcell.initialization
@@ -516,7 +420,6 @@ def save_initialization_commands(context, out_file):
     if init.vacancy_search_distance.get_expr(ps.panel_parameter_list) != '':
         out_file.write("VACANCY_SEARCH_DISTANCE = %s\n" % (init.vacancy_search_distance.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Surface Grid Density
-    ##### TODO: If surface_grid_density is an integer (as it is) why output it as %.15g format?
     out_file.write("SURFACE_GRID_DENSITY = %s\n" % (init.surface_grid_density.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Accurate 3D Reactions
     if init.accurate_3d_reactions:
@@ -594,7 +497,7 @@ def save_initialization_commands(context, out_file):
 
     # Warnings
     out_file.write("WARNINGS\n{\n")
-    if init.all_notifications == 'INDIVIDUAL':
+    if init.all_warnings == 'INDIVIDUAL':
 
         # Degenerate Polygons
         out_file.write(
@@ -633,6 +536,7 @@ def save_initialization_commands(context, out_file):
 
 def save_object_list(context, out_file, object_list):
     """ Save the list objects to mdl output file """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: object_list" )
 
     for item in object_list:
         out_file.write("  %s OBJECT %s {}\n" % (item.name, item.name))
@@ -640,6 +544,7 @@ def save_object_list(context, out_file, object_list):
 
 def save_release_site_list(context, out_file, release_site_list, mcell):
     """ Save the list of release site to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: release_site_list" )
 
     mol_list = mcell.molecules.molecule_list
     ps = mcell.parameter_system
@@ -650,54 +555,66 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
 
         print ( "release_site.shape = " + release_site.shape )
-        
-        # release sites with predefined shapes
-        if ((release_site.shape == 'CUBIC') |
-                (release_site.shape == 'SPHERICAL') |
-                (release_site.shape == 'SPHERICAL_SHELL')):
+
+        # Always need the molecule, so do it first
+        mol_spec = None
+        if release_site.molecule in mol_list:
+            if mol_list[release_site.molecule].type == '2D':
+                mol_spec = "%s%s" % (release_site.molecule, release_site.orient)
+            else:
+                mol_spec = "%s" % (release_site.molecule)
+
+
+        # release sites with predefined shapes or list shapes
+        if ((release_site.shape == 'LIST') |
+            (release_site.shape == 'CUBIC') |
+            (release_site.shape == 'SPHERICAL') |
+            (release_site.shape == 'SPHERICAL_SHELL')):
 
             out_file.write("   SHAPE = %s\n" % (release_site.shape))
-            out_file.write("   LOCATION = [%s, %s, %s]\n" %
-                           (release_site.location_x.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
-                            release_site.location_y.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
-                            release_site.location_z.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+            if release_site.shape != 'LIST':
+                out_file.write("   LOCATION = [%s, %s, %s]\n" %
+                               (release_site.location_x.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
+                                release_site.location_y.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
+                                release_site.location_z.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
             out_file.write("   SITE_DIAMETER = %s\n" %
                            (release_site.diameter.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
         # user defined shapes
         if (release_site.shape == 'OBJECT'):
-            inst_obj_expr = instance_object_expr(context,
-                                                 release_site.object_expr)
+            inst_obj_expr = instance_object_expr(context, release_site.object_expr)
             out_file.write("   SHAPE = %s\n" % (inst_obj_expr))
 
-        if release_site.molecule in mol_list:
-            if mol_list[release_site.molecule].type == '2D':
-                out_file.write("   MOLECULE = %s%s\n" % (release_site.molecule,
-                                                         release_site.orient))
-            else:
-                out_file.write("   MOLECULE = %s\n" % (release_site.molecule))
-
-        if release_site.quantity_type == 'NUMBER_TO_RELEASE':
-            out_file.write("   NUMBER_TO_RELEASE = %s\n" %
-                       (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-
-        elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-            out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
+        if (release_site.shape == 'LIST'):
+            out_file.write("   MOLECULE_POSITIONS\n")
             out_file.write("   {\n")
-            out_file.write("        MEAN_NUMBER = %s\n" %
-                           (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-            out_file.write("        STANDARD_DEVIATION = %s\n" %
-                           (release_site.stddev.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-            out_file.write("      }\n")
+            for p in release_site.points_list:
+                out_file.write("     %s [%.15g, %.15g, %.15g]\n" % ( mol_spec, p.x, p.y, p.z ) )
+            out_file.write("   }\n")
+        else:
+            out_file.write("   MOLECULE = %s\n" % (mol_spec))
 
-        elif release_site.quantity_type == 'DENSITY':
-            if release_site.molecule in mol_list:
-                if mol_list[release_site.molecule].type == '2D':
-                    out_file.write("   DENSITY = %s\n" %
+            if release_site.quantity_type == 'NUMBER_TO_RELEASE':
+                out_file.write("   NUMBER_TO_RELEASE = %s\n" %
+                           (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+
+            elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
+                out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
+                out_file.write("   {\n")
+                out_file.write("        MEAN_NUMBER = %s\n" %
                                (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-                else:
-                    out_file.write("   CONCENTRATION = %s\n" %
-                               (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+                out_file.write("        STANDARD_DEVIATION = %s\n" %
+                               (release_site.stddev.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+                out_file.write("   }\n")
+
+            elif release_site.quantity_type == 'DENSITY':
+                if release_site.molecule in mol_list:
+                    if mol_list[release_site.molecule].type == '2D':
+                        out_file.write("   DENSITY = %s\n" %
+                                   (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+                    else:
+                        out_file.write("   CONCENTRATION = %s\n" %
+                                   (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
         out_file.write("   RELEASE_PROBABILITY = %s\n" %
                        (release_site.probability.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
@@ -708,34 +625,10 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         out_file.write('  }\n')
 
-# This function is not being used except in commented references within save_wrapper
-#
-#def save_parameters(context, out_file, par_list):
-#    """ Saves parameter info to mdl output file. """
-#
-#    # Export Parameter:
-#    if par_list:
-#        out_file.write("/* DEFINE PARAMETERS */\n")
-#
-#        for par_item in par_list:
-#            out_file.write("    %s = %s" % (par_item.name, par_item.value))
-#
-#            if ((par_item.unit != "") | (par_item.type != "")):
-#                out_file.write("    /* ")
-#
-#                if par_item.unit != "":
-#                    out_file.write("%s. " % (par_item.unit))
-#
-#                if par_item.type != "":
-#                    out_file.write("%s. " % (par_item.type))
-#
-#                out_file.write("*/")
-#                out_file.write("\n")
-#        out_file.write("\n")
 
-
-def write_parameter_as_mdl ( p, out_file, as_expr ):
+def write_parameter_as_mdl_old ( p, out_file, as_expr ):
     """ Writes a single parameter as MDL as either a value or an expression """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: parameter_as_mdl_old" )
 
     # Export Parameter:
     if as_expr:
@@ -764,34 +657,123 @@ def write_parameter_as_mdl ( p, out_file, as_expr ):
 
 
 
+"""
+
+# This is the proper release version of this function
+def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
+    # Writes a single parameter as MDL as either a value or an expression
+
+    # Export Parameter:
+    if as_expr:
+        # Note that some expressions are allowed to be blank which indicates use of the default VALUE
+        if len(p['expr'].strip()) <= 0:
+            # The expression is blank, so use the value which should be the default
+            out_file.write("%s = %.15g" % (par_name, p['value']))
+        else:
+            # The expression is not blank, so use it
+            out_file.write("%s = %s" % (par_name, p['expr']))
+    else:
+        # Output the value rather than the expression
+        out_file.write("%s = %.15g" % (par_name, p['value']))
+
+    if ((p['desc'] != "") | (p['units'] != "")):
+        out_file.write("    /* ")
+
+        if p['desc'] != "":
+            out_file.write("%s " % (p['desc']))
+
+        if p['units'] != "":
+            out_file.write("   units=%s" % (p['units']))
+
+        out_file.write(" */")
+    out_file.write("\n")
+
+
+"""
+
+# This temporary version uses a flag to force output with Blender's precision
+def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
+    # Writes a single parameter as MDL as either a value or an expression
+    force_blender_precision = False
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: parameter_as_mdl" )
+
+    # Export Parameter:
+    if as_expr:
+        # Note that some expressions are allowed to be blank which indicates use of the default VALUE
+        if len(p['expr'].strip()) <= 0:
+            # The expression is blank, so use the value which should be the default
+            if force_blender_precision:
+                mcell = bpy.context.scene.mcell
+                out_file.write("%s = %.15g" % (par_name, mcell.blender_float(p['value'])))
+            else:
+                out_file.write("%s = %.15g" % (par_name, p['value']))
+        else:
+            # The expression is not blank, so use it
+            out_file.write("%s = %s" % (par_name, p['expr']))
+    else:
+        # Output the value rather than the expression
+        if force_blender_precision:
+            mcell = bpy.context.scene.mcell
+            out_file.write("%s = %.15g" % (par_name, mcell.blender_float(p['value'])))
+        else:
+            out_file.write("%s = %.15g" % (par_name, p['value']))
+
+    if ((p['desc'] != "") | (p['units'] != "")):
+        out_file.write("    /* ")
+
+        if p['desc'] != "":
+            out_file.write("%s " % (p['desc']))
+
+        if p['units'] != "":
+            out_file.write("   units=%s" % (p['units']))
+
+        out_file.write(" */")
+    out_file.write("\n")
+
+
+
 def save_general_parameters(ps, out_file):
     """ Saves parameter info to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: general_parameters" )
 
     # Export Parameters:
     if ps and ps.general_parameter_list:
-                
+
         if not ps.export_as_expressions:
 
             # Output as values ... order doesn't matter
             out_file.write("/* DEFINE PARAMETERS */\n")
             for p in ps.general_parameter_list:
-                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+                #print ( "Writing id = " + str(p.par_id) )
+                write_parameter_as_mdl ( p.name, ps['gp_dict'][p.par_id], out_file, ps.export_as_expressions )
             out_file.write("\n")
 
         else:
 
-            ordered_names = ps.build_dependency_ordered_name_list()
-            print ( "Ordered names = " + str(ordered_names) )
-            # Output as expressions where order matters
+            #ordered_names = ps.build_dependency_ordered_name_list()
+            ordered_names = None
+            if 'gp_ordered_list' in ps:
+                ordered_names = ps['gp_ordered_list']
+            #print ( "Ordered names = " + str(ordered_names) )
             out_file.write("/* DEFINE PARAMETERS */\n")
-            for pn in ordered_names:
-                p = ps.general_parameter_list[pn]
-                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+            if ordered_names == None:
+                #print ( "Warning: Unable to export as expressions." )
+                # Output as values ... order doesn't matter
+                for p in ps.general_parameter_list:
+                    #print ( "Writing id = " + str(p.par_id) )
+                    write_parameter_as_mdl ( p.name, ps['gp_dict'][p.par_id], out_file, False )
+            else:
+                # Output as expressions where order matters
+                for pn in ordered_names:
+                    p = ps['gp_dict'][pn]
+                    #print ( "Writing id = " + str(pn) )
+                    write_parameter_as_mdl ( p['name'], ps['gp_dict'][pn], out_file, ps.export_as_expressions )
             out_file.write("\n")
 
 
 def save_molecules(context, out_file, mol_list):
     """ Saves molecule info to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: molecules" )
 
     # Export Molecules:
     out_file.write("DEFINE_MOLECULES\n")
@@ -813,7 +795,7 @@ def save_molecules(context, out_file, mol_list):
                             ps.panel_parameter_list, ps.export_as_expressions)))
 
         if mol_item.custom_time_step.get_value(ps.panel_parameter_list) > 0:
-            out_file.write("    CUSTOM_TIME_STEP = %s\n" % 
+            out_file.write("    CUSTOM_TIME_STEP = %s\n" %
                            (mol_item.custom_time_step.get_as_string_or_value(
                             ps.panel_parameter_list, ps.export_as_expressions)))
         elif mol_item.custom_space_step.get_value(ps.panel_parameter_list) > 0:
@@ -824,14 +806,22 @@ def save_molecules(context, out_file, mol_list):
         if mol_item.target_only:
             out_file.write("    TARGET_ONLY\n")
 
+        if mol_item.maximum_step_length.get_expr(ps.panel_parameter_list) != '':
+            out_file.write("    MAXIMUM_STEP_LENGTH = %s\n" %
+                           (mol_item.maximum_step_length.get_as_string_or_value(
+                            ps.panel_parameter_list, ps.export_as_expressions)))
+
         out_file.write("  }\n")
     out_file.write("}\n\n")
 
 
 def save_surface_classes(context, out_file, surf_class_list):
     """ Saves surface class info to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: surface_classes" )
 
     mcell = context.scene.mcell
+
+    ps = mcell.parameter_system
 
     out_file.write("DEFINE_SURFACE_CLASSES\n")
     out_file.write("{\n")
@@ -844,12 +834,16 @@ def save_surface_classes(context, out_file, surf_class_list):
             unfiltered_surf_class_props_list)
         for surf_class_props in surf_class_props_list:
             molecule = surf_class_props.molecule
+            affected_mols = surf_class_props.affected_mols
+            if affected_mols != 'SINGLE':
+                molecule = affected_mols
             orient = surf_class_props.surf_class_orient
             surf_class_type = surf_class_props.surf_class_type
             if surf_class_type == 'CLAMP_CONCENTRATION':
-                clamp_value = surf_class_props.clamp_value
+                clamp_value = surf_class_props.clamp_value.get_as_string_or_value(
+                              ps.panel_parameter_list, ps.export_as_expressions)
                 out_file.write("    %s" % surf_class_type)
-                out_file.write(   " %s%s = %.15g\n" % (molecule,
+                out_file.write(   " %s%s = %s\n" % (molecule,
                                                     orient,
                                                     clamp_value))
             else:
@@ -861,6 +855,7 @@ def save_surface_classes(context, out_file, surf_class_list):
 
 def save_rel_patterns(context, out_file, release_pattern_list):
     """ Saves release pattern info to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: rel_patterns" )
 
     mcell = context.scene.mcell
 
@@ -902,6 +897,7 @@ def save_rel_patterns(context, out_file, release_pattern_list):
 
 def save_reactions(context, out_file, rxn_list, filedir):
     """ Saves reaction info to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: reactions" )
 
     out_file.write("DEFINE_REACTIONS\n")
     out_file.write("{\n")
@@ -910,44 +906,13 @@ def save_reactions(context, out_file, rxn_list, filedir):
 
     for rxn_item in rxn_list:
         rxn_item.write_to_mdl_file ( context, out_file, filedir )
-        
-        """
-        # Moved to cellblender_properties.py / MCellReactionProperty
-        out_file.write("  %s " % (rxn_item.name))
-
-        if rxn_item.type == 'irreversible':
-            # Use a variable rate constant file if specified
-            if rxn_item.variable_rate_switch and rxn_item.variable_rate_valid:
-                variable_rate_name = rxn_item.variable_rate
-                out_file.write('["%s"]' % (variable_rate_name))
-                variable_rate_text = bpy.data.texts[variable_rate_name]
-                variable_out_filename = os.path.join(
-                    filedir, variable_rate_name)
-                with open(variable_out_filename, "w", encoding="utf8",
-                          newline="\n") as variable_out_file:
-                    variable_out_file.write(variable_rate_text.as_string())
-            # Use a single-value rate constant
-            else:
-                out_file.write("[%s]" % (rxn_item.fwd_rate.get_as_string_or_value(
-                               ps.panel_parameter_list,ps.export_as_expressions)))    
-        else:
-            out_file.write(
-                "[>%s, <%s]" % (rxn_item.fwd_rate.get_as_string_or_value(
-                ps.panel_parameter_list, ps.export_as_expressions),
-                rxn_item.bkwd_rate.get_as_string_or_value(ps.panel_parameter_list,
-                ps.export_as_expressions)))
-
-        if rxn_item.rxn_name:
-            out_file.write(" : %s\n" % (rxn_item.rxn_name))
-        else:
-            out_file.write("\n")
-        """
 
     out_file.write("}\n\n")
 
 
 def save_geometry(context, out_file, object_list):
     """ Saves geometry info to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: geometry" )
 
     # Export Model Geometry:
     for object_item in object_list:
@@ -965,6 +930,7 @@ def save_geometry(context, out_file, object_list):
             context.scene.objects.active = data_object
             bpy.ops.object.mode_set(mode='OBJECT')
 
+            # Begin POLYGON_LIST block
             out_file.write("%s POLYGON_LIST\n" % (data_object.name))
             out_file.write("{\n")
 
@@ -1011,29 +977,35 @@ def save_geometry(context, out_file, object_list):
                                    str(regions[region_name])+'\n')
                     out_file.write("    }\n")
 
+                # close SURFACE_REGIONS block
                 out_file.write("  }\n")
 
-            # close SURFACE_REGIONS block
+            # close POLYGON_LIST block
             out_file.write("}\n\n")
 
             # restore proper object visibility state
             data_object.hide = saved_hide_status
 
 
-def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
+def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all, export_all_ascii):
     """ Saves visualizaton output info to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: viz_output_mdl" )
 
     mcell = context.scene.mcell
     settings = mcell.project_settings
-    start = mcell.viz_output.start
-    end = mcell.viz_output.end
-    step = mcell.viz_output.step
+    ps = mcell.parameter_system
+    start = mcell.viz_output.start.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)
+    end   = mcell.viz_output.end.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)
+    step  = mcell.viz_output.step.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)
     all_iterations = mcell.viz_output.all_iterations
 
     if molecule_viz_list or export_all:
         out_file.write("VIZ_OUTPUT\n{\n")
-        out_file.write("  MODE = CELLBLENDER\n")
-        out_file.write("  FILENAME = \"./viz_data/seed_\" & seed & \"/%s\"\n" % settings.base_name)
+        if export_all_ascii:
+            out_file.write("  MODE = ASCII\n")
+        else:
+            out_file.write("  MODE = CELLBLENDER\n")
+        out_file.write("  FILENAME = \"./viz_data/seed_\" & seed & \"/%s\"\n" % settings.base_name)  # Should be using "os.sep"
         out_file.write("  MOLECULES\n")
         out_file.write("  {\n")
         if export_all:
@@ -1050,46 +1022,139 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
         out_file.write("  }\n")
         out_file.write("}\n\n")
 
+
 def save_rxn_output_mdl(context, out_file, rxn_output_list):
     """ Saves reaction output info to mdl output file. """
-    
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: rxn_output_mdl" )
+
     mcell = context.scene.mcell
     ps = mcell.parameter_system
 
     out_file.write("REACTION_DATA_OUTPUT\n{\n")
-    rxn_step = mcell.rxn_output.rxn_step.get_as_string_or_value(
-        ps.panel_parameter_list, ps.export_as_expressions)
+
+    output_buf_size = mcell.rxn_output.output_buf_size.get_expr(ps.panel_parameter_list)
+    if len(output_buf_size.strip()) > 0:
+        # When not blank, convert it as a normal panel parameter
+        output_buf_size = mcell.rxn_output.output_buf_size.get_as_string_or_value(
+            ps.panel_parameter_list, ps.export_as_expressions)
+        out_file.write("  OUTPUT_BUFFER_SIZE=%s\n" % output_buf_size)
+
+    rxn_step = mcell.rxn_output.rxn_step.get_expr(ps.panel_parameter_list)
+    if len(rxn_step.strip()) == 0:
+        # When blank, use the system time step set in initialization
+        rxn_step = mcell.initialization.time_step.get_as_string_or_value(
+            ps.panel_parameter_list, ps.export_as_expressions)
+    else:
+        # When not blank, convert it as a normal panel parameter
+        rxn_step = mcell.rxn_output.rxn_step.get_as_string_or_value(
+            ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
+    always_generate = mcell.rxn_output.always_generate
     for rxn_output in rxn_output_list:
-        if rxn_output.rxn_or_mol == 'Reaction':
-            count_name = rxn_output.reaction_name
-        else:
-            count_name = rxn_output.molecule_name
-        object_name = rxn_output.object_name
-        region_name = rxn_output.region_name
-        if rxn_output.count_location == 'World':
-            out_file.write(
-                "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.World.dat\"\n" % (count_name, count_name,))
-        elif rxn_output.count_location == 'Object':
-            out_file.write(
-                "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,
-                object_name, count_name, object_name))
-        elif rxn_output.count_location == 'Region':
-            out_file.write(
-                "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
-                object_name, region_name, count_name, object_name, region_name))
-                
+        if always_generate or rxn_output.plotting_enabled:
+            if rxn_output.rxn_or_mol == 'Reaction':
+                count_name = rxn_output.reaction_name
+            elif rxn_output.rxn_or_mol == 'Molecule':
+                count_name = rxn_output.molecule_name
+            elif rxn_output.rxn_or_mol == 'MDLString':
+                outputStr = rxn_output.mdl_string
+                output_file = rxn_output.mdl_file_prefix
+                if outputStr not in ['', None]:
+                    outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
+                    out_file.write(outputStr)
+                else:
+                    print('Found invalid reaction output {0}'.format(rxn_output.name))
+                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
+            elif rxn_output.rxn_or_mol == 'File':
+                # No MDL is generated for plot items that are plain files
+                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
 
+            object_name = rxn_output.object_name
+            region_name = rxn_output.region_name
+            if rxn_output.count_location == 'World':
+                out_file.write(
+                    "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.World.dat\"\n" % (count_name, count_name,))
+            elif rxn_output.count_location == 'Object':
+                if mcell.pbc.peri_trad == False:
+                     out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+                     + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s_%s_%s.dat\"\n" %(count_name, object_name,mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z))
+                elif mcell.pbc.peri_trad == True:
+                    if mcell.rxn_output.trig == True:
+                        out_file.write(
+                            "  {TRIGGER[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                            "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, count_name, object_name))
+                    else:
+                        out_file.write(
+                            "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                            "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, count_name, object_name))
+            elif rxn_output.count_location == 'Region':
+                if mcell.pbc.peri_trad == False:
+                     out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+"["+region_name+"]"+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+                     + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s.dat\"\n" %(count_name,object_name,region_name))
+                elif mcell.pbc.peri_trad == True:
+                    if mcell.rxn_output.all_enc == True and mcell.rxn_output.trig == False:
+                         out_file.write(
+                        "  {COUNT[%s,%s.%s[%s],ALL_ENCLOSED]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                    elif mcell.rxn_output.all_enc == True and mcell.rxn_output.trig == True:
+                         out_file.write(
+                        "  {TRIGGER[%s,%s.%s[%s],ALL_ENCLOSED]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                    elif mcell.rxn_output.trig == True:
+                         out_file.write(
+                        "  {TRIGGER[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                    elif mcell.rxn_output.est_conc == True:
+                         out_file.write(
+                        "  {COUNT[%s,%s.%s[%s],ESTIMATE_CONC]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                    elif mcell.rxn_output.fr_bk == True:
+                        # FRONT_HITS, BACK_HITS, ALL_HITS, FRONT_CROSSINGS, BACK_CROSSINGS, and ALL_CROSSINGS.
+                        if mcell.rxn_output.hit_all==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],ALL_HITS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.hit_front==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],FRONT_HITS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.hit_back==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],BACK_HITS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.cross_all==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],ALL_CROSSINGS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.cross_front==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],FRONT_CROSSINGS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.cross_back==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],BACK_CROSSINGS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                    else:
+                        out_file.write(
+                        "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+         #   elif rxn_output.count_location == 'Region' and mcell.pbc.peri_trad == False:
+          #          out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+"["+region_name+"]"+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+           #          + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s.dat\"\n" %(count_name,object_name,region_name))
+                    #(count_name, context.scene.name,object_name, count_name, object_name))
+          #  elif rxn_output.count_location == 'Object' and mcell.pbc.peri_trad == False:
+           #         out_file.write("  {COUNT["+count_name+ ","+ context.scene.name+ "." + object_name + ",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+            #         + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s_%s_%s.dat\"\n" %(count_name, object_name,mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z))
     out_file.write("}\n\n")
 
+"""
+#deprecated
 def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
     #JJT:temporary code that outsputs imported rxn output expressions
     #remove when we figure out how to add this directly to the interface
-    
+
     mcell = context.scene.mcell
     ps = mcell.parameter_system
 
@@ -1098,7 +1163,7 @@ def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
         ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
-    
+
     for rxn_output in rxn_output_list:
         outputStr = rxn_output.molecule_name
         if outputStr not in ['',None]:
@@ -1107,18 +1172,21 @@ def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
         else:
             print('Found invalid reaction output {0}'.format(outputStr))
     out_file.write("}\n\n")
-
+"""
 
 def save_mod_surf_regions(context, out_file, mod_surf_regions_list):
     """ Saves modify surface region info to mdl output file. """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: mod_surf_regions" )
 
     out_file.write("MODIFY_SURFACE_REGIONS\n")
     out_file.write("{\n")
     for active_mod_surf_regions in mod_surf_regions_list:
         surf_class_name = active_mod_surf_regions.surf_class_name
-        out_file.write("  %s[%s]\n" %
-                       (active_mod_surf_regions.object_name,
-                        active_mod_surf_regions.region_name))
+        object_name = active_mod_surf_regions.object_name
+        region_name = active_mod_surf_regions.region_name
+        if active_mod_surf_regions.region_selection == 'ALL':
+            region_name = "ALL"
+        out_file.write("  %s[%s]\n" % (object_name, region_name))
         out_file.write("  {\n    SURFACE_CLASS = %s\n  }\n" %
                        (surf_class_name))
     out_file.write("}\n\n")
@@ -1140,6 +1208,7 @@ def instance_object_expr(context, expression):
     but perhaps it's fine. Time will tell.
 
     """
+    print ( "]]]]]] IO_Mesh/MCell 3 ::::: instance_object_expr" )
 
     token_spec = [
         ("ID", r"[A-Za-z]+[0-9A-Za-z_.]*(\[[A-Za-z]+[0-9A-Za-z_.]*\])?"),

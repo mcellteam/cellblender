@@ -3,13 +3,14 @@
 
 #include <sys/types.h>
 
+#define YY_DECL int mdllex \
+  (YYSTYPE * yylval_param , yyscan_t yyscanner)
+
 struct element_list {
   struct element_list *next;
-  u_int begin;
-  u_int end;
+  unsigned int begin;
+  unsigned int end;
 };
 
-int mdlparse(void);
-int mdlerror(char *str);
 
 #endif

@@ -1,27 +1,24 @@
 
-INSTALL_DIR = ~/.config/blender/2.68/scripts/addons/io_mesh_import_mcell_mdl/
+INSTALL_DIR = ~/.config/blender/2.76/scripts/addons/io_mesh_import_mcell_mdl/
 
 SHELL = /bin/sh
-OBJS = mdlparse.bison.o mdlmesh_parser.o vector.o mdlmesh_parser_wrap.o
+OBJS = mdllex.flex.o mdlparse.bison.o mdlmesh_parser.o vector.o mdlmesh_parser_wrap.o
 
-_mdlmesh_parser.so: makefile setup.py mdlobj.py mdlparse.bison.c mdlmesh_parser.c vector.c mdlmesh_parser_wrap.c 
-	python3.4 setup.py build_ext --inplace
-	@if [ -e _mdlmesh_parser.cpython-34m.so ] ; then \
-	    mv _mdlmesh_parser.cpython-34m.so _mdlmesh_parser.so; \
-	fi
+_mdlmesh_parser.so: makefile setup.py mdlobj.py mdllex.flex.c mdlparse.bison.c mdlmesh_parser.c mdlmesh_parser.i vector.c mdlmesh_parser_wrap.c 
+	python setup.py build_ext
 
-mdllex.flex.c: mdllex.l
+mdllex.flex.c mdllex.flex.h: mdllex.l
 	flex -Crema mdllex.l
 
-mdlparse.bison.c: mdllex.flex.c mdlparse.y mdlmesh_parser.h
-	bison -v -d mdlparse.y
+mdlparse.bison.c mdlparse.bison.h: mdlparse.y mdlmesh_parser.h
+	bison -v --defines=mdlparse.bison.h mdlparse.y
 
 mdlmesh_parser_wrap.c: mdlmesh_parser.i mdlmesh_parser.c mdlmesh_parser.h
 #	swig -python mdlmesh_parser.i
 	swig -python -py3 -nothreads mdlmesh_parser.i
 
 clean:
-	rm -rf $(OBJS) build mdllex.flex.c mdlparse.bison.c mdlparse.bison.h mdlparse.bison.output mdlmesh_parser_wrap.c mdlmesh_parser.py mdlmesh_parser.pyc _mdlmesh_parser.so
+	rm -rf $(OBJS) build mdllex.flex.c mdllex.flex.h mdlparse.bison.c mdlparse.bison.h mdlparse.bison.output mdlmesh_parser_wrap.c mdlmesh_parser.py mdlmesh_parser.pyc _mdlmesh_parser.so
 
 install:
 	@if [ "$(INSTALL_DIR)" ]; then \

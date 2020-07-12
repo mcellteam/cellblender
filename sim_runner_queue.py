@@ -10,26 +10,50 @@ import threading
 import subprocess as sp
 import time
 
+'''
+#################################
+
+First useful attempt at a Set of classes for managing processes via a Queue and ThreadWorkers
+The goal is to manage some number of  tasks to be run concurrently by N threadworkers
+and capture the stdout and stderr of each task.
+
+Two main classes are defined:
+
+1) The OutputQueue class allows the management of the stdout and stderr streams of individual tasks wrapped by run_wrapper.py
+   a) NB: run_wrapper.py is a python script that waits for the command string and argument string to be sent on stdin.
+
+2) The SimQueue class manages all the tasks and threadworkers that process the tasks.
+   a) each task is a dictionary containing:
+      i) a Popen object for a run_wrapper.py process which waits in idle for the command and args to be sent to its stdin
+     ii) all the other task attributes
+
+#################################
+'''
 
 
+# class for managing stdout and stderr streams of a running task wrapped by run_wrapper.py
 class OutputQueue:
   def __init__(self):
     self.out_q = Queue(maxsize=0)
     self.err_q = Queue(maxsize=0)
 
+  # Process stdout or stderr pipes of running process (e.g. typically capture the output and copy onto a queue or append to list)
   def read_output(self, pipe, funcs):
     for line in iter(pipe.readline, b''):
       line = line.decode('utf-8')
       for func in funcs:
-        func(line)
+        func(line)  # execute the func: possible values: 1) the Queue.put function; 2) the list.append function
     pipe.close()
 
-  def write_output(self, get, pipe, bl_text=None, e_bl_text_quit=None):
+  # Get strings found in the out_q or err_q and write to sys.stdout or sys.stderr, also copy to a bl_text if not None)
+  def write_output(self, get, pipe, output_list=None, bl_text=None, e_bl_text_quit=None):
     if bl_text != None:
       import bpy
     for line in iter(get, None):
       pipe.write(line)
       pipe.flush()
+      if output_list != None:
+        output_list.append ( line )
       if bl_text != None:
         bl_text_quit = False
         if e_bl_text_quit != None:
@@ -41,8 +65,20 @@ class OutputQueue:
           except:
             pass
 
+  # Recursive function to flatten a list of lists into a single list
+  def flatten_list ( self, l, f ):
+      for i in l:
+          if type(i) == type([]):
+              self.flatten_list(i, f)
+          else:
+              print ( " item: " + str(i) )
+              f.append ( i )
+      print ( "flattened so far: " + str(f) )
 
-  def run_proc(self, proc, arg_in=None, passthrough=True, bl_text=None, e_bl_text_quit=None):
+
+  # In passthrough mode, set up threadworkers and queues to manage stdout and stderr of task and send command string and args to run_wrapper.py process
+  # Otherwise just do proc.communicate() and capture stdout and stderr upon command completion (possibly broken functionality?)
+  def run_proc(self, proc, arg_in=None, passthrough=True, output_list=None, bl_text=None, e_bl_text_quit=None):
 
     if bl_text != None:
       import bpy
@@ -60,11 +96,11 @@ class OutputQueue:
           )
 
       stdout_writer_thread = threading.Thread(
-          target=self.write_output, args=(self.out_q.get, sys.stdout, bl_text, e_bl_text_quit)
+          target=self.write_output, args=(self.out_q.get, sys.stdout, output_list, bl_text, e_bl_text_quit)
           )
 
       stderr_writer_thread = threading.Thread(
-          target=self.write_output, args=(self.err_q.get, sys.stderr, bl_text, e_bl_text_quit)
+          target=self.write_output, args=(self.err_q.get, sys.stderr, output_list, bl_text, e_bl_text_quit)
           )
 
       for t in (stdout_reader_thread, stderr_reader_thread, stdout_writer_thread, stderr_writer_thread):
@@ -72,9 +108,26 @@ class OutputQueue:
         t.start()
 
       if arg_in:
+        sys.stdout.write('run_proc in sim_runner_queue.py with arg_in = ' + str(arg_in) + '\n')
+        sys.stdout.write('run_proc in sim_runner_queue.py with args:\n')
         for arg in arg_in:
+          char_stream = ""
+          if type(arg) == type([]):
+            # Convert the list to quoted argument format
+            flat_arg = []
+            self.flatten_list ( arg, flat_arg );
+            for a in flat_arg:
+              char_stream += '"' + a + '" '
+            if len(char_stream) > 0:
+              char_stream = char_stream[0:-1]
+            # Convert the list to a string (for now) by joining
+            # char_stream = ' '.join ( arg )
+          else:
+            # Use previous string format
+            char_stream = arg
+          sys.stdout.write('  arg: ' + str(char_stream) + '\n')
 #          sys.stdout.write('run_proc sending: {0}\n'.format(arg).encode().decode())
-          proc.stdin.write('{0}\n'.format(arg).encode())
+          proc.stdin.write('{0}\n'.format(char_stream).encode())
           proc.stdin.flush()
       proc.wait()
 
@@ -102,13 +155,13 @@ class OutputQueue:
 
 
 class SimQueue:
-  def __init__(self):
+  def __init__(self, python_path):
     self.work_q = Queue(maxsize=0)
     self.workers = []
     self.task_dict = {}
     self.n_threads = 0
     self.evnt_bl_text_quit = threading.Event()
-    self.python_exec = 'python'
+    self.python_exec = python_path
     module_dir_path = os.path.dirname(os.path.realpath(__file__))
     module_file_path = os.path.join(module_dir_path, 'run_wrapper.py')
     self.run_wrapper = module_file_path
@@ -123,7 +176,7 @@ class SimQueue:
         worker.start()
     elif n_threads < self.n_threads:
       for i in range(self.n_threads - n_threads):
-        self.work_q.put(None)
+        self.work_q.put(None) # This is a signal for the thread to exit
     self.n_threads = n_threads
 
   def run_q_item(self):
@@ -143,7 +196,8 @@ class SimQueue:
       out_q = OutputQueue()
 #      sys.stdout.write('sending:  {0}\n'.format(cmd).encode().decode())
       task['status'] = 'running'
-      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough=self.notify, bl_text=bl_t, e_bl_text_quit=self.evnt_bl_text_quit)
+      self.task_dict[pid]['output'] = []
+      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough=self.notify, output_list=self.task_dict[pid]['output'], bl_text=bl_t, e_bl_text_quit=self.evnt_bl_text_quit)
       self.task_dict[pid]['stdout'] = res[0]
       self.task_dict[pid]['stderr'] = res[1]
 #      self.task_dict[pid]['text'].write(res[0])
@@ -164,9 +218,9 @@ class SimQueue:
     with self.work_q.mutex:
       self.work_q.queue.clear()
 
-  def add_task(self,cmd,args,wd):
+  def add_task(self,cmd,args,wd,make_texts=True,env=None):
     import bpy
-    process = sp.Popen([self.python_exec, self.run_wrapper, wd], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    process = sp.Popen([self.python_exec, self.run_wrapper, wd], env=env, bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     pid = process.pid
     self.task_dict[pid] = {}
     self.task_dict[pid]['process'] = process
@@ -175,10 +229,14 @@ class SimQueue:
     self.task_dict[pid]['status'] = 'queued'
     self.task_dict[pid]['stdout'] = b''
     self.task_dict[pid]['stderr'] = b''
-    bpy.ops.text.new()
-    bl_t = bpy.data.texts[-1]
-    bl_t.name = 'task_%d_output' % pid
-    self.task_dict[pid]['bl_text'] = bl_t
+    self.task_dict[pid]['output'] = []
+    if make_texts:
+      task_name = 'task_%d_output' % pid
+      bl_t = bpy.data.texts.new ( task_name )
+      bl_t.name = task_name   # This may be redundant now, but it was done in the previous version
+      self.task_dict[pid]['bl_text'] = bl_t
+    else:
+      self.task_dict[pid]['bl_text'] = None
     self.work_q.put(self.task_dict[pid])
     return process
 
@@ -200,8 +258,11 @@ class SimQueue:
   def clear_task(self,pid):
     import bpy
     if self.task_dict.get(pid):
-      if bpy.data.texts.get(self.task_dict[pid]['bl_text'].name):
-        bpy.data.texts.remove(self.task_dict[pid]['bl_text'])
+      # if bpy.data.texts.get(self.task_dict[pid]['bl_text'].name):
+      if self.task_dict[pid]['bl_text'] != None:
+        if self.task_dict[pid]['bl_text'].name:
+          if self.task_dict[pid]['bl_text'].name in bpy.data.texts:
+            bpy.data.texts.remove(self.task_dict[pid]['bl_text'], do_unlink=True)
       self.task_dict.pop(pid)
 
   def shutdown(self):
@@ -257,7 +318,7 @@ if (__name__ == '__main__'):
   parser.add_argument('--cpus', help='number of CPUs to use.  If omitted, use the number of hyperthreads available.')
   ns=parser.parse_args()
 
-  my_q = SimQueue()
+  my_q = SimQueue('python')
 
   if ns.cpus:
     cpus = int(ns.cpus)

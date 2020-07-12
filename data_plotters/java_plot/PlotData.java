@@ -11,12 +11,19 @@ class FieldReader {
   //   Non-Empty String: trimmed next field string if it exists in this line
   //   Empty String: "" is returned for each end of line
   //   null: end of file or error
-  
+
   BufferedReader r = null;
   String line = null;
-  
+
   FieldReader ( BufferedReader f ) {
     r = f;
+  }
+
+  void close () {
+    try {
+      r.close();
+    } catch ( Exception e ) {
+    }
   }
 
 	String next_field () {
@@ -50,12 +57,16 @@ class FieldReader {
 	    line = "";
 	  }
 	  return ( field );
-	}	
+	}
 }
 
 
 
 abstract class data_file {
+
+	public double index ( double x ) {
+	  return ( Double.NaN );
+	}
 
 	public abstract double f ( double x );
 	public abstract void find_x_range();
@@ -64,6 +75,7 @@ abstract class data_file {
 	public boolean valid_data = false;
 
 	String name = "Identity";
+	String file_name = "";
 	Color color = Color.red;
 	boolean continuous = true;
 	int num_samples = -1;     // Use -1 to indicate that there are no samples
@@ -80,6 +92,9 @@ abstract class data_file {
 	}
 	public String getName() {
 		return name;
+	}
+	public String getFileName() {
+		return file_name;
 	}
 	public void setColor ( Color c ) {
 		color = c;
@@ -157,13 +172,16 @@ class file_x extends data_file {
   public file_x ( String file_name, double epsilon ) {
     eps = epsilon;
     // Read the values
-    name = "File=\"" + file_name + "\"";
+    this.file_name = file_name;
+    this.name = "File=\"" + this.file_name + "\"";
     int num_values = 0;
+    BufferedReader br=null;
+	  FieldReader fr=null;
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br = get_reader ( file_name );
-			  FieldReader fr = new FieldReader ( br );
+		    br = get_reader ( this.file_name );
+			  fr = new FieldReader ( br );
 			  String xfield = null;
 			  do {
 				  xfield = fr.next_field();
@@ -181,6 +199,8 @@ class file_x extends data_file {
 		    x_values = new double[num_values];
 		  }
 		}
+    try { fr.close(); } catch ( Exception e ) {}
+    try { br.close(); } catch ( Exception e ) {}
 		// Print the values (debugging)
 		for (int i=0; i<x_values.length; i++) {
 		  System.out.println ( "x[" + i + "] = " + x_values[i] );
@@ -205,13 +225,16 @@ class file_y extends data_file {
     x0 = start_x;
     dx = delta_x;
     // Read the values
-    name = "File=\"" + file_name + "\"";
+    this.file_name = file_name;
+    this.name = "File=\"" + this.file_name + "\"";
     int num_values = 0;
+    BufferedReader br=null;
+	  FieldReader fr=null;
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br = get_reader ( file_name );
-			  FieldReader fr = new FieldReader ( br );
+		    br = get_reader ( this.file_name );
+			  fr = new FieldReader ( br );
 			  String yfield = null;
 			  do {
 				  yfield = fr.next_field();
@@ -229,6 +252,8 @@ class file_y extends data_file {
 		    y_values = new double[num_values];
 		  }
 		}
+    try { fr.close(); } catch ( Exception e ) {}
+    try { br.close(); } catch ( Exception e ) {}
 		// Print the values (debugging)
 		for (int i=0; i<y_values.length; i++) {
 		  //System.out.println ( "x=" + (x0+(i*dx)) + ", y=" + y_values[i] );
@@ -315,8 +340,20 @@ class file_xy extends data_file {
   }
 
 
+  public file_xy ( String file_name, int xcol, int ycol ) {
+    read_col_file ( file_name, xcol, ycol );
+  }
+
 
   public file_xy ( String file_name ) {
+    read_col_file ( file_name, 0, 1 );
+  }
+
+
+  public void read_col_file ( String file_name, int xcol, int ycol ) {
+    // Column numbers start at 0 which is normally the time field
+    // # time col1 col2 col3
+    //    0    1    2    3
 
     double[][] blocks = null;
     int blocksize = 100000*2; // Must be an EVEN number to save on checking!!!
@@ -326,27 +363,69 @@ class file_xy extends data_file {
     int total_values = 0;
     int num_values = 0;
 
-    name = "File=\"" + file_name + "\"";
+    this.file_name = file_name;
+    this.name = "File=\"" + this.file_name + "\"" + " Columns " + xcol + " and " + ycol;
 
+    BufferedReader in = null;
+    String s, ss[];
     try {
-      BufferedReader in = new BufferedReader(new FileReader(file_name));
-      String s;
+      in = new BufferedReader(new FileReader(this.file_name));
+      
+      // Read labels if there are any for BioNetGen output files (must start with #)
+      s = in.readLine();
+      if (s != null) {
+        s = s.trim().replace (",", " ").trim();        // Replace all commas with spaces
+        s = s.trim().replaceAll ("\\s+", " ").trim();  // Replace all white space with spaces
+        System.out.println ( "Header line after processing: " + s );
+        if (s.charAt(0) == '#') {
+          // This is a comment line so remove the # and split into column names (which should always start with "time")
+          ss = s.substring(1).split(" ");
+          if (ss.length > (ycol+1)) {
+            System.out.println ( "Using a title: " + ss[ycol] );
+            this.name = ss[ycol+1];  // The "+1" is needed to skip the original "time" column
+          }
+        }
+      }
+      
+      // Close the file to open again
+      in.close();
+      in = new BufferedReader(new FileReader(this.file_name));
+
       while ( (s = in.readLine()) != null ) {
-        String ss[] = s.split(" ");
-        for (int i=0; i<ss.length; i++) {
-          if (block == null) {
-            block = new double[blocksize];
-            blockindex = 0;
+        // Trim whitespace
+        s = s.trim();
+        if (s.charAt(0) != '#') {  // This is not a comment
+          // Replace all commas with spaces
+          s = s.trim().replace (",", " ").trim();
+          // Convert all contiguous white space to a single space
+          //System.out.println ( "Read line: \"" + s + "\"" );
+          s = s.replaceAll ("\\s+", " ").trim();
+          //System.out.println ( "Proc line: \"" + s + "\"" );
+          ss = s.split(" ");
+          if ( (ss.length <= xcol) || (ss.length <= ycol) ) {
+            // Not enough data
+            valid_data = false;
+            return;
           }
-          block[blockindex] = Double.parseDouble(ss[i]);
-          blockindex += 1;
-          if (blockindex >= blocksize) {
-            blocks = append_block ( blocks, block );
-            num_blocks += 1;
-            block = new double[blocksize];
-            blockindex = 0;
+          for (int i=0; i<ss.length; i++) {
+            if ( (i == xcol) || (i == ycol) ) {
+              // Only add the block if this is one of the selected data columns
+              if (block == null) {
+                block = new double[blocksize];
+                blockindex = 0;
+              }
+              //System.out.println ( "Parsing \"" + ss[i] + "\"" );
+              block[blockindex] = Double.parseDouble(ss[i]);
+              blockindex += 1;
+              if (blockindex >= blocksize) {
+                blocks = append_block ( blocks, block );
+                num_blocks += 1;
+                block = new double[blocksize];
+                blockindex = 0;
+              }
+              total_values += 1;
+            }
           }
-          total_values += 1;
         }
       }
 
@@ -379,17 +458,18 @@ class file_xy extends data_file {
 
 
 	  } catch ( IOException ie ) {
-	    System.out.println ( "Error reading file " + file_name );
+	    System.out.println ( "Error reading file " + this.file_name );
 	    ie.printStackTrace();
 	  } catch ( Exception e ) {
-	    System.out.println ( "Exception reading file " + file_name + ": " + e );
+	    System.out.println ( "Exception reading file " + this.file_name + ": " + e );
 	    e.printStackTrace();
     }
+    try { in.close(); } catch ( Exception e ) {}
 
 
     /* Uncomment for debugging
     try {
-      PrintStream dumpfile = new PrintStream ( file_name + ".dump.txt" );
+      PrintStream dumpfile = new PrintStream ( this.file_name + ".dump.txt" );
       for (int i=0; i<num_values; i++) {
         dumpfile.println ( x_values[i] + " " + y_values[i] );
       }
@@ -408,7 +488,7 @@ class file_xy extends data_file {
     int blockindex = 0;
     int total_values = 0;
     try {
-      BufferedReader in = new BufferedReader(new FileReader(file_name));
+      BufferedReader in = new BufferedReader(new FileReader(this.file_name));
       String s;
       while ( (s = in.readLine()) != null ) {
         String ss[] = s.split(" ");
@@ -447,7 +527,7 @@ class file_xy extends data_file {
         y_values[i] = (double)(i*i);
 	    }
 	  } catch ( IOException e ) {
-	    System.out.println ( "Error reading file " + file_name );
+	    System.out.println ( "Error reading file " + this.file_name );
     }
 
 
@@ -455,9 +535,11 @@ class file_xy extends data_file {
     Vector values = new Vector();
     // Read the values
     name = "File=\"" + file_name + "\"";
+//    this.file_name = file_name;
+//    this.name = "File=\"" + this.file_name + "\"";
     int num_values = 0;
 	  try {
-	    BufferedReader br = get_reader ( file_name );
+	    BufferedReader br = get_reader ( this.file_name );
 		  FieldReader fr = new FieldReader ( br );
 		  String xfield = null;
 		  String yfield = null;
@@ -473,7 +555,7 @@ class file_xy extends data_file {
 			  }
 		  } while ( (xfield != null) && (yfield != null) );
 	  } catch (Exception e) {
-	    System.out.println ( "Error reading from file: " + file_name );
+	    System.out.println ( "Error reading from file: " + this.file_name );
 	    valid_data = false;
 	    return;
 	  }
@@ -489,12 +571,12 @@ class file_xy extends data_file {
 
     /* Old two pass code reads twice to use an array:
     // Read the values
-    name = "File=\"" + file_name + "\"";
+    name = "File=\"" + this.file_name + "\"";
     int num_values = 0;
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br = get_reader ( file_name );
+		    BufferedReader br = get_reader ( this.file_name );
 			  FieldReader fr = new FieldReader ( br );
 			  String xfield = null;
 			  String yfield = null;
@@ -515,7 +597,7 @@ class file_xy extends data_file {
 				  }
 			  } while ( (xfield != null) && (yfield != null) );
 		  } catch (Exception e) {
-		    System.out.println ( "Error reading from file: " + file_name );
+		    System.out.println ( "Error reading from file: " + this.file_name );
 		    valid_data = false;
 		    return;
 		  }
@@ -653,6 +735,60 @@ class file_xy extends data_file {
 		  if (y_values[i] > max_y) max_y = y_values[i];
 		}
 	}
+	public double index ( double x ) {
+	  // Assume x values are sorted
+	  if (x_values == null) {
+	    return Double.NaN;
+	  } else {
+	    if (x < x_values[0]) {
+	      return ( Double.NaN );
+	      // return ( y_values[0] );
+	    } else if (x > x_values[x_values.length-1]) {
+	      return ( Double.NaN );
+	      // return ( y_values[y_values.length-1] );
+	    } else {
+	      // Find and interpolate a data point
+				if (Double.isNaN(average_delta)) {	      
+	        // Perform a linear search from the beginning
+	        for (int i=1; i<x_values.length; i++) {
+	          if (x < x_values[i]) {
+	            // Interpolate between i-1 and i
+	            return ( (i-1) + ( (x-x_values[i-1]) / (x_values[i]-x_values[i-1]) ) );
+	          }
+	        }
+  	      return ( y_values[y_values.length-1] );
+	      } else {
+  	      // Perform a linear search from the estimated location
+	        int guess_i = (int)((x - x_values[0]) / average_delta);
+	        if (guess_i < 0) guess_i = 0;
+	        if (guess_i >= x_values.length) guess_i = x_values.length-1;
+//System.out.println ( "Searching from " + guess_i );
+	        if (x == x_values[guess_i]) {
+	          // Exact match ... not too likely unless x values are integer or power of 2
+	          return ( (double)guess_i );
+	        } else if (x > x_values[guess_i]) {
+	          // x is greater than the guess so search up from guess
+	          for (int i=guess_i+1; i<x_values.length; i++) {
+	            if (x < x_values[i]) {
+	              // Interpolate between i-1 and i
+  	            return ( (i-1) + ( (x-x_values[i-1]) / (x_values[i]-x_values[i-1]) ) );
+	            }
+	          }
+    	      return ( (double)(y_values.length-1) );
+	        } else {
+	          // x is less than the guess so search down from guess
+	          for (int i=guess_i-1; i>=0; i--) {
+	            if (x > x_values[i]) {
+	              // Interpolate between i and i+1
+	              return ( i + ( (x-x_values[i]) / (x_values[i+1]-x_values[i]) ) );
+	            }
+	          }
+    	      return ( (double)0 );
+	        }
+	      }
+	    }
+	  }
+	}
 	public double f ( double x ) {
 	  // Assume x values are sorted
 	  if (x_values == null) {
@@ -707,7 +843,6 @@ class file_xy extends data_file {
 	    }
 	  }
 	}
-
 }
 
 
@@ -792,6 +927,11 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		frame = f;
 	}
 	
+	String working_directory = "";
+	public void set_directory ( String path ) {
+		working_directory = path;
+	}
+
 	public void add_file ( data_file df ) {
 	  boolean old_loading = loading;
 	  loading = true;
@@ -818,6 +958,38 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		}
 	}
 	
+	public String[] get_file_names () {
+		if ( func_set == null ) {
+		  return ( new String[0] );
+		} else {
+		  int n = func_set.flist.length;
+			String file_names[] = new String[n];
+      for (int i=0; i<n; i++) {
+        file_names[i] = func_set.flist[i].file_name;
+			}
+		  return ( file_names );
+		}
+	}
+
+	public void remove_file_by_number ( int n ) {
+	  String old_strings[] = get_file_names();
+	  if (old_strings.length <= 0) {
+	    set_files ( null );
+	  } else if ( (n >= 0) && (n < old_strings.length) ) {
+	    String new_strings[] = new String[old_strings.length-1];
+	    int new_index = 0;
+	    for (int old_index=0; old_index<old_strings.length; old_index++) {
+	      if (old_index != n) {
+	        new_strings[new_index] = old_strings[old_index];
+	        new_index += 1;
+	      }
+	    }
+	    set_files ( new_strings );
+	  } else {
+	    // Don't do anything
+	  }
+	}
+
 	public void save_and_exit() {
 		save_settings();
 		System.exit(0);
@@ -889,6 +1061,17 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 								combined = true;
 							}
 						}
+					} else if (field.equals("Sample_Numbers:")) {
+						field = fr.next_field();
+						if ( (field != null) && (field.length() > 0) ) {
+							double samp_num_level = new Double(field);
+							System.out.println ( "Setting Sample Numbers to : " + samp_num_level );
+							if (samp_num_level < 0.5) {
+								sample_numbers = false;
+							} else {
+								sample_numbers = true;
+							}
+						}
 					} else if (field.equals("Variable_Y:")) {
 						field = fr.next_field();
 						if ( (field != null) && (field.length() > 0) ) {
@@ -926,8 +1109,9 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 
 	public void save_settings() {
 		System.out.println ( "Saving persistent settings to: \"" + settings_file_name + "\"" );
+		OutputStreamWriter o = null;
 		try {
-			OutputStreamWriter o = new OutputStreamWriter ( new FileOutputStream ( settings_file_name ) );
+			o = new OutputStreamWriter ( new FileOutputStream ( settings_file_name ) );
 			o.write ( "CurrentBasePath: " + current_base_path + "\n" );
 			o.write ( "InputFile: " + current_file_name + "\n" );
 			o.write ( "Scale: " + x_scale + "\n" );
@@ -947,6 +1131,11 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			} else {
 				o.write ( "Variable_Y: 0.0\n" );
 			}
+			if (sample_numbers) {
+				o.write ( "Sample_Numbers: 1.0\n" );
+			} else {
+				o.write ( "Sample_Numbers: 0.0\n" );
+			}
 			Rectangle r = getBounds();
 			o.write ( "WindowWidth: " + r.width + "\n" );
 			o.write ( "WindowHeight: " + r.height + "\n" );
@@ -955,6 +1144,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			o.close();
 		} catch (Exception e) {
 			System.out.println ( "Unable to create a new settings file: \"" + settings_file_name + "\" to store persistent settings." );
+			try { o.close(); } catch ( Exception e2 ) { }
 		}
 	}
 
@@ -968,6 +1158,9 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	boolean annotation = true;
 	boolean fit_x = false;
 	boolean antialias = false;
+	boolean sample_numbers = false;
+	boolean show_file_names = false;
+	double scrollwheel_zoom_factor = 1.25;
 	
 	JMenu remove_menu = null;
 	
@@ -976,27 +1169,69 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
     ButtonGroup bg;
     JMenuBar menu_bar = new JMenuBar();
 	    JMenu file_menu = new JMenu("File");
-	    	file_menu.add ( mi = new JMenuItem("Add") );
-	    	mi.addActionListener(this);
-	    	file_menu.add ( mi = new JMenuItem("Clear") );
-	    	mi.addActionListener(this);
+        file_menu.add ( mi = new JMenuItem("Add File") );
+        mi.addActionListener(this);
+        JMenu file_clear_menu = new JMenu("Clear");
+          file_clear_menu.add ( mi = new JMenuItem("Clear All") );
+          mi.addActionListener(this);
+          for (int i=1; i<=25; i++) {
+            file_clear_menu.add ( mi = new JMenuItem("Clear "+i) );
+            mi.addActionListener(this);
+          }
+          file_menu.add ( file_clear_menu );
 	    	file_menu.addSeparator();
 	    	file_menu.add ( mi = new JMenuItem("Exit") );
 	    	mi.addActionListener(this);
 	    	// file_menu.add ( mi = remove_menu = new JMenu("Remove") );
 	    	// mi.addActionListener(this);
 	    	menu_bar.add ( file_menu );
-			JMenu set_menu = new JMenu("Show");
-		  	set_menu.add ( mi = new JMenuItem("Full Range") );
+			JMenu show_menu = new JMenu("Show");
+		  	show_menu.add ( mi = new JMenuItem("Full Range") );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Combined",combined) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Combined",combined) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Variable Y",var_y) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Variable Y",var_y) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Annotation",annotation) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Annotation",annotation) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
 		  	mi.addActionListener(this);
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Sample Numbers",sample_numbers) );
+		  	mi.addActionListener(this);
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("File Names",show_file_names) );
+		  	mi.addActionListener(this);
+		  	menu_bar.add ( show_menu );
+			JMenu set_menu = new JMenu("Set");
+			  JMenu set_scrollwheel_factor_menu = new JMenu("Scroll Wheel Factor");
+			    bg = new ButtonGroup();
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 2.00") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.50") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.25",true) );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.20") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.10") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.05") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.02") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.01") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.001") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+  		  	set_menu.add ( set_scrollwheel_factor_menu );
 		  	menu_bar.add ( set_menu );
 	   return (menu_bar);
 	}
@@ -1019,30 +1254,27 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		
 		if (cmd.equalsIgnoreCase("Exit")) {
 			save_and_exit();
-		} else if (cmd.equalsIgnoreCase("Add")) {
+		//} else if (cmd.substring(0,3).equalsIgnoreCase("Add")) {
+		} else if (cmd.equalsIgnoreCase("Add File")) {
 			System.out.println ( "Adding a file" );
 
-			// fd_file_types = ".txt";
-			// String current_base_path = ".";
-			// Change to a new base folder
-			// gdata.println ( 50, "Opening new file ..." );
-			//String old_path = current_base_path;
-			
 			if (fd == null) {
-				fd = new FileDialog ( frame, "Choose a file" );
+        System.out.println ( "Creating a file dialog." );
+				fd = new FileDialog ( frame, "Choose a file", FileDialog.LOAD );
+        fd.setModal ( true );
+				if (working_directory.length() > 0) {
+				  System.out.println ( "Setting Working Directory to: " + working_directory );
+				  fd.setDirectory ( working_directory );
+				}
+				// fd.setModalityType ( Dialog.APPLICATION_MODAL );
 			}
 			fd.setTitle ( "Open a Reaction File" );
-			// fd.setFilenameFilter ( this );
 			fd.setMode ( FileDialog.LOAD );
-			//if (gdata.histogram_tags_file_name != null) {
-			//	fd.setFile ( gdata.histogram_file_name );
-			//} else {
-			//	fd.setFile ( "*" + fd_file_types );
-			//}
-			//fd.show();
+      fd.setModal ( true );
 			fd.setVisible(true);
 			fd.toFront();
 			
+			// Read from a file which may contain 2 or more columns
 			if (fd.getFile() != null) {
 				String file_name = null;
 				if (fd.getDirectory() != null) {
@@ -1051,15 +1283,25 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 					file_name = fd.getFile();
 				}
 				System.out.println ( "Reading data from " + file_name );
-        file_xy fxy = new file_xy ( file_name );
-        fxy.setColor ( data_file.get_next_color() );
-        add_file ( fxy );
-				//gdata.read_hist_file();
+        file_xy fxy;
+        int x_col = 0; // Assume first column is x
+        int y_col = 1; // Assume second column is first y
+        do {
+          fxy = new file_xy ( file_name, x_col, y_col );
+          if (!fxy.valid_data) break;
+          fxy.setColor ( data_file.get_next_color() );
+          add_file ( fxy );
+          y_col += 1;
+        } while (true);
 			}
-			//gdata.display_histogram = true;
 			
-		} else if (cmd.equalsIgnoreCase("Clear")) {
+		} else if (cmd.equalsIgnoreCase("Clear All")) {
       set_files ( null );
+      data_file.next_color = 0;
+			fit_x = true;
+		} else if (cmd.startsWith("Clear ")) {
+		  int n = Integer.parseInt ( cmd.substring(6) );
+      remove_file_by_number ( n-1 );
 		} else if (cmd.equalsIgnoreCase("Combined")) {
 			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
 			if (mi.isSelected()) {
@@ -1096,8 +1338,38 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 				System.out.println ( "Antialiasing Off" );
 				antialias = false;
 			}
+		} else if (cmd.equalsIgnoreCase("Sample Numbers")) {
+			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
+			if (mi.isSelected()) {
+				System.out.println ( "Sample Numbers On" );
+				sample_numbers = true;
+			} else {
+				System.out.println ( "Sample Numbers Off" );
+				sample_numbers = false;
+			}
+		} else if (cmd.startsWith("Scale by ")) {
+			JRadioButtonMenuItem mi = (JRadioButtonMenuItem)(e.getSource());
+		  String valstr = cmd.substring("Scale by ".length());
+		  try {
+		    double v = Double.parseDouble(valstr);
+				System.out.println ( "Setting Scroll Wheel Zoom Factor to " + v );
+		    scrollwheel_zoom_factor = v;
+      } catch (Exception ee) {
+        System.out.println ( "Error parsing double from " + valstr );
+      }
+		} else if (cmd.equalsIgnoreCase("File Names")) {
+			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
+			if (mi.isSelected()) {
+				System.out.println ( "Show File Names On" );
+				show_file_names = true;
+			} else {
+				System.out.println ( "Show File Names Off" );
+				show_file_names = false;
+			}
 		} else if (cmd.equalsIgnoreCase("Full Range")) {
 			fit_x = true;
+		} else {
+		  System.out.println ( "Unknown command: " + cmd );
 		}
 
 		repaint();
@@ -1263,18 +1535,27 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		  x0i = x0i - tpdi;
 	  }
 
+    // Draw vertical time lines based on time or sample number
+
 	  g.setClip (0,0,win_w,win_h);
 	  g.translate (0,0);
-	  int grid_x;
-	  do {
-		  grid_x = (int)(( x0i - x0 ) * x_scale);
-		  // System.out.println ( "Grid line at " + grid_x + " = " + x0i );
-		  g.setColor ( new Color ( 50, 50, 50 ) );
-		  g.drawLine ( grid_x, 0, grid_x, h * num_panels );
-	    g.setColor ( Color.gray );
-		  g.drawString ( ""+ Math.round(1000000*x0i)/1000000.0, grid_x, win_h-5 );
-		  x0i += tpdi;
-	  } while (grid_x < w);
+    int grid_x;
+    // System.out.println ( "===================" );
+    do {
+	    grid_x = (int)(( x0i - x0 ) * x_scale);
+      // System.out.println ( "Grid line at " + grid_x + " = " + x0i );
+	    g.setColor ( new Color ( 50, 50, 50 ) );
+	    g.drawLine ( grid_x, 0, grid_x, h * num_panels );
+      g.setColor ( Color.gray );
+      if (sample_numbers) {
+        // System.out.println ( "grid_x = " + grid_x + ", x0i = " + x0i + ", x0 = " + x0 + ", scale = " + x_scale );
+				//  x = (i / x_scale) + x0;
+	      g.drawString ( ""+ (int)(Math.round(f[0].index(x0i))), grid_x, win_h-5 );
+	    } else {
+	      g.drawString ( ""+ Math.round(1000000*x0i)/1000000.0, grid_x, win_h-5 );
+	    }
+	    x0i += tpdi;
+    } while (grid_x < w);
 
 	  // Now draw the data panels
 	  
@@ -1429,11 +1710,17 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			}
 
 		  if (annotation) {
+		    String graph_name;
+		    if (show_file_names) {
+		      graph_name = f[p].getFileName();
+		    } else {
+		      graph_name = f[p].getName();
+		    }
         if (combined) {
 	        g.setColor ( f[p].color );
-  		  	g.drawString ( f[p].getName() + ": " + y_min + " < y < " + y_max, 10, 20*(p+1) );
+  		  	g.drawString ( graph_name + ": " + y_min + " < y < " + y_max, 10, 20*(p+1) );
         } else {
-  		  	g.drawString ( f[p].getName() + ": " + y_min + " < y < " + y_max, 10, 20 );
+  		  	g.drawString ( graph_name + ": " + y_min + " < y < " + y_max, 10, 20 );
   		  }
 		  }
 
@@ -1495,9 +1782,9 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    // System.out.print ( "MouseWheel: " + e.getWheelRotation() + ", x: " + e.getX() + ", x0: " + x0 + ", pre-x_scale: " + x_scale);
 	    int w = -e.getWheelRotation();
 	    if (w > 0) {
-		    x_scale = 1.25 * w * x_scale;
+		    x_scale = scrollwheel_zoom_factor * w * x_scale;
 	    } else if (w < 0) {
-		    x_scale = x_scale / (1.25 * (-w));
+		    x_scale = x_scale / (scrollwheel_zoom_factor * (-w));
 	    }
 	    // System.out.println ( ", post-x_scale: " + x_scale);
 	    x0 += (x/old_x_scale) - (x/x_scale);
@@ -1681,7 +1968,7 @@ public class PlotData extends JFrame implements WindowListener {
 	}
 
   public static void main(String[] args) {
-		System.out.println ( "Data Plotting Program ..." );
+		System.out.println ( "Java Data Plotting Program ..." );
 		
 		dp = new DisplayPanel();
     dp.loading = true;
@@ -1712,7 +1999,9 @@ public class PlotData extends JFrame implements WindowListener {
 
     if (args.length > 0) {
       Color next_color = null;
+      String curve_name = null;
       for (int arg=0; arg<args.length; arg++) {
+        System.out.println ( "  Java Plotter argument " + arg + " = " + args[arg] );
         try {
           if ( (args[arg].equals("?")) || (args[arg].equals("/?")) ) {
             System.out.println ( "Args: [fxy=filename ...] [GenTestFiles] [?]" );
@@ -1829,6 +2118,10 @@ public class PlotData extends JFrame implements WindowListener {
             }
           } else if ( args[arg].equalsIgnoreCase("auto") ) {
             System.out.println ( "Autoscaling = true" );
+          } else if ( (args[arg].length() > 5) && (args[arg].substring(0,5).equalsIgnoreCase("path=")) ) {
+            String working_directory = args[arg].substring(5);
+            System.out.println ( "Path = " + working_directory );
+            dp.set_directory ( working_directory );
           } else if ( (args[arg].length() > 4) && (args[arg].substring(0,4).equalsIgnoreCase("fxy=")) ) {
             System.out.println ( "Reading file " + args[arg].substring(4) + " ..." );
             file_xy fxy = new file_xy ( args[arg].substring(4) );
@@ -1838,7 +2131,14 @@ public class PlotData extends JFrame implements WindowListener {
             } else {
               fxy.setColor ( next_color );
             }
+            if (curve_name != null) {
+              fxy.setName ( curve_name );
+            }
             dp.add_file ( fxy );
+            curve_name = null;
+          } else if ( (args[arg].length() > 5) && (args[arg].substring(0,5).equalsIgnoreCase("name=")) ) {
+            System.out.println ( "Curve Name: " + args[arg].substring(5) );
+            curve_name = args[arg].substring(5);
           } else if ( (args[arg].length() > 6) && (args[arg].substring(0,6).equalsIgnoreCase("color=")) ) {
             System.out.println ( "Setting Color to " + args[arg].substring(6) );
             try {

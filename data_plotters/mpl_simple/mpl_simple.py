@@ -2,9 +2,8 @@
 
 import sys
 import numpy
-import scipy
-import pylab
 import matplotlib as mpl
+mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 
 if (__name__ == '__main__'):
@@ -28,14 +27,27 @@ if (__name__ == '__main__'):
     ax.set_xlabel(r'Time (s)')
     ax.set_ylabel(r'Count')
 
+    legend = False
+    label = ""
     for i in range(1, len(sys.argv)):
         filename = sys.argv[i]
-        print('Plotting %s' % (filename))
-        data = numpy.fromfile(sys.argv[i],sep=' ')
-        x = data[0::2]
-        y = data[1::2]
-        ax.plot(x, y, label=filename)
+        if filename == "-legend":
+            legend = True
+        elif filename == "-no-legend":
+            legend = False
+        elif filename[0:3] == "-n=":
+            label = filename[3:]
+        else:
+            print('Plotting %s' % (filename))
+            if len(label) == 0:
+              label = filename
+            data = numpy.fromfile(sys.argv[i],sep=' ')
+            x = data[0::2]
+            y = data[1::2]
+            ax.plot(x, y, label=label)
+            label = ""
 
-    ax.legend()
+    if legend:
+        ax.legend()
 
     plt.show()

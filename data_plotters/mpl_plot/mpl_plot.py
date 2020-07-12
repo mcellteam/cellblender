@@ -18,12 +18,11 @@ This is the current plan for a simple plotting syntax:
   yaxis=label : set label for y axis
 '''
 
-from numpy import *
-from scipy import *
-from pylab import *
+from numpy import math, fromfile
+import sys
 import matplotlib as mpl
+mpl.use("TkAgg")
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 
 if (len(sys.argv) < 2):
@@ -173,9 +172,9 @@ for page in plot_cmds:
             elif cmd[0:6] == "legend":
                 # print "legend command: " + cmd
                 legend = 0
-            elif cmd[0:2] == "n=":
+            elif cmd[0:4] == "ppt=":
                 # print "Name command: " + cmd
-                name = cmd[2:]
+                name = cmd[4:]
             elif cmd[0:2] == "f=":
                 # print "File command: " + cmd
                 fn = cmd[2:]
@@ -195,7 +194,8 @@ for page in plot_cmds:
                 ax.xaxis.set_ticks_position('bottom')
                 ax.yaxis.set_ticks_position('left')
             else:
-                print ( "Unknown command: " + cmd )
+                # print ( "Unknown command: " + cmd )
+                pass
 
         if legend >= 0:
             ax.legend(loc=legend)

@@ -6,7 +6,8 @@ import subprocess
 import json
 import sys
 import cellblender
-from cellblender import cellblender_properties, cellblender_operators
+from cellblender import cellblender_main
+#from cellblender import cellblender_operators
 from collections import defaultdict
 #from . import net
 
@@ -45,6 +46,8 @@ class EXTERNAL_OT_parameter_add(bpy.types.Operator):
         #jfile = json.load(filePointer) 
         jfile = accessFile(filePath,self)       
         par_list = jfile['par_list']
+        
+        # Begin code added by commit: 4595cd36870ead428083cc9671e68520bea8391d
         index = -1
         mcell.parameter_system.init_properties()
         for key in par_list:
@@ -54,8 +57,17 @@ class EXTERNAL_OT_parameter_add(bpy.types.Operator):
             par_value = str(key['value'])
             par_unit = str(key['unit'])
             par_type = str(key['type'])
+        # End code added by commit: 4595cd36870ead428083cc9671e68520bea8391d
 
-            mcell.parameter_system.add_general_parameter_with_values( par_name, par_value, par_unit, par_type )
+        cell_par_list = []
+        for key in par_list:
+            local_par = {}
+            local_par["par_name"] = str(key['name'])
+            local_par["par_expression"] = str(key['value'])
+            local_par["par_units"] = str(key['unit'])
+            local_par["par_description"] = str(key['type'])
+            cell_par_list.append(local_par)
+        mcell.parameter_system.add_general_parameters_from_list(context, cell_par_list)
             #print ( "Adding parameter \"" + str(par_name) + "\"  =  \"" + str(par_value) + "\"  (" + str(par_unit) + ")" )
  
         return {'FINISHED'}
@@ -73,6 +85,8 @@ class EXTERNAL_OT_molecule_add(bpy.types.Operator):
         #filePointer= open(filePath + '.json','r')
         #json.load(filePointer)        
 
+        """
+        # Old method
         jfile = accessFile(filePath,self)
         mol_list = jfile['mol_list']
         index = -1
@@ -86,12 +100,34 @@ class EXTERNAL_OT_molecule_add(bpy.types.Operator):
             molecule.init_properties(ps)
 
             molecule.name = str(key['name'])
+            molecule.bnglLabel = str(key['extendedName']) if 'extendedName' in key else key['name']
             molecule.type = str(key['type'])
             #molecule.diffusion_constant.expression = str(key['dif'])
             #molecule.diffusion_constant.param_data.label = "Diffusion Constant"
             molecule.diffusion_constant.set_expr ( key['dif'], ps.panel_parameter_list )
             
             #print ( "Adding molecule " + str(molecule.name) )
+        """
+
+        # Updated method
+        jfile = accessFile(filePath,self)
+        mol_list = jfile['mol_list']
+        mols = mcell.molecules
+        mlist = mols.molecule_list
+        for key in mol_list:
+            print ( "bng/external_operators.EXTERNAL_OT_molecule_add adding " + str(key['name']) )
+            mols.add_molecule(context)
+            mol = mlist[mols.active_mol_index]
+            mol.init_properties(ps)
+            mol.name = str(key['name'])
+            mol.bnglLabel = str(key['extendedName']) if 'extendedName' in key else key['name']
+            mol.type = str(key['type'])
+            #molecule.diffusion_constant.expression = str(key['dif'])
+            #molecule.diffusion_constant.param_data.label = "Diffusion Constant"
+            mol.diffusion_constant.set_expr ( key['dif'], ps.panel_parameter_list )
+
+            print ( "Added molecule " + str(mol.name) )
+
 
         return {'FINISHED'}
 
@@ -183,40 +219,39 @@ class EXTERNAL_OT_reaction_output_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         #filePointer= open(filePath + '.json','r')
-        #jfile = json.load(filePointer) 
-        jfile = accessFile(filePath,self)     
-        ps = mcell.parameter_system
-        obs_list = jfile['obs_list']     
+        #jfile = json.load(filePointer)
+        jfile = accessFile(filePath, self)
+        #ps = mcell.parameter_system
+        obs_list = jfile['obs_list']
         index = -1
         import copy
-        for index,key in enumerate(obs_list):
+        for index, key in enumerate(obs_list):
             strBuffer = []
             #mcell.rxn_output.complex_rxn_output_list.append({'name':key['name'],'value':key['value']})
-            
             for element in key['value']:
                 if element == ['0']:
                     continue
                 tmp = copy.copy(element)
                 tmp[-1] = 'COUNT[{0},WORLD]'.format(element[-1])
                 strBuffer.append(' * '.join(tmp))
-
-
+            '''
             mcell.rxn_output.complex_rxn_output_list.add()
             mcell.rxn_output.temp_index = index
             rxn_output_instance = mcell.rxn_output.complex_rxn_output_list[
                 mcell.rxn_output.temp_index]
             rxn_output_instance.molecule_name = '+'.join(strBuffer)
             rxn_output_instance.name = key['name']
+            '''
 
-            '''    
-            index += 1
             mcell.rxn_output.rxn_output_list.add()
-            mcell.rxn_output.active_rxn_output_index = index
+            mcell.rxn_output.active_rxn_output_index = len(mcell.rxn_output.rxn_output_list) - 1
             rxn_output = mcell.rxn_output.rxn_output_list[
                 mcell.rxn_output.active_rxn_output_index]
-            #release_site.set_defaults()
-            rxn_output.init_properties(ps)
-            '''
+            rxn_output.mdl_string = '+'.join(strBuffer)
+            rxn_output.mdl_file_prefix = key['name']
+            rxn_output.rxn_or_mol = 'MDLString'
+
+            
 
             #print ( "Adding reaction output " + str(key['name']))
 

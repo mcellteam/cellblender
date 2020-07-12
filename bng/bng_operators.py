@@ -2,7 +2,8 @@ import bpy
 import os
 import subprocess
 
-from cellblender import cellblender_properties, cellblender_operators
+from cellblender import cellblender_main
+#from cellblender import cellblender_operators
 #from . import net
 
 # We use per module class registration/unregistration
@@ -18,8 +19,13 @@ def unregister():
 
 def cleanup(filePath):
     pass
+
+
 def execute_bionetgen(filepath,context):
     mcell = context.scene.mcell
+
+    print ( " execute_bionetgen with " + os.path.join(os.path.dirname(__file__), "extensions", "bng2", "BNG2.pl") )
+
     if mcell.cellblender_preferences.bionetgen_location_valid:
       bngpath = mcell.cellblender_preferences.bionetgen_location
       print ("\nBioNetGen exe found: " + bngpath)
@@ -29,10 +35,21 @@ def execute_bionetgen(filepath,context):
       print("    Command: " + exe_bng )
       #os.system(exe_bng)    # execute BNG
       subprocess.call([bngpath,"--outdir",destpath,filepath])
+
+    elif os.path.exists ( os.path.join ( os.path.dirname(os.path.dirname(__file__)), "extensions", "mcell", "bng2", "BNG2.pl" ) ):
+      bngpath =           os.path.join ( os.path.dirname(os.path.dirname(__file__)), "extensions", "mcell", "bng2", "BNG2.pl" )
+      print ("\nBioNetGen exe found: " + bngpath)
+      destpath = os.path.dirname(__file__)
+      exe_bng = "    ".join([bngpath, "--outdir", destpath, filepath])    # create command string for BNG execution
+      print("*** Started BioNetGen execution ***")
+      #os.system(exe_bng)    # execute BNG
+      subprocess.call([bngpath,"--outdir",destpath,filepath])
+      return{'FINISHED'}
     
     else:
+      print ("\nBioNetGen BNG2.pl not found. Searching ...")
+
       # Perform the search as done before
-      from os.path import exists
       filebasename = os.path.basename(filepath)
       filedirpath = os.path.dirname(filepath)    # dir of the bngl script file
       check_dir = filedirpath;
@@ -48,7 +65,7 @@ def execute_bionetgen(filepath,context):
               if dirpath in checked:  # escape any child dir if already been checked
                   continue
               bngpath = os.path.join(dirpath,"BNG2.pl")    # tentative path for the BNG exe. file
-              print ( "Searching for " + bngpath )
+              print ( "Searching for BNG2.pl in " + bngpath )
               if os.path.exists(bngpath):    # if BNG exe.file found, proceed for BNG execution
                   print ("\nBioNetGen exe found: " + bngpath)
                   destpath = os.path.dirname(__file__)

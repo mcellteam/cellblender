@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+
+import subprocess  
+import shutil  
+import os
+import sys
+
+def main():
+    python_path = shutil.which("python", mode=os.X_OK)
+    git_path = shutil.which("git", mode=os.X_OK)
+    script_file_path = "cellblender_source_info.py"
+    id_path = "cellblender_id.py"
+    p1 = subprocess.call([python_path, script_file_path], stdout=subprocess.DEVNULL)
+    p2 = subprocess.call([git_path, "add", id_path])
+    if (p1 or p2):
+        print("Error running .git/hook/pre-commit")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

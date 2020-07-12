@@ -6,7 +6,7 @@ Devin Sullivan
 Taraz Buck
 '''
 from collections import defaultdict
-from cellblender.utils import preserve_selection_use_operator
+from cellblender.cellblender_utils import preserve_selection_use_operator
  
 import sys
 import bpy
@@ -127,6 +127,34 @@ def readSBMLFileParametricObject(filepath):
             
             faces = parseSBMLSpatialArrayData(faces, dtype=int)
             vertices = parseSBMLSpatialArrayData(vertices)
+        
+            print("id: "       + id)
+            
+            print("faces: "    + faces)
+            print("vertices: " + vertices)
+
+            if not faces or not vertices:
+                print ( 'this geometry file contains invalid polygon object entries' )
+                continue
+
+            faces = faces[1:-1]
+            faces = faces.split(";")
+            temp = []
+            for element in faces:
+                face = element.split()
+                for i in range(0,len(face)):
+                    face[i] = int(face[i])-1
+                temp += [face]
+            faces = temp
+            vertices = vertices[1:-1]
+            vertices = vertices.split(";")
+            temp = []
+            for element in vertices:
+                vertice = element.split()
+                for i in range(0, len(vertice)):
+                    vertice[i] = float(vertice[i])
+                temp += [vertice]
+            vertices = temp
         
             objects += [[id, faces, vertices]]
     

@@ -1,0 +1,183 @@
+This file is intended to be a running list of open and resolved issues for CellBlender.
+
+Some of this functionality is in the various "issue trackers" that come with a particular
+repository host (Google Code, GitHub, GitLab), but those "issue trackers" may be specific
+to each platform and are not part of what's downloaded when a repository is cloned.
+
+=== Open Issues ===
+
+ 1 <Done?> Better user interface for the text output overlay
+      Added poll methods to gray out task control buttons as appropriate.
+      Changed text label of text update delay and moved to settings panel.
+      Drew only one of the "Show Text" or "Hide Text" buttons at a time.
+      Added an icon to the "Home" button.
+      Removed global variable: accumulate_text - no longer needed.
+
+
+ 2 Opening a parameter-driven swept geometry blend file doesn't display the right geometry.
+
+ 3 <DONE?> Can't use a parameter value for time step with MCellR
+      (it may need to be converted to a numeric value for use with export or BNGL suite?)
+      Note that this reported problem may be due to another cause.
+      Commit 6202f0703bf30d95076586a4dd1ce342b4e8ee9f was written to generate
+      TIME_STEP (and others) from the parameters and write them with fixed values
+      before writing the parameters (the current "typical" MDLR format).
+      However, this failed to reliably solve the problem.
+      Also, on further testing, writing parameters before TIME_STEP (and others) did
+      work sometimes. So it's not clear what's going on.
+      For that reason, this task may be considered done, but another task may be required.
+
+
+ 4 When sweeping (MCellR only?), the task list doesn't update until the last few are run.
+
+ 5 The plot setting to always generate all files seems to be stuck on (MCellR only?).
+
+ 6 <DONE> Adding new release sites sometimes duplicates the default name (Release_Site_2 for example).
+     This was happening when a user manually (or sometimes via Data Model import) created
+     release site names that would end up being duplicated by the auto-naming system.
+     For example, creating an initial release site and naming it "Release_Site_5" would
+     cause a problem when 4 more release sites were added (auto-generating a duplicate).
+     This was fixed for Release Sites, Release Patterns, and Molecules by searching for
+     conflicts in the current list before choosing an auto-generated name.
+     A similar problem may exist for BNGL Molecule components which are also auto-named,
+     but it is less likely for a user to use those auto-generated names. In fact, that's
+     why the release sites were the first to be noticed. They generate names that are often
+     not changed by the user and remain in the likely to be conflicting pattern. This is less
+     likely to happen for BNGL component names which generally have meaning to the user.
+
+ 7 It would be nice to not have to define reflective surface classes for everything (MCellR).
+
+ 8 Creating an MCellR project from scratch and running works, but sometimes the .blend file
+     needs to be re-opened to show the mol-viz data. This seems to happen when deleting all
+     CellBlender data and regenerating the project from a script. When a new project is
+     created (with File/New) that doesn't seem to happen. It might have something to do
+     with the proxy molecules? The errors are:
+
+        Saving dynamic and script name for objects
+        Done saving dynamic and script name for objects
+        save post handler: cellblender_mol_viz.viz_data_save_post() called
+        New file name = .../bind_unbind_from_script.blend
+        Viz not manually selected
+        Blend:  .../bind_unbind_from_script.blend
+        Viz:    .../bind_unbind_from_script_files/mcell/output_data/viz_data/seed_00001
+        Refreshing/Reloading the Parameters, Molecules, and Geometry ...
+        Error: Array length mismatch (expected 300000, got 3000)
+
+        ***** RuntimeError reading file: .../bind_unbind_from_script_files/mcell/output_data/viz_data/seed_00001/Scene.cellbin.0842.dat
+
+              str(error): 
+        internal error setting the array
+
+            Error Type: <class 'RuntimeError'>
+            Error Value: internal error setting the array
+        === Traceback Start ===
+          File ".../addons/cellblender/cellblender_mol_viz.py", line 916, in mol_viz_file_read
+            mol_pos_mesh.vertices.foreach_set("co", mol_pos)
+        === Traceback End ===
+        Error: Array length mismatch (expected 303000, got 3000)
+
+        ***** RuntimeError reading file: .../bind_unbind_from_script_files/mcell/output_data/viz_data/seed_00001/Scene.cellbin.0384.dat
+
+              str(error): 
+        internal error setting the array
+
+            Error Type: <class 'RuntimeError'>
+            Error Value: internal error setting the array
+        === Traceback Start ===
+          File ".../addons/cellblender/cellblender_mol_viz.py", line 916, in mol_viz_file_read
+            mol_pos_mesh.vertices.foreach_set("co", mol_pos)
+        === Traceback End ===
+        Error: Array length mismatch (expected 306000, got 3000)
+
+
+ 9 Do we need reactions and observables to run MCellR?
+
+      =============================================================================================
+      Running Scene.mdlr
+      There is an issue with the observables section in the mdlr file
+      Traceback (most recent call last):
+        File ".../addons/cellblender/extensions/mdlr2mdl.py", line 165, in <module>
+          namespace.input, namespace.nfsim)
+        File ".../addons/cellblender/extensions/read_mdl.py", line 285, in construct_bng_from_mdlr
+          reactions = process_reaction_rules(sections['reactions'])
+        File ".../2.78/python/lib/python3.5/site-packages/pyparsing.py", line 393, in __getitem__
+          return self.__tokdict[i][-1][0]
+      KeyError: 'reactions'
+      There is an issue with the observables section in the mdlr file
+      Traceback (most recent call last):
+        File ".../addons/cellblender/extensions/mdlr2mdl.py", line 165, in <module>
+          namespace.input, namespace.nfsim)
+        File ".../addons/cellblender/extensions/read_mdl.py", line 285, in construct_bng_from_mdlr
+          reactions = process_reaction_rules(sections['reactions'])
+        File ".../2.78/python/lib/python3.5/site-packages/pyparsing.py", line 393, in __getitem__
+          return self.__tokdict[i][-1][0]
+      KeyError: 'reactions'
+      =============================================================================================
+      Running Scene.mdlr
+      There is an issue with the observables section in the mdlr file
+      Traceback (most recent call last):
+        File ".../addons/cellblender/extensions/mdlr2mdl.py", line 165, in <module>
+          namespace.input, namespace.nfsim)
+        File ".../addons/cellblender/extensions/read_mdl.py", line 291, in construct_bng_from_mdlr
+          final_bngl_str.write(observables)
+      UnboundLocalError: local variable 'observables' referenced before assignment
+      There is an issue with the observables section in the mdlr file
+      Traceback (most recent call last):
+        File ".../addons/cellblender/extensions/mdlr2mdl.py", line 165, in <module>
+          namespace.input, namespace.nfsim)
+        File ".../addons/cellblender/extensions/read_mdl.py", line 291, in construct_bng_from_mdlr
+          final_bngl_str.write(observables)
+      UnboundLocalError: local variable 'observables' referenced before assignment
+      =============================================================================================
+
+ 10 Testing ... we need lots of test cases to test various combinations of features.
+    This is especially important for testing lots of features with MCellR.
+
+ 11 <DONE?> CPU usage by CellBlender goes up after several runs.
+    This may be connected display updating.
+    Further testing shows that this only happens when running MCellR models.
+    When CellBlender runs a simulation, Blender's CPU usage will go up and down during
+    various phases (export, running, finished). Blender's CPU usage should return to its
+    resting state after any number of runs. However, when running MCellR runs, Blender's
+    CPU usage will show a higher number after each successive MCellR run.
+
+ 12 <DONE> Seed isn't being displayed properly in Simulation Process's list (show # of seeds rather than seed).
+
+ 13 Check seed propagation from CellBlender to BioNetGen/MCellR (any repeatability issues?).
+
+
+=== Resolved Issues ===
+
+ - In the Objects panel: selecting "Display From: Exported Files" doesn't work.
+     This option doesn't make sense for static scripted objects.
+     The logic was re-worked to produce sensible options for this case.
+
+ - Display engine output (text) to the 3D view during run.
+     Completed
+
+ - Move the "start_time.txt" file into the <project>_files directory.
+     start_time.txt is now in the <project>_files directory.
+
+ - Doesn't seem to support sweeping ...
+     Completed
+
+ - Can't seem to add plain (non-BNGL) molecules to an MCellR simulation.
+     This was an "operator error". Released molecules use a syntax like: @CP::x()
+     They work fine without any components, but do need to be referenced properly.
+
+ - Check for mcell path in extensions folder and use as the default if not already set
+      (it should default to the extensions folder: extensions/mcell)
+ - Check for bionetgen path in extensions folder and use as the default if not already set
+      (it should default to the extensions folder: extensions/bng2/BNGL2.pl)
+
+ - Add MCellR support to the "MCell Local" Engine/Runner.
+     This is partially implemented, and being tested.
+     Should we default to hiding the "mol_surface_proxy" and "mol_volume_proxy" molecules?
+     Sometimes a model needs to be run twice for MCell to run (race condition in files?).
+
+ - When looping over run commands (rather than looping over seeds), the seed value is
+   found in "run_cmd[5]". That's the value to use in the status line for the process name.
+
+ - CPU usage was increasing when tasks terminated abnormally because the percent done timers
+   for those tasks kept running (waiting for a "100% complete" detection in their streams).
+
