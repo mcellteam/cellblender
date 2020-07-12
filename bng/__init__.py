@@ -38,14 +38,16 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         if hasattr(external_operators.accessFile,"info"):
             del external_operators.accessFile.info
 
-        if('.bngl') in self.filepath:
+        is_file_xml = self.filepath.endswith('.xml')
+	
+        if self.filepath.endswith('.bngl'):
             bngfilepath = self.filepath         # bngl file path
             external_operators.filePath=findCellBlenderDirectory()+'bng{0}'.format(os.sep) + self.filepath.split(os.sep)[-1]
             print ( "Calling bng_operators.execute_bionetgen("+bngfilepath+")" )
             bng_operators.execute_bionetgen(self.filepath,context)
             print ( "Back from bng_operators.execute_bionetgen("+bngfilepath+")" )
 
-        elif('.xml') in self.filepath:
+        elif is_file_xml:
             sbmlfilepath = self.filepath
             external_operators.filePath = sbmlfilepath
             # sbml file path
@@ -67,7 +69,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         print ( "Loading release sites from external model..." )
         bpy.ops.external.release_site_add()
         print ( "Done Loading external model" )
-        if ('.xml') in self.filepath:
+        if is_file_xml:
             #TODO:this is sbml only until we add this information on the bng side
             print("Loading reaction output ...")
             bpy.ops.external.reaction_output_add()
@@ -78,9 +80,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         ###  THIS ENTIRE SECTION IS A QUICK HACK TO HANDLE XML IMPORTING
         ###
         ###
-        if ('.xml' in self.filepath) and ('mcell' in context.scene):
-            # Note that searching for ".xml" in the filepath may not be reliable since it should end with .xml.
-            # Keeping the same for now.
+        if is_file_xml and ('mcell' in context.scene):
             print ( "Pulling object structure from XML file: " + self.filepath )
             
             mcell = context.scene.mcell
