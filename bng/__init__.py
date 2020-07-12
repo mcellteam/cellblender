@@ -80,7 +80,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         ###  THIS ENTIRE SECTION IS A QUICK HACK TO HANDLE XML IMPORTING
         ###
         ###
-        if is_file_xml and ('mcell' in context.scene):
+        if is_file_xml and self.add_to_model_objects and ('mcell' in context.scene):
             print ( "Pulling object structure from XML file: " + self.filepath )
             
             mcell = context.scene.mcell
