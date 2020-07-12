@@ -620,7 +620,7 @@ class SBML2JSON:
                 tmpR['reactants'] = ' + '.join(prdList)
                 if flagR:
                     virtualReaction= {}
-                    virtualReaction['rxn_name'] =  tmpL['rxn_name']
+                    virtualReaction['rxn_name'] =  tmpR['rxn_name']
                     tmpR.pop('rxn_name')
                     tmpR['products'] = '{0}_{1}_{2}'.format(product[0][0],reactant[0][2],reactant[0][0])
                     virtualReaction['reactants'] = tmpR['products']
