@@ -352,7 +352,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     variable_rate = StringProperty(
         name="Variable Rate", subtype='FILE_PATH', default="")
     variable_rate_valid = BoolProperty(name="Variable Rate Valid",
-        default=False, update=check_reaction)
+        default=False) # there was 'update=check_reaction', however, this is not a checkbox controlled by the user and having this causes infinite recursion in check_reaction 
 
 
     fwd_rate = PointerProperty ( name="Forward Rate", type=parameter_system.Parameter_Reference )
