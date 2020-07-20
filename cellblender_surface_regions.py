@@ -93,6 +93,10 @@ def check_mod_surf_regions(self, context):
     mod_surf_regions = mcell.mod_surf_regions
     active_mod_surf_regions = self
     surf_class_name = active_mod_surf_regions.surf_class_name
+    if surf_class_name == "NONE":
+        # this is an initial molecule release surface class and it has no name
+        return    
+    
     object_name = active_mod_surf_regions.object_name
     region_selection = active_mod_surf_regions.region_selection
 
@@ -329,6 +333,11 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
             dm['description'] = ""
             dm['data_model_version'] = "DM_2018_01_11_1330"
 
+        if dm['data_model_version'] == "DM_2020_07_12_1600":
+            print("WARNING: Initial region molecules are not supported by cellblender yet, they are ignored.")
+            dm['description'] = "Initial region molecules are not supported by cellblender yet, they were ignored."
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+            
         if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data_model to current version." )
             return None
@@ -344,10 +353,13 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
         self.name = dm["name"]
         self.description = dm["description"]
-        self.surf_class_name = dm["surf_class_name"]
-        self.object_name = dm["object_name"]
-        self.region_selection = dm['region_selection']
-        self.region_name = dm["region_name"]
+        if "surf_class_name" in dm:
+            self.surf_class_name = dm["surf_class_name"]
+            self.object_name = dm["object_name"]
+            self.region_selection = dm['region_selection']
+            self.region_name = dm["region_name"]
+        else:
+            self.surf_class_name = "NONE"
 
     def check_properties_after_building ( self, context ):
         # print ( "Implementing check_properties_after_building for " + str(self) )
