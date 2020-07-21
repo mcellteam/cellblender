@@ -23,13 +23,21 @@ sys.path.insert(1, CELLBLENDER_DIR)
 import cellblender_mol_viz as cb_mv
 import data_model
 
-# TODO: better argument checkinbg 
-INPUT_DIRECTORY = sys.argv[4]
-   
-# reports error when the cellblender frame goes past the mcell data provided
-def out_of_bounds(n):
-    print('ERROR: frame number '+ str(n) + ' is out of bounds. This frame was not simulated in MCell.')
-    
+
+# TODO: better argument checking 
+INPUT_DIRECTORY_ARG = sys.argv[4]
+
+if len(sys.argv) == 6:
+    DATA_MODEL_FILE_ARG = sys.argv[5]
+else:
+    DATA_MODEL_FILE_ARG = None
+
+g_last_data_model_loaded = ""
+g_last_viz_file_loaded = ""
+
+# this is a dictionary that maps frame index onto a pair (viz file, data model file)
+g_frame_to_files = {}
+
 
 def mol_viz_update_from_file(mcell, filename):
     """ Clear the old viz data. Draw the new viz data. """
@@ -50,76 +58,90 @@ def mol_viz_update_from_file(mcell, filename):
 
 def update_frame_data(scene):
     # this is our iteration
-    current_iteration = bpy.context.scene.frame_current - 1
-   
-    best_datamodel_iteration = -1
-    best_datamodel_file = ''
-    best_mol_pos_file = ''
+    frame_index = bpy.context.scene.frame_current - 1
     
-    filepath = os.scandir(INPUT_DIRECTORY)
-    for file in filepath:
-        # --- geometry ---
-        if re.match(r'(.*\.datamodel\.[0-9]+\.json)'.format(), str(file)):
-            name = str(file.path)
-            file_iteration = int(name.split('.')[-2])
-            
-            # find the highest value that is still lower or equal than current_iteration
-            if file_iteration <= current_iteration and file_iteration > best_datamodel_iteration:
-                best_datamodel_iteration = file_iteration
-                best_datamodel_file = file.path
+    if frame_index not in g_frame_to_files:
+        print('Warning: data for frame number '+ str(bpy.context.scene.frame_current) + ' were not found.')
+        return
         
-        # --- molecule positions --- 
-        if not best_mol_pos_file and re.match(r'(.*\.0*{}\.dat)'.format(current_iteration), str(file)):
-            best_mol_pos_file = file.path
-
-
-    # geometry does not have to be present
-    if best_datamodel_file:
-        print("** Matching datamodel file " + best_datamodel_file)
-        #load_datamodel(best_datamodel_file)
-        data_model.import_datamodel_all_json(best_datamodel_file, bpy.context)
-        pass
+    viz, dm = g_frame_to_files[frame_index]
+    
+    # data model does not have to be present
+    if dm != "" and dm != g_last_data_model_loaded:
+        data_model.import_datamodel_all_json(dm, bpy.context)
+        global g_last_data_model_loaded
+        g_last_data_model_loaded = dm
     
     # molecule positions must be found        
-    if best_mol_pos_file:
+    if viz != g_last_viz_file_loaded:
         # file.path gets the entire folder path as well as the file name as a string.
-        mol_viz_update_from_file(bpy.context.scene.mcell, best_mol_pos_file)
-    else:
-        # print out of bounds error
-        out_of_bounds(current_iteration)
+        mol_viz_update_from_file(bpy.context.scene.mcell, viz)
+        global g_last_viz_file_loaded
+        g_last_viz_file_loaded = viz
+
+    
+def get_corresponding_dm_file(dm_files, iteration):
+    best_match = ""
+    for k, v in sorted(dm_files.items()):
+        if k <= iteration:
+            best_match = v
+    return best_match
     
 
-def load_first_frame_and_set_nr_of_frames():
+def init_frame_files_mapping():
     
     # get nr of frames
     max_frame_nr = -1
-    filepath = os.scandir(INPUT_DIRECTORY)
+    filepath = os.scandir(INPUT_DIRECTORY_ARG)
+    viz_files = []
+    dm_files = {}
     for file in filepath:
-        # --- geometry ---
+        # --- viz data ---
         if re.match(r'(.*\.[0-9]+\.dat)', str(file)):
             name = str(file.path)
-            file_iteration = int(name.split('.')[-2])
+            iteration = int(name.split('.')[-2])
+            viz_files.append(name)
             
-            # find the highest value 
-            if file_iteration >= max_frame_nr:
-                max_frame_nr = file_iteration
             
+        if not DATA_MODEL_FILE_ARG:
+            if re.match(r'(.*\.data_model\.[0-9]+\.json)'.format(), str(file)):
+                name = str(file.path)
+                iteration = int(name.split('.')[-2])
+                dm_files[iteration] = name
+
+    # if passed by argument, this is our only data model file
+    if DATA_MODEL_FILE_ARG:
+        dm_files[0] = DATA_MODEL_FILE_ARG
+
+
+    # viz files must be sorted by iteration
+    viz_files.sort()
+
+    # the sorted viz files determine the frame, 
+    # data model files follow the ordering, 
+    # 
+    global g_frame_to_files
+    for i in range(0, len(viz_files)):
+        dm = get_corresponding_dm_file(dm_files, i)
+        g_frame_to_files[i] = (viz_files[i], dm)
                 
-    bpy.context.scene.frame_end = max_frame_nr + 1 # frames are counted from 1, iterations from 0
-    update_frame_data(bpy.context.scene)
+    bpy.context.scene.frame_end = len(g_frame_to_files)
     
 
-print("*** Loading visualization data from directory " + INPUT_DIRECTORY)
-if not os.path.exists(INPUT_DIRECTORY):
-    print("Error: directory " + INPUT_DIRECTORY + " does not exist, terminating.")
+print("*** Loading visualization data from directory " + INPUT_DIRECTORY_ARG)
+if not os.path.exists(INPUT_DIRECTORY_ARG):
+    print("Error: directory " + INPUT_DIRECTORY_ARG + " does not exist, terminating.")
     sys.exit(1)
 
 # remove all default objects from blender startup
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete()
 
-# set number of frames and load first file
-load_first_frame_and_set_nr_of_frames()
+# set number of frames and 
+init_frame_files_mapping()
+
+# load first file
+update_frame_data(bpy.context.scene)
 
 # register a handler for events when frame changes
 # update the visual output by sending the .dat files created by mcell into cellblender for each frame
