@@ -840,6 +840,10 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
                 # f.write ( "  { %s } => \"./react_data/seed_\" & seed & \"/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
                 # f.write ( "  { %s } => \"./react_data/seed_00001/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
                 file_suffix = '_MDLString' if not DATA_MODEL_FROM_MDL else ''
+                # we need to store somewhere that the user selected Species, add suffix _Species when needed, Molecules is default
+                if 'bng_observables_type' in p and p['bng_observables_type'] == 'Species':
+                    file_suffix += '_' + p['bng_observables_type']     
+
                 f.write ( "  { %s } => \"./react_data/%s%s.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix'], file_suffix) )
           f.write ( "}\n" )
           f.write("\n")
