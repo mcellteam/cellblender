@@ -933,8 +933,9 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 
         split_line = line.strip().split()
         keyword = split_line[0]
-        if keyword != "Molecules":
-          print ( "Warning: Conversion only supports Molecule observables" )
+        if keyword == "Species":
+          print("Warning: CellBlender does not handle Species observables and interprets them as Molecules type,"\
+                " however the information is store into the data model" )
         label = split_line[1]
 
         mols_part = ' '.join(split_line[2:])
@@ -971,7 +972,8 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
             'plotting_enabled' : True,
             'reaction_name' : "",
             'region_name' : "",
-            'rxn_or_mol' : "MDLString"
+            'rxn_or_mol' : "MDLString",
+            'bng_observables_type' : keyword
           }
         dm.add_observable(count_item)
 
@@ -1342,8 +1344,9 @@ def read_data_model_from_bngsim( model ):
     # obs is the name of the observable
     # model.observables is tuple (type, expression)
     keyword, patterns = model.observables._item_dict[obs_name]
-    if keyword != "Molecules":
-      print ( "Warning: Conversion only supports Molecule observables" )
+    if keyword == "Species":
+        print("Warning: CellBlender does not handle Species observables and interprets them as Molecules type,"\
+            " however the information is store into the data model" )
     label = obs_name
 
     mols_part = str(patterns)
@@ -1375,7 +1378,8 @@ def read_data_model_from_bngsim( model ):
         'plotting_enabled' : True,
         'reaction_name' : "",
         'region_name' : "",
-        'rxn_or_mol' : "MDLString"
+        'rxn_or_mol' : "MDLString",
+        'bng_observables_type' : keyword
       }
     dm.add_observable(count_item)
 
