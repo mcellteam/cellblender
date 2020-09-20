@@ -888,7 +888,12 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
           if int(molecule_type_dict[mol['mol_name']][0]) == 2:
             mol['mol_type'] = '2D'
         else:
-          print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
+          # check whether it has a diffusion constant assigned
+          key = 'MCELL_DIFFUSION_CONSTANT_2D_' + mol['mol_name']
+          if key in dm.special_parameters:
+            mol['mol_type'] = '2D'
+          else:
+            print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
 
         mol['custom_space_step'] = ""
         mol['custom_time_step'] = ""
@@ -1313,7 +1318,12 @@ def read_data_model_from_bngsim( model ):
       if int(molecule_type_dict[mol['mol_name']][0]) == 2:
         mol['mol_type'] = '2D'
     else:
-      print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
+      # check whether it has a diffusion constant assigned
+      key = 'MCELL_DIFFUSION_CONSTANT_2D_' + mol['mol_name']
+      if key in dm.special_parameters:
+        mol['mol_type'] = '2D'
+      else:
+        print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
 
     mol['custom_space_step'] = ""
     mol['custom_time_step'] = ""
