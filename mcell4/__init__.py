@@ -30,7 +30,7 @@ def convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_na
     converter = os.path.join(mcell_dir, 'utils', 'data_model_to_pymcell', 'data_model_to_pymcell' + exe_ext) 
     
     res = subprocess.run(
-        [converter, dm_file, '-o', base_name], 
+        [converter, dm_file, '-b', '-o', base_name], 
         cwd=sweep_item_path,
         stderr=subprocess.PIPE
     )

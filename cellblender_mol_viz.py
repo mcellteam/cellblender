@@ -269,8 +269,6 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
 
         if mol_file_dir != '':
           mol_file_list = [ f for f in glob.glob(os.path.join(mol_file_dir, "*.dat")) ]
-          print ( "Read found " + str(len(mol_file_list)) + " files" )
-          print ( "Last file is " + mol_file_list[len(mol_file_list)-1] )
           mol_file_list.sort()
 
         if mol_file_list:
