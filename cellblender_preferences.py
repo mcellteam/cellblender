@@ -456,6 +456,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="Debug Level", default=0, min=0, max=101,
         description="Amount of debug information to print: 0 to 100 (greater at your own risk)")
     
+    mcell4_mode = BoolProperty(
+        name="MCell4 Mode", default=True,
+        description="Use MCell4 for simulation")
+
     bionetgen_mode = BoolProperty(
         name="BioNetGen Language Mode", default=False,
         description="Show BioNetGen Options and disable some checking")
@@ -576,6 +580,9 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "invalid_policy")
+
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "mcell4_mode")
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "bionetgen_mode")

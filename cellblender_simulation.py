@@ -64,7 +64,7 @@ from multiprocessing import cpu_count
 
 import cellblender.sim_engines as engine_manager
 import cellblender.sim_runners as runner_manager
-
+import cellblender.mcell4 as mcell4
 
 # We use per module class registration/unregistration
 def register():
@@ -337,6 +337,7 @@ def run_generic_runner (context, sim_module):
         if runner_input.endswith("json"):
           data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,runner_input) )
         else:
+          print("SAVING to " + os.path.join(project_dir,runner_input))
           data_model.save_data_model_to_file ( mcell_dm, os.path.join(project_dir,runner_input) )
 
         base_name = mcell.project_settings.base_name
@@ -732,6 +733,10 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
 
         mcell = context.scene.mcell
         run_sim = mcell.run_simulation
+        
+        mcell4_mode = mcell.cellblender_preferences.mcell4_mode
+        if mcell.cellblender_preferences.mcell4_mode:
+            print ( "- Using mcell4 mode" )
 
         run_sim.last_simulation_run_time = str(time.time())
 
@@ -888,9 +893,22 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                             engine_manager.makedirs_exist_ok ( sweep_item_path, exist_ok=True )
                             engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
                             engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
-                            print ( "Writing data model as MDL at " + str(os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) )) )
-                            cellblender.current_data_model = {'mcell':dm}
-                            data_model_to_mdl.write_mdl ( cellblender.current_data_model, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ), scene_name=context.scene.name )
+                            
+                            if mcell4_mode:
+                                dm_file = str(os.path.join(sweep_item_path, '%s.data_model.json' % (base_name)))
+                                print ( "Writing data model to " + dm_file )
+                                data_model.save_data_model_to_json_file(dm, dm_file)
+                                print ( "Converting data model to MCell4 Python code" )
+                                error_msg = mcell4.convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_name)
+                                if error_msg:
+                                    status = 'Conversion of data model into MCell4 Python code failed. ' + error_msg 
+                                    self.report({'ERROR'}, status)
+                                    return {'FINISHED'} # what should be returned when error was encountered?
+                            else:
+                                print ( "Writing data model as MDL at " + str(os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) )) )
+                                cellblender.current_data_model = {'mcell':dm} # this creates two mcell levels: mcell: { mcell: {
+                                data_model_to_mdl.write_mdl ( cellblender.current_data_model, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ), scene_name=context.scene.name )
+                            
                         run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
                     # Increment the current_index counters from rightmost side (deepest directory)
                     i = len(sweep_list) - 1
@@ -941,7 +959,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       elif log_file_option == 'console':
                           log_file = None
 
-                      if bionetgen_mode:
+                      if not mcell4_mode and bionetgen_mode:
                           # execute mdlr2mdl.py to generate MDL from MDLR
 
                           mdlr_cmd = os.path.join ( ext_path, 'mdlr2mdl.py' )
@@ -976,7 +994,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           print ( "Add Task:" + cellblender.python_path + " args:" + str(mcellr_args) + " wd:" + str(run_cmd[1]) + " txt:" + str(make_texts) )
                           proc = cellblender.simulation_queue.add_task([cellblender.python_path], mcellr_args, run_cmd[1], make_texts, env=my_env)
                           print ( 100 * "@" )
-                      else:
+                      elif not mcell4_mode:
 
                           mdl_filename = '%s.main.mdl' % (run_cmd[2])
                           mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
@@ -987,6 +1005,14 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           print ( "Add Task:" + run_cmd[0] + " args:" + str(mcell_args) + " wd:" + str(run_cmd[1]) + " txt:" + str(make_texts) )
                           proc = cellblender.simulation_queue.add_task(run_cmd[0], mcell_args, run_cmd[1], make_texts, env=my_env)
                           print ( 100 * "@" )
+                      else:
+                          # mcell4
+                          # (0:mcell, 1:wd, 2:base_name, 3:error, 4:log, 5:seed)
+                          py_filename = '%s_model.py' % (run_cmd[2])
+                          mcell_args = '%s -seed %d' % (py_filename, run_cmd[5])
+                          make_texts = run_sim.save_text_logs
+                          my_env['MCELL_DIR'] = os.path.dirname(mcell_binary)
+                          proc = cellblender.simulation_queue.add_task(python_path, mcell_args, run_cmd[1], make_texts, env=my_env)
 
                       self.report({'INFO'}, "Simulation Running")
 
