@@ -268,7 +268,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         mol_file_list = []
 
         if mol_file_dir != '':
-          mol_file_list = [ f for f in glob.glob(os.path.join(mol_file_dir, "*")) if not f.endswith(os.sep + "viz_bngl") ]
+          mol_file_list = [ f for f in glob.glob(os.path.join(mol_file_dir, "*.dat")) ]
           print ( "Read found " + str(len(mol_file_list)) + " files" )
           print ( "Last file is " + mol_file_list[len(mol_file_list)-1] )
           mol_file_list.sort()
@@ -277,9 +277,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           # Add all the viz_data files to global_mol_file_list (e.g.
           # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
           for mol_file_name in mol_file_list:
-#              new_item = mol_viz.mol_file_list.add()
-#              new_item.name = os.path.basename(mol_file_name)
-              global_mol_file_list.append(os.path.basename(mol_file_name))
+            global_mol_file_list.append(os.path.basename(mol_file_name))
 
           # If you previously had some viz data loaded, but reran the
           # simulation with less iterations, you can receive an index error.
@@ -484,14 +482,9 @@ def get_mol_file_dir():
 # Note: why is self here? This isn't a class method...
 def mol_viz_update(self, context):
     """ Clear the old viz data. Draw the new viz data. """
-    global global_mol_file_list
-
     mcell = context.scene.mcell
 
-#    if len(mcell.mol_viz.mol_file_list) > 0:
-    if len(global_mol_file_list) > 0:
-        for file in global_mol_file_list:
-            print(str(file))
+    if global_mol_file_list:
             
         # -2 is used to match cell number with frame number
         filename = global_mol_file_list[mcell.mol_viz.mol_file_index-2]
