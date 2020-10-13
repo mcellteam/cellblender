@@ -49,6 +49,8 @@ cellblender_info = {
 
         "cellblender_legacy.py",
         
+        "mcell4"+os.sep+"__init__.py",
+
         "icons"+os.sep+"cellblender_icon.png",
         "icons"+os.sep+"mol_sel.png",
         "icons"+os.sep+"mol_unsel.png",
@@ -175,8 +177,6 @@ cellblender_info = {
         "sim_engines"+os.sep+"mcell3"+os.sep+"pyparsing.py",
         #        "sim_engines"+os.sep+"mcell3"+os.sep+"mdlmesh_parser.py",
         "sim_engines"+os.sep+"mcell3"+os.sep+"mdlobj.py",
-
-        "sim_engines"+os.sep+"mcell4"+os.sep+"__init__.py",
 
         "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"makefile",
         "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"__init__.py",

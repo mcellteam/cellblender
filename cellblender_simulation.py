@@ -64,7 +64,7 @@ from multiprocessing import cpu_count
 
 import cellblender.sim_engines as engine_manager
 import cellblender.sim_runners as runner_manager
-import cellblender.sim_engines.mcell4 as mcell4
+import cellblender.mcell4 as mcell4
 
 # We use per module class registration/unregistration
 def register():
