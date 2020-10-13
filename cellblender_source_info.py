@@ -176,6 +176,7 @@ cellblender_info = {
         #        "sim_engines"+os.sep+"mcell3"+os.sep+"mdlmesh_parser.py",
         "sim_engines"+os.sep+"mcell3"+os.sep+"mdlobj.py",
 
+        "sim_engines"+os.sep+"mcell4"+os.sep+"__init__.py",
 
         "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"makefile",
         "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"__init__.py",
