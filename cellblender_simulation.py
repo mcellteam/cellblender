@@ -64,7 +64,7 @@ from multiprocessing import cpu_count
 
 import cellblender.sim_engines as engine_manager
 import cellblender.sim_runners as runner_manager
-import cellblender.mcell4 as mcell4
+import cellblender.sim_engines.mcell4 as mcell4
 
 # We use per module class registration/unregistration
 def register():
@@ -869,6 +869,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 print ( "Number of non-seed sweep runs = " + str(num_sweep_runs) )
                 print ( "Total runs (sweep and seed) is " + str(num_requested_runs) )
 
+                bionetgen_mode = data_model_to_mdl.requires_mcellr ( {'mcell':dm} )
 
                 # Build a list of "run commands" (one for each run) to be put in the queue
                 # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
@@ -899,7 +900,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                                 print ( "Writing data model to " + dm_file )
                                 data_model.save_data_model_to_json_file(dm, dm_file)
                                 print ( "Converting data model to MCell4 Python code" )
-                                error_msg = mcell4.convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_name)
+                                error_msg = mcell4.convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_name, bionetgen_mode)
                                 if error_msg:
                                     status = 'Conversion of data model into MCell4 Python code failed. ' + error_msg 
                                     self.report({'ERROR'}, status)
@@ -925,8 +926,6 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 print ( "Run Cmds for Sweep Queue (0:mcell, 1:wd, 2:base_name, 3:error, 4:log, 5:seed):" )
                 for run_cmd in run_cmd_list:
                     print ( "  " + str(run_cmd) )
-
-                bionetgen_mode = data_model_to_mdl.requires_mcellr ( {'mcell':dm} )
 
                 if run_sim.run_requested:
                     processes_list = run_sim.processes_list

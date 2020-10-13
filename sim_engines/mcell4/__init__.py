@@ -23,14 +23,18 @@ import os
 import subprocess
 
 # returns empty string of conversion passed, error message if conversion failed
-def convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_name):
+def convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_name, bng_mode):
     
     mcell_dir = os.path.dirname(mcell_binary)
     exe_ext = os.path.splitext(mcell_binary)[1] 
     converter = os.path.join(mcell_dir, 'utils', 'data_model_to_pymcell', 'data_model_to_pymcell' + exe_ext) 
     
+    cmd = [converter, dm_file, '-o', base_name]
+    if bng_mode:
+        cmd.append('-b')
+    
     res = subprocess.run(
-        [converter, dm_file, '-b', '-o', base_name], 
+        cmd,
         cwd=sweep_item_path,
         stderr=subprocess.PIPE
     )
