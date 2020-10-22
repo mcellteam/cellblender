@@ -1010,7 +1010,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           py_filename = '%s_model.py' % (run_cmd[2])
                           mcell_args = '%s -seed %d' % (py_filename, run_cmd[5])
                           make_texts = run_sim.save_text_logs
-                          my_env['MCELL_DIR'] = os.path.dirname(mcell_binary)
+                          my_env['MCELL_PATH'] = os.path.dirname(mcell_binary)
                           proc = cellblender.simulation_queue.add_task(python_path, mcell_args, run_cmd[1], make_texts, env=my_env)
 
                       self.report({'INFO'}, "Simulation Running")
