@@ -1007,7 +1007,10 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       else:
                           # mcell4
                           # (0:mcell, 1:wd, 2:base_name, 3:error, 4:log, 5:seed)
-                          py_filename = '%s_model.py' % (run_cmd[2])
+                          if run_cmd[2] != 'Untitled':
+                              py_filename = '%s_model.py' % (run_cmd[2])
+                          else:
+                              py_filename = 'model.py'
                           mcell_args = '%s -seed %d' % (py_filename, run_cmd[5])
                           make_texts = run_sim.save_text_logs
                           my_env['MCELL_PATH'] = os.path.dirname(mcell_binary)
