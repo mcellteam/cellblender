@@ -1769,7 +1769,7 @@ def write_surface_classes ( sclasses, f ):
               mol = scp['molecule']
               if scp['affected_mols'] != 'SINGLE':
                   mol = scp['affected_mols']
-              if scp['surf_class_type'] == 'CLAMP_CONCENTRATION':
+              if scp['surf_class_type'] == 'CLAMP_CONCENTRATION' or scp['surf_class_type'] == 'CLAMP_FLUX':
                   clamp_value = scp['clamp_value']
                   f.write("    %s" % scp['surf_class_type'])
                   f.write(" %s%s = %s\n" % (mol,scp['surf_class_orient'],scp['clamp_value']))
