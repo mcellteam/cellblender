@@ -161,6 +161,13 @@ def create_reactdata_tmpfile(data_path):
         with open(ReactionDataTmpFile.reactdata_tmpfile, 'w') as tmpfile:
             tmpfile.write(data_path)
 
+def remove_mdl_string_suffix(path):
+    s = '_MDLString'
+    path_ext = os.path.splitext(path)
+    if path_ext[0].endswith(s): 
+        return path_ext[0][:-len(s)] + path_ext[1]
+    else:
+        return path
 
 class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
     bl_idname = "mcell.plot_rxn_output_with_selected"
@@ -414,18 +421,27 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                             # Prepend a search across all seeds for this file
                             file_name = os.path.join("seed_*", file_name)
                             if len(data_path[0]) > 0:
-                              print ( "glob of " + os.path.join(root_path, data_path[0], file_name) )
-                              candidate_file_list = glob.glob(os.path.join(root_path, data_path[0], file_name))
+                              base_path = os.path.join(root_path, data_path[0])
                             else:
-                              print ( "glob of " + os.path.join(root_path, file_name) )
-                              candidate_file_list = glob.glob(os.path.join(root_path, file_name))
+                              base_path = root_path
+                                
+                            print ( "glob of " + os.path.join(base_path, file_name) )
+                            candidate_file_list = glob.glob(os.path.join(base_path, file_name))
+                            print ( "xxCandidate list = " + str(candidate_file_list) )
+                            if not candidate_file_list and '_MDLString' in file_name:
+                              # try to search without the _MDLString suffix
+                              pattern_wo_mdlstring = os.path.join(base_path, remove_mdl_string_suffix(file_name))
+                              print ( " - glob did not find any files, searching for " + pattern_wo_mdlstring)
+                              candidate_file_list = glob.glob(pattern_wo_mdlstring)
+                                
                             # Without sorting, the seeds may not be increasing
                             candidate_file_list.sort()
                             #print("Candidate file list for %s:" % (file_name))
                             #print("  ", candidate_file_list)
                             if not mcell4_mode and not mcell.rxn_output.ignore_start_time:
-                              # Use the start_time.txt file to find files modified since MCell was started
-                              start_time = os.stat(os.path.join(project_files_path(), "start_time.txt")).st_mtime
+                              # TODO: support this also for mcell4
+                              # Use the start_time.txt file to find files modified since MCell was started (minus 10 seconds)
+                              start_time = os.stat(os.path.join(project_files_path(), "start_time.txt")).st_mtime - 10
                               # This file is both in the list and newer than the run time for MCell
                               candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
 
