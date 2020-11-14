@@ -32,10 +32,10 @@ import math
 
 # special object created for releases in case 
 # when there are no compartments
-BOX_NO_COMPARTMENT = 'box_no_compartment'
+DEFAULT_COMPARTMENT = 'default_compartment'
 
-# special parameter name that tells the 
-MCELL_NO_COMPARTMENT_SIZE = 'MCELL_NO_COMPARTMENT_SIZE'
+# special parameter name that specifies the volume of a default compartment (in um^3)
+MCELL_DEFAULT_COMPARTMENT_VOLUME = 'MCELL_DEFAULT_COMPARTMENT_VOLUME'
 
 #### DataModel class ####
 class DataModel:
@@ -1080,18 +1080,20 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
 def define_single_box(dm):
   
   half_side = 1/8
-  if MCELL_NO_COMPARTMENT_SIZE in dm.special_parameters:
-      sz = eval(dm.special_parameters[MCELL_NO_COMPARTMENT_SIZE])
-      half_side = float(sz) / 2
+  if MCELL_DEFAULT_COMPARTMENT_VOLUME in dm.special_parameters:
+      expr = dm.special_parameters[MCELL_DEFAULT_COMPARTMENT_VOLUME]
+      expr = expr.replace('^', '**')
+      sz = float(eval(expr))**(1.0/3.0)
+      half_side = sz / 2
     
-  print("Creating " + BOX_NO_COMPARTMENT + " with size: " + str(half_side * 2))
+  print("Creating " + DEFAULT_COMPARTMENT + " with size: " + str(half_side * 2))
   points, faces = create_rectangle(
       -half_side, half_side, 
       -half_side, half_side, 
       -half_side, half_side, 
   )    
   go = {
-    'name': BOX_NO_COMPARTMENT,
+    'name': DEFAULT_COMPARTMENT,
     'vertex_list' : points,
     'element_connections' : faces, 
     'material_names' : ['membrane_mat'],    
@@ -1107,7 +1109,7 @@ def define_single_box(dm):
     "script_name": "",
     "membrane_name": "",
     "dynamic": False,
-    "name": BOX_NO_COMPARTMENT
+    "name": DEFAULT_COMPARTMENT
   }
   dm.append_to_model_obj_list(model_object) 
 
@@ -1277,7 +1279,7 @@ def read_data_model_from_bngsim( model ):
       print ( "  " )
       rel_item['object_expr'] = compartment_expression
     else:
-      rel_item['object_expr'] = BOX_NO_COMPARTMENT
+      rel_item['object_expr'] = DEFAULT_COMPARTMENT
     rel_list.append(rel_item)
     site_num += 1
 
