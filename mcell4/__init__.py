@@ -33,6 +33,8 @@ def convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_na
     if bng_mode:
         cmd.append('-b')
     
+    cmd.append('-c') # cellblender viz output
+    
     res = subprocess.run(
         cmd,
         cwd=sweep_item_path,
