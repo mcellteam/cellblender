@@ -427,12 +427,19 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                                 
                             print ( "glob of " + os.path.join(base_path, file_name) )
                             candidate_file_list = glob.glob(os.path.join(base_path, file_name))
-                            print ( "xxCandidate list = " + str(candidate_file_list) )
+                            print ( "Candidate list = " + str(candidate_file_list) )
                             if not candidate_file_list and '_MDLString' in file_name:
                               # try to search without the _MDLString suffix
                               pattern_wo_mdlstring = os.path.join(base_path, remove_mdl_string_suffix(file_name))
                               print ( " - glob did not find any files, searching for " + pattern_wo_mdlstring)
                               candidate_file_list = glob.glob(pattern_wo_mdlstring)
+                              
+                            if not candidate_file_list:
+                              # try to search with '.' replaced with '_'
+                              name_ext = os.path.splitext(file_name)
+                              pattern_wo_dots = os.path.join(base_path, name_ext[0].replace('.', '_') + name_ext[1]) 
+                              print ( " - glob did not find any files, searching for " + pattern_wo_dots)
+                              candidate_file_list = glob.glob(pattern_wo_dots)
                                 
                             # Without sorting, the seeds may not be increasing
                             candidate_file_list.sort()
