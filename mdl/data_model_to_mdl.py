@@ -540,7 +540,11 @@ def write_viz_out_mdlr3 ( vizout, mols, f ):
       if vizout['all_iterations']:
         f.write ( "    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n" )
       else:
-        f.write ( "    ITERATION_NUMBERS {ALL_DATA @ [[%s TO %s STEP %s]]}\n" % (vizout['start'], vizout['end'], vizout['step']) )
+        step = vizout['step']
+        if step == '0':
+          print("Warning: viz output step is 0, changing it to 1e6 to keep similar behavior.")
+          step = '1e6'
+        f.write ( "    ITERATION_NUMBERS {ALL_DATA @ [[%s TO %s STEP %s]]}\n" % (vizout['start'], vizout['end'], step) )
       f.write ( "  }\n" )
       f.write ( "}\n" )
       f.write ( "\n" );
