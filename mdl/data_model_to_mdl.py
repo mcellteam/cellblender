@@ -864,6 +864,12 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
     f = open ( os.path.join(output_data_dir,"Scene.viz_output.mdl"), 'w' )
     f.write ( 'sprintf(seed,"%05g",SEED)\n\n' )
     write_viz_out_mdlr3(data_model['viz_output'], data_model['define_molecules'], f)
+    
+    
+    if 'partitions' in data_model['initialization']:
+      # this doesn't really belong here but no other MDL file is generated directly 
+      write_partitions ( data_model['initialization']['partitions'], f)
+     
     f.close()
 
     if 'simulation_control' in data_model: 

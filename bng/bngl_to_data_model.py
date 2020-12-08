@@ -160,6 +160,21 @@ class DataModel:
                 self.dm['mcell']['initialization']['time_step'] = str(spv)
             elif sp == "MCELL_VACANCY_SEARCH_DISTANCE":
                 self.dm['mcell']['initialization']['vacancy_search_distance'] = str(spv)
+            elif sp == "MCELL_SUBPARTITION_DIMENSION":
+                self.dm['mcell']['initialization']['partitions'] = {
+                    "data_model_version": "DM_2016_04_15_1600",
+                    "include": True,
+                    "recursion_flag": False,
+                    "x_start": "-1",
+                    "x_end": "1",
+                    "y_start": "-1",
+                    "y_end": "1",
+                    "z_start": "-1",
+                    "z_end": "1",
+                    "y_step": str(spv),
+                    "z_step": str(spv),
+                    "x_step": str(spv)
+                }
             elif "MCELL_REDEFINE_" in sp:
                 # this is a MCELL_REDEFINE 
                 param_name = sp.replace("MCELL_REDEFINE_","")
