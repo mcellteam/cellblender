@@ -27,7 +27,7 @@ def convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_na
     
     mcell_dir = os.path.dirname(mcell_binary)
     exe_ext = os.path.splitext(mcell_binary)[1] 
-    converter = os.path.join(mcell_dir, 'utils', 'data_model_to_pymcell', 'data_model_to_pymcell' + exe_ext) 
+    converter = os.path.join(mcell_dir, 'bin', 'data_model_to_pymcell' + exe_ext) 
     
     cmd = [converter, dm_file, '-o', base_name]
     if bng_mode:
