@@ -407,7 +407,20 @@ class MCELL_OT_scripting_add(bpy.types.Operator):
         update_available_scripts ( scripting )
         return {'FINISHED'}
 
+class MCELL_OT_mcell4_scripting_add(bpy.types.Operator):
+    bl_idname = "mcell.mcell4_scripting_add"
+    bl_label = "Add Script"
+    bl_description = "Add a new script to the model"
+    bl_options = {'REGISTER', 'UNDO'}
 
+    def execute(self, context):
+        scripting = context.scene.mcell.scripting
+        scripting.mcell4_scripting_list.add()
+        scripting.active_mcell4_scripting_index = len(scripting.scripting_list)-1
+        check_scripting(self, context)
+        update_available_scripts ( scripting )
+        return {'FINISHED'}
+    
 class MCELL_OT_scripting_remove(bpy.types.Operator):
     bl_idname = "mcell.scripting_remove"
     bl_label = "Remove Script"
@@ -425,7 +438,23 @@ class MCELL_OT_scripting_remove(bpy.types.Operator):
         update_available_scripts ( scripting )
         return {'FINISHED'}
 
+class MCELL_OT_mcell4_scripting_remove(bpy.types.Operator):
+    bl_idname = "mcell.mcell4_scripting_remove"
+    bl_label = "Remove Script"
+    bl_description = "Remove selected script from the model"
+    bl_options = {'REGISTER', 'UNDO'}
 
+    def execute(self, context):
+        scripting = context.scene.mcell.scripting
+        scripting.mcell4_scripting_list.remove(scripting.active_mcell4_scripting_index)
+        scripting.active_mcell4_scripting_index -= 1
+        if (scripting.active_mcell4_scripting_index < 0):
+            scripting.active_mcell4_scripting_index = 0
+        if scripting.mcell4_scripting_list:
+            check_scripting(self, context)
+        update_available_scripts ( scripting )
+        return {'FINISHED'}
+    
 class MCELL_OT_scripting_refresh(bpy.types.Operator):
     bl_idname = "mcell.scripting_refresh"
     bl_label = "Refresh Files"
@@ -518,6 +547,11 @@ class MCELL_UL_scripting_item(bpy.types.UIList):
             layout.label ( icon='FILE_TICK', text=desc )
 
 
+class MCELL_UL_mcell4_scripting_item(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        desc = item.get_description()
+        layout.label ( icon='FILE_TICK', text=desc )
+            
 # Scripting Property Groups
 
 
@@ -709,6 +743,96 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
             row.prop(self, "include_section", text="", expand=False)
 
 
+class CellBlenderMCell4ScriptingProperty(bpy.types.PropertyGroup):
+    name = StringProperty(name="Scripting", update=check_scripting)
+    status = StringProperty(name="Status")
+    
+    internal_file_name = StringProperty ( name = "Internal File Name" )
+    external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+
+    internal_external_enum = [
+        ('internal', "Internal", ""),
+        ("external", "External",  "")]
+    internal_external = bpy.props.EnumProperty(
+        items=internal_external_enum, name="Internal/External",
+        default='internal',
+        description="Choose location of file (internal text or external file).",
+        update=check_scripting)
+
+
+    def init_properties ( self, parameter_system ):
+        pass
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Scripting Item building Data Model" )
+        dm = {}
+        dm['data_model_version'] = "DM_2016_03_15_1900"
+        dm['name'] = self.name
+        dm['internal_file_name'] = self.internal_file_name
+        dm['external_file_name'] = self.external_file_name
+        dm['internal_external'] = self.internal_external
+        return dm
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        return dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Check that the data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2016_03_15_1900":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingProperty data model to current version." )
+        self.init_properties(context.scene.mcell.parameter_system)
+
+        self.name = dm["name"]
+        self.internal_file_name = dm["internal_file_name"]
+        self.external_file_name = dm["external_file_name"]
+        self.internal_external = dm["internal_external"]
+
+
+    def get_description ( self ):
+        desc = ""
+
+        int_ext = ""
+        fname = ""
+        if self.internal_external == "internal":
+            int_ext = "internal "
+            fname = "\"" + self.internal_file_name + "\" "
+        if self.internal_external == "external":
+            int_ext = "external "
+            fname = "\"" + self.external_file_name + "\" "
+
+        desc = "Include " + int_ext + fname
+
+        return ( desc )
+        
+
+    def draw_layout ( self, context, layout ):
+        mcell = context.scene.mcell
+        ps = mcell.parameter_system
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( layout )
+        else:
+            row = layout.row()
+            row.prop(self, "internal_external", expand=True)
+            
+            row = layout.row()
+
+            if (self.internal_external == "internal"):
+                row.prop_search ( self, "internal_file_name",
+                                  context.scene.mcell.scripting, "internal_python_scripts_list",
+                                  text="File:", icon='TEXT' )
+                row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+            if (self.internal_external == "external"):
+
+                row.prop ( self, "external_file_name" )
+                row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+            row = layout.row()
+
+
 class CellBlenderScriptProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Script")
 
@@ -724,6 +848,12 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     internal_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python Internal Scripts")
     external_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python External Scripts")
 
+    active_mcell4_scripting_index = IntProperty(name="Active MCell4 Scripting Index", default=0)
+    mcell4_scripting_list = CollectionProperty(type=CellBlenderMCell4ScriptingProperty, name="MCell4 Scripting List")
+    internal_mcell4_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MCell4 Internal Scripts")
+
+
+    show_mcell4_scripting = BoolProperty(name="MCell4 Scripting", default=False)
     show_simulation_scripting = BoolProperty(name="Export Scripting", default=False)
     show_data_model_scripting = BoolProperty(name="Data Model Scripting", default=False)
     show_data_model_script_make = BoolProperty(name="Make Script", default=False)
@@ -791,6 +921,11 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         for s in self.scripting_list:
             s_list.append ( s.build_data_model_from_properties(context) )
         dm['scripting_list'] = s_list
+        
+        s4_list = []
+        for s in self.mcell4_scripting_list:
+            s4_list.append ( s.build_data_model_from_properties(context) )
+        dm['mcell4_scripting_list'] = s4_list
 
         # Don't: Store the scripts lists in the data model for now - they are regenerated when rebuilding properties
 
@@ -847,6 +982,14 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 self.scripting_list.add()
                 self.active_scripting_index = len(self.scripting_list)-1
                 s = self.scripting_list[self.active_scripting_index]
+                # s.init_properties(context.scene.mcell.parameter_system)
+                s.build_properties_from_data_model ( context, dm_s )
+
+        if "mcell4_scripting_list" in dm:
+            for dm_s in dm["mcell4_scripting_list"]:
+                self.mcell4_scripting_list.add()
+                self.active_mcell4_scripting_index = len(self.mcell4_scripting_list)-1
+                s = self.mcell4_scripting_list[self.active_mcell4_scripting_index]
                 # s.init_properties(context.scene.mcell.parameter_system)
                 s.build_properties_from_data_model ( context, dm_s )
 
@@ -923,6 +1066,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     def draw_layout ( self, context, layout ):
         """ Draw the scripting "panel" within the layout """
         mcell = context.scene.mcell
+        mcell4_mode = mcell.cellblender_preferences.mcell4_mode
         ps = mcell.parameter_system
 
         if not mcell.initialized:
@@ -938,148 +1082,175 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             #col = row.column()
             #col.label ( "Export Scripting" )
             #col.prop ( self, "show_simulation_scripting" )
-
-            if self.show_simulation_scripting:
-                row.prop(self, "show_simulation_scripting", icon='TRIA_DOWN', emboss=False)
-
-                row = box.row()
-                col = row.column()
-                col.template_list("MCELL_UL_scripting_item", "scripting",
-                                  self, "scripting_list",
-                                  self, "active_scripting_index", rows=2)
-                col = row.column(align=True)
-                col.operator("mcell.scripting_add", icon='ZOOMIN', text="")
-                # col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
-                col.operator("mcell.scripting_remove", icon='ZOOMOUT', text="")
-
-                if self.scripting_list:
-                    if len(self.scripting_list) > 0:
-                        selected_script = self.scripting_list[self.active_scripting_index]
-                        selected_script.draw_layout ( context, box )
-                row = box.row()
-                row.prop ( self, "ignore_cellblender_data" )
-
-
-            else:
-                row.prop(self, "show_simulation_scripting", icon='TRIA_RIGHT', emboss=False)
-
-
-            parent_box = layout.box()
-            row = parent_box.row(align=True)
-            row.alignment = 'LEFT'
-
-            if self.show_data_model_scripting:
-                row.prop(self, "show_data_model_scripting", icon='TRIA_DOWN', emboss=False)
-
-                box = parent_box.box()
-                row = box.row(align=True)
-                row.alignment = 'LEFT'
-
-                if self.show_data_model_script_make:
-                    row.prop(self, "show_data_model_script_make", icon='TRIA_DOWN', emboss=False)
-
+            if mcell4_mode:
+                if self.show_mcell4_scripting:
+                    row.prop(self, "show_mcell4_scripting", icon='TRIA_DOWN', emboss=False)
+    
                     row = box.row()
-                    row.operator ( "cb.regenerate_data_model", icon='FILE_REFRESH' )
-
-                    try:
-                        # Try to import tkinter to see if it is installed in this version of Blender
-                        import tkinter as tk
-                        row = box.row()
-                        row.operator ( "cb.tk_browse_data_model", icon='ZOOM_ALL' )
-
-                    except ( ImportError ):
-                        # Unable to import needed libraries so don't draw
-                        print ( "Unable to import tkinter for TK Data Model Browser" )
-                        """
-                        row = box.row()
-                        col = row.column()
-                        col.operator ( "cb.copy_data_model_to_cbd" )
-                        col = row.column()
-                        col.prop ( self, "include_geometry_in_dm" )
-                        """
-                        pass
-
-                    if 'data_model' in mcell:
-                        row = box.row()
-                        col = row.column()
-                        col.prop ( self, "include_geometry_in_dm" )
-                        col = row.column()
-                        col.prop ( self, "include_scripts_in_dm" )
-                        col = row.column()
-                        col.prop ( self, "include_dyn_geom_in_dm" )
-
-                        row = box.row()
-                        col = row.column()
-                        col.prop ( self, "dm_section", text="" )
-                        col = row.column()
-                        col.operator ( "cb.copy_sel_data_model_to_cbd", icon='COPYDOWN' )
-
-
-
-                        """
-                        # This created the line by line labels - locked up Blender when too many labels were created
-                        dm = unpickle_data_model ( mcell['data_model'] )
-                        dm_list = list_data_model ( "Data Model", { "mcell": dm }, [] )
-                        for line in dm_list:
-                            row = box.row()
-                            row.label(text=line)
-                        """
-
-
-                else:
-                    row.prop(self, "show_data_model_script_make", icon='TRIA_RIGHT', emboss=False)
-
-
-                box = parent_box.box()
-                row = box.row(align=True)
-                row.alignment = 'LEFT'
-
-                if self.show_data_model_script_run:
-                    row.prop(self, "show_data_model_script_run", icon='TRIA_DOWN', emboss=False)
-
-                    row = box.row()
-                    row.prop ( self, "dm_internal_external", text="" )
-                    row = box.row()
-
-                    if (self.dm_internal_external == "internal"):
-
-                        row.prop_search ( self, "dm_internal_file_name",
-                                          context.scene.mcell.scripting, "internal_python_scripts_list",
-                                          text="File:", icon='TEXT' )
-                        row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
-
-                    if (self.dm_internal_external == "external"):
-
-                        row.prop ( self, "dm_external_file_name" )
-                        row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
-
-                    # This is now part of the code's API
+                    col = row.column()
+                    col.template_list("MCELL_UL_mcell4_scripting_item", "scripting",
+                                      self, "mcell4_scripting_list",
+                                      self, "active_mcell4_scripting_index", rows=2)
+                    col = row.column(align=True)
+                    col.operator("mcell.mcell4_scripting_add", icon='ZOOMIN', text="")
+                    # col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                    col.operator("mcell.mcell4_scripting_remove", icon='ZOOMOUT', text="")
+    
+                    if self.mcell4_scripting_list:
+                        if len(self.mcell4_scripting_list) > 0:
+                            selected_script = self.mcell4_scripting_list[self.active_mcell4_scripting_index]
+                            selected_script.draw_layout ( context, box )
                     #row = box.row()
-                    #row.prop ( self, "force_property_update" )
-
+                    #row.prop ( self, "ignore_cellblender_data" )
+                else:
+                    row.prop(self, "show_mcell4_scripting", icon='TRIA_RIGHT', emboss=False)
+            else:
+                # TODO: hide for mcell4
+                parent_box = layout.box()
+                row = parent_box.row(align=True)
+                row.alignment = 'LEFT'                
+    
+                if self.show_simulation_scripting:
+                    row.prop(self, "show_simulation_scripting", icon='TRIA_DOWN', emboss=False)
+    
                     row = box.row()
                     col = row.column()
-                    col.operator("mcell.scripting_execute", text="Run Script", icon='SCRIPTWIN')
-                    # TODO: The following operator is not enabled (probably in the wrong context in the 3D view rather than text editor)
-                    #col = row.column()
-                    #col.operator("text.run_script", text="Run Script", icon='SCRIPTWIN')
-                    col = row.column()
-                    col.operator("mcell.delete", text="Clear Project", icon='RADIO')   # or use 'X'
-
+                    col.template_list("MCELL_UL_scripting_item", "scripting",
+                                      self, "scripting_list",
+                                      self, "active_scripting_index", rows=2)
+                    col = row.column(align=True)
+                    col.operator("mcell.scripting_add", icon='ZOOMIN', text="")
+                    # col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                    col.operator("mcell.scripting_remove", icon='ZOOMOUT', text="")
+    
+                    if self.scripting_list:
+                        if len(self.scripting_list) > 0:
+                            selected_script = self.scripting_list[self.active_scripting_index]
+                            selected_script.draw_layout ( context, box )
+                    row = box.row()
+                    row.prop ( self, "ignore_cellblender_data" )
+    
+    
                 else:
-                    row.prop(self, "show_data_model_script_run", icon='TRIA_RIGHT', emboss=False)
-
-            else:
-                row.prop(self, "show_data_model_scripting", icon='TRIA_RIGHT', emboss=False)
-
-            box = layout.box()
-            row = box.row(align=True)
-            row.alignment = 'LEFT'
-            if self.show_data_model_browser:
-                row.prop(self, "show_data_model_browser", icon='TRIA_DOWN', emboss=False)
-                self.data_browser.draw_layout ( context, box )
-            else:
-                row.prop(self, "show_data_model_browser", icon='TRIA_RIGHT', emboss=False)
+                    row.prop(self, "show_simulation_scripting", icon='TRIA_RIGHT', emboss=False)
+    
+    
+                parent_box = layout.box()
+                row = parent_box.row(align=True)
+                row.alignment = 'LEFT'
+    
+                if self.show_data_model_scripting:
+                    row.prop(self, "show_data_model_scripting", icon='TRIA_DOWN', emboss=False)
+    
+                    box = parent_box.box()
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+    
+                    if self.show_data_model_script_make:
+                        row.prop(self, "show_data_model_script_make", icon='TRIA_DOWN', emboss=False)
+    
+                        row = box.row()
+                        row.operator ( "cb.regenerate_data_model", icon='FILE_REFRESH' )
+    
+                        try:
+                            # Try to import tkinter to see if it is installed in this version of Blender
+                            import tkinter as tk
+                            row = box.row()
+                            row.operator ( "cb.tk_browse_data_model", icon='ZOOM_ALL' )
+    
+                        except ( ImportError ):
+                            # Unable to import needed libraries so don't draw
+                            print ( "Unable to import tkinter for TK Data Model Browser" )
+                            """
+                            row = box.row()
+                            col = row.column()
+                            col.operator ( "cb.copy_data_model_to_cbd" )
+                            col = row.column()
+                            col.prop ( self, "include_geometry_in_dm" )
+                            """
+                            pass
+    
+                        if 'data_model' in mcell:
+                            row = box.row()
+                            col = row.column()
+                            col.prop ( self, "include_geometry_in_dm" )
+                            col = row.column()
+                            col.prop ( self, "include_scripts_in_dm" )
+                            col = row.column()
+                            col.prop ( self, "include_dyn_geom_in_dm" )
+    
+                            row = box.row()
+                            col = row.column()
+                            col.prop ( self, "dm_section", text="" )
+                            col = row.column()
+                            col.operator ( "cb.copy_sel_data_model_to_cbd", icon='COPYDOWN' )
+    
+    
+    
+                            """
+                            # This created the line by line labels - locked up Blender when too many labels were created
+                            dm = unpickle_data_model ( mcell['data_model'] )
+                            dm_list = list_data_model ( "Data Model", { "mcell": dm }, [] )
+                            for line in dm_list:
+                                row = box.row()
+                                row.label(text=line)
+                            """
+    
+    
+                    else:
+                        row.prop(self, "show_data_model_script_make", icon='TRIA_RIGHT', emboss=False)
+    
+    
+                    box = parent_box.box()
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+    
+                    if self.show_data_model_script_run:
+                        row.prop(self, "show_data_model_script_run", icon='TRIA_DOWN', emboss=False)
+    
+                        row = box.row()
+                        row.prop ( self, "dm_internal_external", text="" )
+                        row = box.row()
+    
+                        if (self.dm_internal_external == "internal"):
+    
+                            row.prop_search ( self, "dm_internal_file_name",
+                                              context.scene.mcell.scripting, "internal_python_scripts_list",
+                                              text="File:", icon='TEXT' )
+                            row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+    
+                        if (self.dm_internal_external == "external"):
+    
+                            row.prop ( self, "dm_external_file_name" )
+                            row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+    
+                        # This is now part of the code's API
+                        #row = box.row()
+                        #row.prop ( self, "force_property_update" )
+    
+                        row = box.row()
+                        col = row.column()
+                        col.operator("mcell.scripting_execute", text="Run Script", icon='SCRIPTWIN')
+                        # TODO: The following operator is not enabled (probably in the wrong context in the 3D view rather than text editor)
+                        #col = row.column()
+                        #col.operator("text.run_script", text="Run Script", icon='SCRIPTWIN')
+                        col = row.column()
+                        col.operator("mcell.delete", text="Clear Project", icon='RADIO')   # or use 'X'
+    
+                    else:
+                        row.prop(self, "show_data_model_script_run", icon='TRIA_RIGHT', emboss=False)
+    
+                else:
+                    row.prop(self, "show_data_model_scripting", icon='TRIA_RIGHT', emboss=False)
+    
+                box = layout.box()
+                row = box.row(align=True)
+                row.alignment = 'LEFT'
+                if self.show_data_model_browser:
+                    row.prop(self, "show_data_model_browser", icon='TRIA_DOWN', emboss=False)
+                    self.data_browser.draw_layout ( context, box )
+                else:
+                    row.prop(self, "show_data_model_browser", icon='TRIA_RIGHT', emboss=False)
 
 
     def draw_panel ( self, context, panel ):
