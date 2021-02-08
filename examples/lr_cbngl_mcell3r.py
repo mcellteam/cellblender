@@ -392,7 +392,7 @@ lr_cbngl_mcell3r_dm = {
       }
     }
   },
-  'model_language' : "mcell3r",
+  'model_language' : "mcell4",
   'model_objects' : {
     'data_model_version' : "DM_2018_01_11_1330",
     'model_object_list' : [

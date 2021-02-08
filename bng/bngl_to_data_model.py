@@ -46,7 +46,7 @@ class DataModel:
         dm = { 'mcell': { 'api_version': 0, 'blender_version': [2,78,0], 'data_model_version': "DM_2017_06_23_1300" } }
         dm['mcell']['cellblender_source_sha1'] = "61cc8da7bfe09b42114982616ce284301adad4cc"
         dm['mcell']['cellblender_version'] = "0.1.54"
-        dm['mcell']['model_language'] = "mcell3r"
+        dm['mcell']['model_language'] = "mcell4"
         # Force a reflective surface class
         dm['mcell']['define_surface_classes'] = {
           'data_model_version' : "DM_2014_10_24_1638",

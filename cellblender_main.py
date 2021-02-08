@@ -1011,7 +1011,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "   geometry=" + str(geometry) + ", scripts=" + str(scripts) + ", dyn_geo=" + str(dyn_geo) )
         dm = {}
         dm['data_model_version'] = "DM_2017_06_23_1300"
-        if self.cellblender_preferences.bionetgen_mode:
+        if self.cellblender_preferences.mcell4_mode:
+          dm['model_language'] = 'mcell4'
+        elif self.cellblender_preferences.bionetgen_mode:
           dm['model_language'] = 'mcell3r'
         else:
           dm['model_language'] = 'mcell3'
@@ -1060,8 +1062,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] == "DM_2014_10_24_1638":
-            # Add the model_language field which should be "mcell3" for any existing models
-            dm['model_language'] = 'mcell3'
+            # Add the model_language field which should be "mcell4" for any existing models
+            dm['model_language'] = 'mcell4'
             dm['data_model_version'] = "DM_2017_06_23_1300"
 
         if dm['data_model_version'] != "DM_2017_06_23_1300":
@@ -1188,10 +1190,15 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         # Set the bionetgen_mode based on model_language
         if 'model_language' in dm:
-            if dm['model_language'] == 'mcell3r':
+            if dm['model_language'] == 'mcell4':
+              self.cellblender_preferences.mcell4_mode = True
               self.cellblender_preferences.bionetgen_mode = True
             else:
-              self.cellblender_preferences.bionetgen_mode = False
+              self.cellblender_preferences.mcell4_mode = False
+              if dm['model_language'] == 'mcell3r':
+                self.cellblender_preferences.bionetgen_mode = True
+              else:
+                self.cellblender_preferences.bionetgen_mode = False
 
         # Then add each section
 

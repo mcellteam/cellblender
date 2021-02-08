@@ -943,7 +943,10 @@ def requires_mcellr ( dm ):
       mcell = dm['mcell']
       if 'model_language' in mcell:
         # Use the explicit model_language since it is specified in the data model
-        if mcell['model_language'] == 'mcell3r':
+        if mcell['model_language'] == 'mcell4':
+          print("Warning: this model was created from MCell4, it might fails with MCell3 mode. "
+                "To select MCell4 mode, open Settings & Preferences and enable checkbox MCell4 Mode.")
+        elif mcell['model_language'] == 'mcell3r':
           bionetgen_mode = True
       elif 'define_molecules' in mcell:
         # If the model_language isn't explicitly given, then attempt to deduce it by components

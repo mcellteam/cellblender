@@ -22856,5 +22856,5 @@ organelle_dm = {
    79,
    0
   ],
-  "model_language": "mcell3"
+  "model_language": "mcell4"
 }

@@ -2092,7 +2092,7 @@ mind_mine_dm = {
       }
     }
   },
-  'model_language' : "mcell3",
+  'model_language' : "mcell4",
   'model_objects' : {
     'data_model_version' : "DM_2017_06_15_1755",
     'model_object_list' : [

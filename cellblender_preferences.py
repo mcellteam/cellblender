@@ -461,8 +461,8 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         description="Use MCell4 for simulation")
 
     bionetgen_mode = BoolProperty(
-        name="BioNetGen Language Mode", default=False,
-        description="Show BioNetGen Options and disable some checking")
+        name="BioNetGen Language Mode", default=True,
+        description="Export CellBlender model into a BNGL file where possible, show BioNetGen Options and disable some checking")
 
     show_mcellr_proxies = BoolProperty(
         name="Show MCellR Proxies", default=False,
