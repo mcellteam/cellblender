@@ -299,13 +299,9 @@ class MCELL_OT_load_rat_nmj(bpy.types.Operator):
 
         clear_texts()
 
-        param_mdl_name = 'rat_nmj.parameters.mdl'
-        parameters_txt = bpy.data.texts.new(param_mdl_name)
-        parameters_txt.write(dm['mcell']['scripting']['script_texts'][param_mdl_name])
-
-        release_mdl_name = 'rat_nmj.release_sites.mdl'
-        release_sites_txt = bpy.data.texts.new(release_mdl_name)
-        release_sites_txt.write(dm['mcell']['scripting']['script_texts'][release_mdl_name])
+        param_mdl_name = 'customization.py'
+        customization_py = bpy.data.texts.new(param_mdl_name)
+        customization_py.write(dm['mcell']['scripting']['script_texts'][param_mdl_name])
 
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
