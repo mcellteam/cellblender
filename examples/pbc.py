@@ -1,4 +1,5 @@
 pbc_dm = {
+  'model_language': 'mcell3',
   'api_version' : 0,
   'blender_version' : [2, 78, 0],
   'cellblender_source_sha1' : "deae7bc4e7997d7a9a9efe8c6fde29a17d866c61",
