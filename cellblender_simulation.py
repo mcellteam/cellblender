@@ -869,7 +869,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 print ( "Number of non-seed sweep runs = " + str(num_sweep_runs) )
                 print ( "Total runs (sweep and seed) is " + str(num_requested_runs) )
 
-                bionetgen_mode = data_model_to_mdl.requires_mcellr ( {'mcell':dm} )
+                bionetgen_mode = data_model_to_mdl.requires_mcellr ( {'mcell':dm} ) or mcell.cellblender_preferences.bionetgen_mode
 
                 # Build a list of "run commands" (one for each run) to be put in the queue
                 # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run

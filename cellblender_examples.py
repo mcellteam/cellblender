@@ -373,7 +373,7 @@ class MCELL_OT_load_delayed_transport(bpy.types.Operator):
 
 class MCELL_OT_load_direct_transport_bngl(bpy.types.Operator):
     bl_idname = "mcell.load_dir_tr_bngl"
-    bl_label = "Direct Transport with Compartmentrs"
+    bl_label = "Direct Transport with Compartments"
     bl_description = "Simple Direct Transport from inside of Cube to outside of Cube that uses BNGL compartments"
     bl_options = {'REGISTER', 'UNDO'}
 
