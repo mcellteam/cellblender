@@ -94,7 +94,7 @@ direct_transport_bngl_dm = {
         'define_surface_regions' : [
           {
             'include_elements' : [5, 11],
-            'name' : "Membrane"
+            'name' : "Cube_region"
           }
         ],
         'element_connections' : [
@@ -350,7 +350,7 @@ direct_transport_bngl_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "V@Cube",
+        'molecule' : "V",
         'name' : "Release_Site_1",
         'object_expr' : "Cube",
         'orient' : "'",
@@ -368,9 +368,9 @@ direct_transport_bngl_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "S@Membrane",
+        'molecule' : "S",
         'name' : "Release_Site_2",
-        'object_expr' : "Cube[Membrane]",
+        'object_expr' : "Cube[Cube_region]",
         'orient' : "'",
         'pattern' : "",
         'points_list' : [],
