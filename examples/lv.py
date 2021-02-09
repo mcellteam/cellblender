@@ -167,9 +167,9 @@ lv_rxn_lim_dm = {
       'y_end' : "0.25",
       'y_start' : "-0.25",
       'y_step' : "0.02",
-      'z_end' : "0.0075",
-      'z_start' : "-0.0075",
-      'z_step' : "0.015"
+      'z_end' : "0.02",
+      'z_start' : "-0.02",
+      'z_step' : "0.02"
     },
     'radial_directions' : "",
     'radial_subdivisions' : "",

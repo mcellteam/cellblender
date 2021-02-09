@@ -310,7 +310,7 @@ class MCELL_OT_load_rat_nmj(bpy.types.Operator):
 
 class MCELL_OT_load_pbc(bpy.types.Operator):
     bl_idname = "mcell.load_pbc"
-    bl_label = "Periodic Boundary Conditions"
+    bl_label = "Periodic Boundary Conditions [MCell3]"
     bl_description = "Loads a model illustrating periodic boundary conditions"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -331,6 +331,12 @@ class MCELL_OT_load_pbc(bpy.types.Operator):
         bpy.context.scene.objects.active.scale = (0.5, 0.1, 0.1)
         bpy.context.object.draw_type = 'WIRE'
         view_all()
+        
+        # this is set when data model is imported but not for examples
+        cellblender_preferences = context.scene.mcell.cellblender_preferences        
+        cellblender_preferences.mcell4_mode = False
+        cellblender_preferences.bionetgen_mode = False
+
         return {'FINISHED'}
 
 
@@ -415,7 +421,7 @@ class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
 
 class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
     bl_idname = "mcell.load_skey_dyn_geo"
-    bl_label = "Dynamic Geometry (Shape Keys)"
+    bl_label = "Dynamic Geometry (Shape Keys) [MCell3]"
     bl_description = "Loads a model with shape key dynamic geometry"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -571,12 +577,17 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         # Return the current frame to 0 (small cube) after viewing large cube
         context.scene.frame_current = 0
 
+        # this is set when data model is imported but not for examples
+        cellblender_preferences = context.scene.mcell.cellblender_preferences        
+        cellblender_preferences.mcell4_mode = False
+        cellblender_preferences.bionetgen_mode = False
+
         return {'FINISHED'}
 
 
 class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
     bl_idname = "mcell.load_scripted_dyn_geo"
-    bl_label = "Dynamic Geometry (Scripted)"
+    bl_label = "Dynamic Geometry (Scripted) [MCell3]"
     bl_description = "Loads a model with scripted dynamic geometry"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -614,12 +625,17 @@ class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
         # Return the current frame to 0 (small cube) after viewing large cube (not really needed for scripting)
         context.scene.frame_current = 0
 
+        # this is set when data model is imported but not for examples
+        cellblender_preferences = context.scene.mcell.cellblender_preferences        
+        cellblender_preferences.mcell4_mode = False
+        cellblender_preferences.bionetgen_mode = False
+
         return {'FINISHED'}
 
 
 class MCELL_OT_load_dyn_geo_cc(bpy.types.Operator):
     bl_idname = "mcell.load_dyn_geo_cc"
-    bl_label = "Dynamic Geometry (Scripted with concentration clamp)"
+    bl_label = "Dynamic Geometry (Scripted with concentration clamp) [MCell3]"
     bl_description = "Loads a scripted dynamic geometry model with concentration clamp"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -657,12 +673,17 @@ class MCELL_OT_load_dyn_geo_cc(bpy.types.Operator):
         # Return the current frame to 0 (small cube) after viewing large cube (not really needed for scripting)
         context.scene.frame_current = 0
 
+        # this is set when data model is imported but not for examples
+        cellblender_preferences = context.scene.mcell.cellblender_preferences        
+        cellblender_preferences.mcell4_mode = False
+        cellblender_preferences.bionetgen_mode = False
+
         return {'FINISHED'}
 
 
 class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
     bl_idname = "mcell.load_dynamic_geometry"
-    bl_label = "Dynamic Geometry (Blend file)"
+    bl_label = "Dynamic Geometry (Blend file) [MCell3]"
     bl_description = "Loads a model using dynamic geometries"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -690,6 +711,12 @@ class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
         bpy.data.materials["Cube_mat"].use_transparency = True
         bpy.data.materials["Cube_mat"].alpha = 0.2
         view_all()
+        
+        # this is set when data model is imported but not for examples
+        cellblender_preferences = context.scene.mcell.cellblender_preferences        
+        cellblender_preferences.mcell4_mode = False
+        cellblender_preferences.bionetgen_mode = False
+
         return {'FINISHED'}
 
 
@@ -723,19 +750,9 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.operator("mcell.load_rat_nmj")
             row = layout.row()
-            row.operator("mcell.load_pbc")
-            row = layout.row()
             row.operator("mcell.load_lipid_raft")
             row = layout.row()
             row.operator("mcell.load_variable_rate_constant")
-            row = layout.row()
-            row.operator("mcell.load_dynamic_geometry")
-            row = layout.row()
-            row.operator("mcell.load_skey_dyn_geo")
-            row = layout.row()
-            row.operator("mcell.load_scripted_dyn_geo")
-            row = layout.row()
-            row.operator("mcell.load_dyn_geo_cc")
             row = layout.row()
             row.operator("mcell.load_lotka_volterra_rxn_limited")
             row = layout.row()
@@ -758,4 +775,14 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_scoil_mcell3r")
             row = layout.row()
             row.operator("mcell.load_mind_mine")
+            row = layout.row()
+            row.operator("mcell.load_pbc")
+            row = layout.row()
+            row.operator("mcell.load_dynamic_geometry")
+            row = layout.row()
+            row.operator("mcell.load_skey_dyn_geo")
+            row = layout.row()
+            row.operator("mcell.load_scripted_dyn_geo")
+            row = layout.row()
+            row.operator("mcell.load_dyn_geo_cc")
 
