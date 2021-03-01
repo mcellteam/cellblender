@@ -463,7 +463,7 @@ fceri_mcell3r_dm = {
       {
         'define_surface_regions' : [
           {
-            'include_elements' : [1, 7],
+            'include_elements' : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
             'name' : "PM"
           }
         ],
