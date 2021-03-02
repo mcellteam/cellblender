@@ -32,7 +32,7 @@ def convert_data_model_to_python(mcell_binary, dm_file, sweep_item_path, base_na
     cmd = [converter, dm_file, '-o', base_name]
     if bng_mode:
         cmd.append('-b')
-    
+    print("Running " + ' '.join(cmd) + " in " + os.getcwd())
     res = subprocess.run(
         cmd,
         cwd=sweep_item_path,
