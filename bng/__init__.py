@@ -217,6 +217,8 @@ class ImportCBNGL(bpy.types.Operator, ImportHelper):
         mcell_dm = bngl_to_data_model.read_data_model_from_bngl_file ( bngfilepath )
         mcell_dm = context.scene.mcell.upgrade_data_model ( mcell_dm['mcell'] )
         context.scene.mcell.build_properties_from_data_model ( context, mcell_dm, geometry=True, scripts=True )
+        # set MCell4 mode, cannot be set in BNGL import because of backwards compatibility with MCell3R
+        context.scene.mcell.cellblender_preferences.mcell4_mode = True
         return {'FINISHED'}
 
 def menu_func_bng_import(self, context):
