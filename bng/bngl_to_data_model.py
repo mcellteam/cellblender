@@ -41,7 +41,7 @@ MCELL_DEFAULT_COMPARTMENT_VOLUME = 'MCELL_DEFAULT_COMPARTMENT_VOLUME'
 class DataModel:
     def __init__(self):
         # Define special parameters that appear to be MCell Specific
-        self.special_parameters = { 'MCELL_ITERATIONS': 1000, 'MCELL_TIME_STEP': 1e-6, 'MCELL_VACANCY_SEARCH_DISTANCE': 10 }
+        self.special_parameters = { 'ITERATIONS': 1000, 'MCELL_ITERATIONS': 1000, 'MCELL_TIME_STEP': 1e-6, 'MCELL_VACANCY_SEARCH_DISTANCE': 10 }
         # populate defaults 
         dm = { 'mcell': { 'api_version': 0, 'blender_version': [2,78,0], 'data_model_version': "DM_2017_06_23_1300" } }
         dm['mcell']['cellblender_source_sha1'] = "61cc8da7bfe09b42114982616ce284301adad4cc"
@@ -153,13 +153,20 @@ class DataModel:
         self.dm = dm
 
     def handle_special_params(self):
+        ignore_mcell_iterations = False
+        if "MCELL_ITERATIONS" in self.special_parameters and "ITERATIONS" in self.special_parameters:
+            print("Ignoring parameter MCELL_ITERATIONS because parameter ITERATIONS is defined")
+            ignore_mcell_iterations = True
+        
         for sp, spv in self.special_parameters.items():
-            if sp == "MCELL_ITERATIONS":
-                self.dm['mcell']['initialization']['iterations'] = str(spv)
+            if sp == "MCELL_ITERATIONS" and not ignore_mcell_iterations:
+                self.dm['mcell']['initialization']['iterations'] = sp
+            elif sp == "ITERATIONS":
+                self.dm['mcell']['initialization']['iterations'] = sp
             elif sp == "MCELL_TIME_STEP":
-                self.dm['mcell']['initialization']['time_step'] = str(spv)
+                self.dm['mcell']['initialization']['time_step'] = sp
             elif sp == "MCELL_VACANCY_SEARCH_DISTANCE":
-                self.dm['mcell']['initialization']['vacancy_search_distance'] = str(spv)
+                self.dm['mcell']['initialization']['vacancy_search_distance'] = sp
             elif sp == "MCELL_SUBPARTITION_DIMENSION":
                 self.dm['mcell']['initialization']['partitions'] = {
                     "data_model_version": "DM_2016_04_15_1600",
