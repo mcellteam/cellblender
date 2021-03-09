@@ -554,9 +554,9 @@ def mol_viz_clear(mcell_prop, force_clear=False):
 
 
 
-
+"""
 def old_mol_viz_file_read(mcell_prop, filepath):
-    """ Draw the viz data for the current frame. """
+    
     mcell = mcell_prop
     try:
 
@@ -729,7 +729,7 @@ def old_mol_viz_file_read(mcell_prop, filepath):
 
     except ValueError:
         print(("\n***** Invalid data in file: %s\n") % (filepath))
-
+"""
 
 
 
@@ -815,6 +815,22 @@ def mol_viz_file_dump(filepath):
         raise
 
 
+def simple_complex_name_to_molecule_type(name):
+    if '.' in name:
+        # Has multiple elementary molecules, keep it as it is
+        return name
+    else:
+        # Remove states and compartment, e.g. Syk(a~Y,l~Y,tSH2)@CP -> Syk,
+        # assuming that the compartment is always at the end if present (not @CP:)
+        par = name.find('(')
+        at = name.find('@')
+        idx = min(par, at)
+        if idx != -1:
+            return name[:idx]
+        else:
+            # This should not occur but let's return the original name
+            return name
+        
 
 def mol_viz_file_read(mcell, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
@@ -877,7 +893,8 @@ def mol_viz_file_read(mcell, filepath):
                     ns = array.array("B")          # Create another byte array to hold the molecule name
                     ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
                     s = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
-                    mol_name = "mol_%s" % (s)      # Construct name of blender molecule viz object
+                    simplified_name = simple_complex_name_to_molecule_type(s)
+                    mol_name = "mol_%s" % (simplified_name)      # Construct name of blender molecule viz object
                     mt = array.array("B")          # Create a byte array for the molecule type
                     mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
                     ni = array.array("I")          # Re-use ni as an integer array to hold the number of molecules of this name in this frame
@@ -922,7 +939,11 @@ def mol_viz_file_read(mcell, filepath):
                     filepath, "r").read().split("\n") if s != ""]
 
             for mol in mol_data:
-                mol_name = "mol_%s" % (mol[0])
+                # visualization filtering works by comparing the molecule name against the name 
+                # in molecules, we can change simple complexes from Lig(l,l)@EC to Lig, if this is a molecule 
+                # composed of multiple elementary molecules, we keep it as it is 
+                simplified_name = simple_complex_name_to_molecule_type(mol[0])
+                mol_name = "mol_%s" % simplified_name
                 if not mol_name in mol_dict:
                     mol_orient = mol[1][3:]
                     mt = 0
