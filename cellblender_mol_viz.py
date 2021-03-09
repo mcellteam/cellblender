@@ -828,7 +828,7 @@ def simple_complex_name_to_molecule_type(name):
         if idx != -1:
             return name[:idx]
         else:
-            # This should not occur but let's return the original name
+            # No state neither compartment
             return name
         
 
