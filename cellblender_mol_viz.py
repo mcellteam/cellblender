@@ -280,12 +280,10 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           # If you previously had some viz data loaded, but reran the
           # simulation with less iterations, you can receive an index error.
           try:
-#              mol_file = mol_viz.mol_file_list[
-#                  mol_viz.mol_file_index]
-              mol_file = global_mol_file_list[
-                  mol_viz.mol_file_index]
+              mol_file = global_mol_file_list[mol_viz.mol_file_index]
           except IndexError:
               mol_viz.mol_file_index = 0
+              mol_file = global_mol_file_list[mol_viz.mol_file_index]
 
           create_color_list()
           set_viz_boundaries(context)
@@ -483,9 +481,9 @@ def mol_viz_update(self, context):
     mcell = context.scene.mcell
 
     if global_mol_file_list:
-            
-        # -2 is used to match cell number with frame number
-        filename = global_mol_file_list[mcell.mol_viz.mol_file_index-2]
+        if mcell.mol_viz.mol_file_index > len(global_mol_file_list) or mcell.mol_viz.mol_file_index < 0:
+            mcell.mol_viz.mol_file_index = 0
+        filename = global_mol_file_list[mcell.mol_viz.mol_file_index]
         mcell.mol_viz.mol_file_name = filename
         filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
 
