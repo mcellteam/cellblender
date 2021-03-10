@@ -813,22 +813,69 @@ def mol_viz_file_dump(filepath):
         raise
 
 
-def simple_complex_name_to_molecule_type(name):
-    if '.' in name:
-        # Has multiple elementary molecules, keep it as it is
-        return name
-    else:
-        # Remove states and compartment, e.g. Syk(a~Y,l~Y,tSH2)@CP -> Syk,
-        # assuming that the compartment is always at the end if present (not @CP:)
-        par = name.find('(')
-        at = name.find('@')
-        idx = min(par, at)
-        if idx != -1:
-            return name[:idx]
-        else:
-            # No state neither compartment
-            return name
+def remove_compartment_and_state(name):
+    # Remove states and compartment, e.g. @EC:Syk(a~Y,l~Y,tSH2)@CP -> Syk
+    split_by_colon = name.split(':')
+    if len(split_by_colon) == 2:
+        em_no_start_comp = split_by_colon[1]
+    else:  
+        em_no_start_comp = name
         
+    par = em_no_start_comp.find('(')
+    if par != -1:
+        idx = par
+    at = em_no_start_comp.find('@')
+    if at != -1 and par != -1 and at < par:
+        idx = at
+    if idx != -1:
+        return em_no_start_comp[:idx]
+    else:
+        # No state neither compartment
+        return em_no_start_comp
+    
+        
+def get_used_molecule_names(name):
+    # example of input:
+    # '@EC:scov2(s!1,s!2,s!3,s!4,s!5).spike(v!1,a)@CP.spike(v!1,a)@CP'
+    # output:
+    # ['scov', 'spike']
+    res = set()
+    split_by_dot = name.split('.')
+    for em in split_by_dot:
+        # remove compartment and states
+        res.add(remove_compartment_and_state(em))
+    return list(res)            
+            
+
+def transform_to_internal_mol_name(name):
+    if '.' in name:
+        # Has multiple elementary molecules, we must make sure that the name is shorter 
+        # than 64 characters,
+        # First concatenate unique molecule type names 
+        mol_names = get_used_molecule_names(name)
+        res = ''
+        n = len(mol_names)
+        for i in range(n):
+            res += mol_names[i]
+            if i != n - 1:
+                res += '.'
+                
+        # And append a hash of the whole name, do not include 0x
+        res += '#' + hex(abs(name.__hash__()))[2:]
+    else:
+        # Assuming that since this is a single name that it will be shorter than 64 chars
+        # and there is no need to append hash
+        res = remove_compartment_and_state(name)
+
+    # BlendDataObjects.new() converts names longer than 59 characters (uses 5 extra chars for appended index) 
+    # which then leads to incorect removal during visualization, 
+    # better to cut the name and have some molecules displayed incorrectly than 
+    # not removing them when iteration/frame changes  
+    if len(res) > 59: 
+        res = res[:59]
+    
+    return res
+
 
 def mol_viz_file_read(mcell, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
@@ -891,7 +938,7 @@ def mol_viz_file_read(mcell, filepath):
                     ns = array.array("B")          # Create another byte array to hold the molecule name
                     ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
                     s = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
-                    simplified_name = simple_complex_name_to_molecule_type(s)
+                    simplified_name = transform_to_internal_mol_name(s)
                     mol_name = "mol_%s" % (simplified_name)      # Construct name of blender molecule viz object
                     mt = array.array("B")          # Create a byte array for the molecule type
                     mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
@@ -940,7 +987,7 @@ def mol_viz_file_read(mcell, filepath):
                 # visualization filtering works by comparing the molecule name against the name 
                 # in molecules, we can change simple complexes from Lig(l,l)@EC to Lig, if this is a molecule 
                 # composed of multiple elementary molecules, we keep it as it is 
-                simplified_name = simple_complex_name_to_molecule_type(mol[0])
+                simplified_name = transform_to_internal_mol_name(mol[0])
                 mol_name = "mol_%s" % simplified_name
                 if not mol_name in mol_dict:
                     mol_orient = mol[1][3:]
