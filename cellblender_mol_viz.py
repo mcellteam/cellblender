@@ -844,7 +844,7 @@ def get_used_molecule_names(name):
     for em in split_by_dot:
         # remove compartment and states
         res.add(remove_compartment_and_state(em))
-    return list(res)            
+    return sorted(list(res))            
             
 
 def transform_to_internal_mol_name(name):
@@ -859,9 +859,6 @@ def transform_to_internal_mol_name(name):
             res += mol_names[i]
             if i != n - 1:
                 res += '.'
-                
-        # And append a hash of the whole name, do not include 0x
-        res += '#' + hex(abs(name.__hash__()))[2:]
     else:
         # Assuming that since this is a single name that it will be shorter than 64 chars
         # and there is no need to append hash
@@ -872,7 +869,15 @@ def transform_to_internal_mol_name(name):
     # better to cut the name and have some molecules displayed incorrectly than 
     # not removing them when iteration/frame changes  
     if len(res) > 59: 
-        res = res[:59]
+        shorter_name = res[:59]
+        # thry to cut off the last molecule
+        idx = shorter_name.rfind('.')
+        if idx != -1:
+            res = res[:idx]
+        else:
+            # no way how to cut off molecule name, just
+            # use a shorter string
+            res = shorter_name 
     
     return res
 
