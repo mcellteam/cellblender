@@ -160,13 +160,13 @@ class DataModel:
         
         for sp, spv in self.special_parameters.items():
             if sp == "MCELL_ITERATIONS" and not ignore_mcell_iterations:
-                self.dm['mcell']['initialization']['iterations'] = sp
+                self.dm['mcell']['initialization']['iterations'] = str(spv)
             elif sp == "ITERATIONS":
-                self.dm['mcell']['initialization']['iterations'] = sp
+                self.dm['mcell']['initialization']['iterations'] = sp 
             elif sp == "MCELL_TIME_STEP":
-                self.dm['mcell']['initialization']['time_step'] = sp
+                self.dm['mcell']['initialization']['time_step'] = str(spv)  
             elif sp == "MCELL_VACANCY_SEARCH_DISTANCE":
-                self.dm['mcell']['initialization']['vacancy_search_distance'] = sp
+                self.dm['mcell']['initialization']['vacancy_search_distance'] = str(spv)
             elif sp == "MCELL_SUBPARTITION_DIMENSION":
                 self.dm['mcell']['initialization']['partitions'] = {
                     "data_model_version": "DM_2016_04_15_1600",
@@ -705,22 +705,22 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
             dm.special_parameters[name_val[0]] = name_val[2]
           else:
             dm.special_parameters[name_val[0]] = name_val[1]
+        
+        # Note that taking this section out of the "else" would also include the special parameters in par_val_dict
+        # It's not clear whether that is what should be done.
+        par = {}
+        par['par_name'] = name_val[0]
+        if len(name_val) == 3:
+          par['par_expression'] = ' '.join ( name_val[2:] )
         else:
-          # Note that taking this section out of the "else" would also include the special parameters in par_val_dict
-          # It's not clear whether that is what should be done.
-          par = {}
-          par['par_name'] = name_val[0]
-          if len(name_val) == 3:
-            par['par_expression'] = ' '.join ( name_val[2:] )
-          else:
-            par['par_expression'] = ' '.join ( name_val[1:] )
-          par['par_description'] = ""
-          par['par_units'] = ""
-          par_list.append ( par )
-          # Store an evaluated copy of this parameter in the parameter/value dictionary
-          # This assumes that parameters are defined before being used
-          par_expr_dict[par['par_name']] = par['par_expression']
-          par_val_dict[par['par_name']] = eval(par['par_expression'],globals(),par_val_dict)
+          par['par_expression'] = ' '.join ( name_val[1:] )
+        par['par_description'] = ""
+        par['par_units'] = ""
+        par_list.append ( par )
+        # Store an evaluated copy of this parameter in the parameter/value dictionary
+        # This assumes that parameters are defined before being used
+        par_expr_dict[par['par_name']] = par['par_expression']
+        par_val_dict[par['par_name']] = eval(par['par_expression'],globals(),par_val_dict)
 
   dm.add_parameters(par_list)
 

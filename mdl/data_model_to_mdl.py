@@ -549,6 +549,24 @@ def write_viz_out_mdlr3 ( vizout, mols, f ):
       f.write ( "}\n" )
       f.write ( "\n" );
 
+
+def has_parameter(data_model, name):
+    # returns True if parameter with this name was already defined
+    if 'parameter_system' not in data_model:
+        return False
+    
+    parameter_system = data_model['parameter_system']
+    if 'model_parameters' not in parameter_system:
+        return False
+    
+    model_parameters = parameter_system['model_parameters']
+    for par_info in model_parameters:
+        if name == par_info['par_name']:
+            return True
+        
+    return False
+
+
 def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
     # The file_name parameter will be something like:
     #   <project>_files/mcell/output_data/Scene.main.mdl"
@@ -611,7 +629,10 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
       # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
       # write_initialization(data_model['initialization'], f)
       # Write specific parts instead:
-      write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
+      # if not already defined
+      if not has_parameter(data_model, 'ITERATIONS'):
+          write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
+      
       write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
       write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
 
