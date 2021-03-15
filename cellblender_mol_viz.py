@@ -943,7 +943,12 @@ def mol_viz_file_read(mcell, filepath):
                     ns = array.array("B")          # Create another byte array to hold the molecule name
                     ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
                     s = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
-                    simplified_name = transform_to_internal_mol_name(s)
+                    
+                    if mcell.cellblender_preferences.mcell4_mode:
+                        simplified_name = transform_to_internal_mol_name(s)
+                    else:
+                        simplified_name = s
+                    
                     mol_name = "mol_%s" % (simplified_name)      # Construct name of blender molecule viz object
                     mt = array.array("B")          # Create a byte array for the molecule type
                     mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
