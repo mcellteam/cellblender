@@ -509,8 +509,11 @@ def write_geometry_mdlr3 ( geom, f ):
           f.write ( "}\n")
           f.write ( "\n" );
 
-def write_viz_out_mdlr3 ( vizout, mols, f ):
 
+def write_viz_out_mdlr3 (data_model, f ):
+    
+    vizout = data_model['viz_output']
+    mols = data_model['define_molecules']
     mol_list_string = ""
 
     if vizout['export_all']:
@@ -531,7 +534,10 @@ def write_viz_out_mdlr3 ( vizout, mols, f ):
     if len(mol_list_string) > 0:
       f.write ( "VIZ_OUTPUT\n" )
       f.write ( "{\n" )
-      f.write ( "  MODE = CELLBLENDER\n" )
+      if data_model['initialization']['export_all_ascii']:
+        f.write ( "  MODE = ASCII\n" )
+      else:
+        f.write ( "  MODE = CELLBLENDER\n" )
       #TODO Note that the use of "Scene" here for file output is a temporary measure!!!!
       f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/Scene\"\n" )
       f.write ( "  MOLECULES\n" )
@@ -884,7 +890,7 @@ def write_mdlr ( dm, file_name, scene_name='Scene', fail_on_error=False ):
 
     f = open ( os.path.join(output_data_dir,"Scene.viz_output.mdl"), 'w' )
     f.write ( 'sprintf(seed,"%05g",SEED)\n\n' )
-    write_viz_out_mdlr3(data_model['viz_output'], data_model['define_molecules'], f)
+    write_viz_out_mdlr3(data_model, f)
     
     
     if 'partitions' in data_model['initialization']:
