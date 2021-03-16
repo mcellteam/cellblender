@@ -290,7 +290,20 @@ tlbr_mcell3r_dm = {
       {
         'define_surface_regions' : [
           {
-            'include_elements' : [1, 7],
+            'include_elements' : [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11
+            ],
             'name' : "PM"
           }
         ],
@@ -327,11 +340,11 @@ tlbr_mcell3r_dm = {
   'initialization' : {
     'accurate_3d_reactions' : True,
     'center_molecules_on_grid' : False,
-    'command_options' : "-d 1000",
+    'command_options' : "",
     'data_model_version' : "DM_2017_11_18_0130",
     'export_all_ascii' : False,
     'interaction_radius' : "",
-    'iterations' : "3000",
+    'iterations' : "60000",
     'microscopic_reversibility' : "OFF",
     'notifications' : {
       'all_notifications' : "INDIVIDUAL",
@@ -366,7 +379,7 @@ tlbr_mcell3r_dm = {
     'radial_subdivisions' : "",
     'space_step' : "",
     'surface_grid_density' : "10000",
-    'time_step' : "5e-6",
+    'time_step' : "0.5e-7",
     'time_step_max' : "",
     'vacancy_search_distance' : "100",
     'warnings' : {
@@ -405,7 +418,7 @@ tlbr_mcell3r_dm = {
       }
     }
   },
-  'model_language' : "mcell3r",
+  'model_language' : "mcell4",
   'model_objects' : {
     'data_model_version' : "DM_2018_01_11_1330",
     'model_object_list' : [
@@ -631,7 +644,7 @@ tlbr_mcell3r_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "L(r,r,r)@CP",
+        'molecule' : "L(r,r,r,k)@CP",
         'name' : "ligand_rel",
         'object_expr' : "CP[ALL]",
         'orient' : "'",
@@ -650,7 +663,7 @@ tlbr_mcell3r_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "R(l,l)@CP",
+        'molecule' : "R(l,l,k)@CP",
         'name' : "receptor_rel",
         'object_expr' : "CP[ALL]",
         'orient' : "'",
