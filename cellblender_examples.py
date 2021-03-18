@@ -194,7 +194,7 @@ class MCELL_OT_load_tlbr_mcell3r(bpy.types.Operator):
 
 class MCELL_OT_load_schain_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_schain_mcell3r"
-    bl_label = "Simple Chain MCell Rules"
+    bl_label = "Simple Chain MCell Rules [MCell3]"
     bl_description = "Loads a simple chain model utilizing MCell Rules"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -211,7 +211,7 @@ class MCELL_OT_load_schain_mcell3r(bpy.types.Operator):
 
 class MCELL_OT_load_scoil_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_scoil_mcell3r"
-    bl_label = "Simple Coil MCell Rules"
+    bl_label = "Simple Coil MCell Rules [MCell3]"
     bl_description = "Loads a simple coil model utilizing MCell Rules"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -770,10 +770,6 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.operator("mcell.load_tlbr_mcell3r")
             row = layout.row()
-            row.operator("mcell.load_schain_mcell3r")
-            row = layout.row()
-            row.operator("mcell.load_scoil_mcell3r")
-            row = layout.row()
             row.operator("mcell.load_mind_mine")
             row = layout.row()
             row.operator("mcell.load_pbc")
@@ -785,4 +781,8 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_scripted_dyn_geo")
             row = layout.row()
             row.operator("mcell.load_dyn_geo_cc")
+            row = layout.row()
+            row.operator("mcell.load_schain_mcell3r")
+            row = layout.row()
+            row.operator("mcell.load_scoil_mcell3r")
 
