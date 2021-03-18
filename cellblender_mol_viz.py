@@ -821,6 +821,7 @@ def remove_compartment_and_state(name):
     else:  
         em_no_start_comp = name
         
+    idx = -1
     par = em_no_start_comp.find('(')
     if par != -1:
         idx = par
