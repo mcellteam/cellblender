@@ -848,41 +848,6 @@ def get_used_molecule_names(name):
     return sorted(list(res))            
             
 
-def transform_to_internal_mol_name(name):
-    if '.' in name:
-        # Has multiple elementary molecules, we must make sure that the name is shorter 
-        # than 64 characters,
-        # First concatenate unique molecule type names 
-        mol_names = get_used_molecule_names(name)
-        res = ''
-        n = len(mol_names)
-        for i in range(n):
-            res += mol_names[i]
-            if i != n - 1:
-                res += '.'
-    else:
-        # Assuming that since this is a single name that it will be shorter than 64 chars
-        # and there is no need to append hash
-        res = remove_compartment_and_state(name)
-
-    # BlendDataObjects.new() converts names longer than 59 characters (uses 5 extra chars for appended index) 
-    # which then leads to incorect removal during visualization, 
-    # better to cut the name and have some molecules displayed incorrectly than 
-    # not removing them when iteration/frame changes  
-    if len(res) > 59: 
-        shorter_name = res[:59]
-        # thry to cut off the last molecule
-        idx = shorter_name.rfind('.')
-        if idx != -1:
-            res = res[:idx]
-        else:
-            # no way how to cut off molecule name, just
-            # use a shorter string
-            res = shorter_name 
-    
-    return res
-
-
 def mol_viz_file_read(mcell, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
 
@@ -943,32 +908,43 @@ def mol_viz_file_read(mcell, filepath):
                     ni.fromfile(mol_file, 1)       # Read one byte which is the number of characters in the molecule name
                     ns = array.array("B")          # Create another byte array to hold the molecule name
                     ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
-                    s = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
+                    mol_name_from_file = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
                     
-                    if mcell.cellblender_preferences.mcell4_mode:
-                        simplified_name = transform_to_internal_mol_name(s)
-                    else:
-                        simplified_name = s
                     
-                    mol_name = "mol_%s" % (simplified_name)      # Construct name of blender molecule viz object
                     mt = array.array("B")          # Create a byte array for the molecule type
                     mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
                     ni = array.array("I")          # Re-use ni as an integer array to hold the number of molecules of this name in this frame
                     ni.fromfile(mol_file, 1)       # Read the 4 byte integer value which is 3 times the number of molecules
                     mol_pos = array.array("f")     # Create a floating point array to hold the positions
                     mol_orient = array.array("f")  # Create a floating point array to hold the orientations
-                    mol_pos.fromfile(mol_file, ni[0])  # Read the positions which should be 3 floats per molecule
-#                    tot += ni[0]/3
+                    mol_pos.fromfile(mol_file, ni[0])  # Read all the positions which should be 3 floats per molecule
                     if mt[0] == 1:                                        # If mt==1, it's a surface molecule
-                        mol_orient.fromfile(mol_file, ni[0])              # Read the surface molecule orientations
-                    mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]     # Create a dictionary entry for this molecule containing a list of relevant data
-                    if len(mcell.mol_viz.mol_viz_list) > 0:
-                      for i in range(len(mcell.mol_viz.mol_viz_list)):
-                        if mcell.mol_viz.mol_viz_list[i].name[4:] == mol_name:
-                          dup_check = True
-                    if dup_check == False:
-                      new_item = mcell.mol_viz.mol_viz_list.add()           # Create a new collection item to hold the name for this molecule
-                      new_item.name = mol_name                              # Assign the name to the new item
+                        mol_orient.fromfile(mol_file, ni[0])              # Read all the surface molecule orientations
+                    
+                    if mcell.cellblender_preferences.mcell4_mode:
+                        elem_mol_names = get_used_molecule_names(mol_name_from_file)
+                    else:
+                        # MCell3(R) in binary viz mode already splits the complexes into individual molecules
+                        elem_mol_names = [mol_name_from_file]
+                
+                    for elem_mol_name in elem_mol_names:                                    
+                        mol_name = "mol_%s" % (elem_mol_name)      # Construct name of blender molecule viz object
+                        
+                        # we must append positions and orientations if this mol type already exists
+                        if mol_name not in mol_dict: 
+                            mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]     # Create a dictionary entry for this molecule containing a list of relevant data
+                        else:
+                            mol_dict[mol_name][1].extend(mol_pos)
+                            mol_dict[mol_name][2].extend(mol_orient)
+                        
+                        if len(mcell.mol_viz.mol_viz_list) > 0:
+                          for i in range(len(mcell.mol_viz.mol_viz_list)):
+                            if mcell.mol_viz.mol_viz_list[i].name[4:] == mol_name:
+                              dup_check = True
+                        if dup_check == False:
+                          new_item = mcell.mol_viz.mol_viz_list.add()           # Create a new collection item to hold the name for this molecule
+                          new_item.name = mol_name                              # Assign the name to the new item
+                        
 
                 except EOFError:
 #                    print("Molecules read: %d" % (int(tot)))
@@ -995,26 +971,27 @@ def mol_viz_file_read(mcell, filepath):
                     filepath, "r").read().split("\n") if s != ""]
 
             for mol in mol_data:
-                # visualization filtering works by comparing the molecule name against the name 
-                # in molecules, we can change simple complexes from Lig(l,l)@EC to Lig, if this is a molecule 
-                # composed of multiple elementary molecules, we keep it as it is 
-                simplified_name = transform_to_internal_mol_name(mol[0])
-                mol_name = "mol_%s" % simplified_name
-                if not mol_name in mol_dict:
-                    mol_orient = mol[1][3:]
-                    mt = 0
-                    # Check to see if it's a surface molecule
-                    if ((mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) |
-                            (mol_orient[2] != 0.0)):
-                        mt = 1
-                    mol_dict[mol_name] = [
-                        mt, array.array("f"), array.array("f")]
-                    new_item = mcell.mol_viz.mol_viz_list.add()
-                    new_item.name = mol_name
-                mt = mol_dict[mol_name][0]
-                mol_dict[mol_name][1].extend(mol[1][:3])
-                if mt == 1:
-                    mol_dict[mol_name][2].extend(mol[1][3:])
+                
+                # generate one molecule for each used elementary molecule because 
+                # we do not have shapes/glyphs for all complexes
+                elem_mol_names = get_used_molecule_names(mol[0])
+                
+                for elem_mol_name in elem_mol_names:
+                    mol_name = "mol_%s" % elem_mol_name
+                    if not mol_name in mol_dict:
+                        mol_orient = mol[1][3:]
+                        mt = 0
+                        # Check to see if it's a surface molecule
+                        if ((mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) |
+                                (mol_orient[2] != 0.0)):
+                            mt = 1
+                        mol_dict[mol_name] = [mt, array.array("f"), array.array("f")]
+                        new_item = mcell.mol_viz.mol_viz_list.add()
+                        new_item.name = mol_name
+                    mt = mol_dict[mol_name][0]
+                    mol_dict[mol_name][1].extend(mol[1][:3])
+                    if mt == 1:
+                        mol_dict[mol_name][2].extend(mol[1][3:])
 
         # Get the parent object to all the molecule positions if it exists.
         # Otherwise, create it.
