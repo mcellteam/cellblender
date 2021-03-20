@@ -416,7 +416,7 @@ class MCELL_OT_mcell4_scripting_add(bpy.types.Operator):
     def execute(self, context):
         scripting = context.scene.mcell.scripting
         scripting.mcell4_scripting_list.add()
-        scripting.active_mcell4_scripting_index = len(scripting.scripting_list)-1
+        scripting.active_mcell4_scripting_index = len(scripting.mcell4_scripting_list)-1
         check_scripting(self, context)
         update_available_scripts ( scripting )
         return {'FINISHED'}
@@ -531,6 +531,11 @@ def check_scripting(self, context):
     scripting_list = mcell.scripting.scripting_list
     if len(scripting_list) > 0:
         scripting = scripting_list[mcell.scripting.active_scripting_index]
+        
+    mcell4_scripting_list = mcell.scripting.scripting_list
+    if len(mcell4_scripting_list) > 0:
+        mcell4_scripting = mcell4_scripting_list[mcell.scripting.active_mcell4_scripting_index]
+        
     return
 
 
@@ -985,6 +990,8 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 # s.init_properties(context.scene.mcell.parameter_system)
                 s.build_properties_from_data_model ( context, dm_s )
 
+        while len(self.mcell4_scripting_list) > 0:
+            self.mcell4_scripting_list.remove(0)
         if "mcell4_scripting_list" in dm:
             for dm_s in dm["mcell4_scripting_list"]:
                 self.mcell4_scripting_list.add()
@@ -1077,11 +1084,6 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             row = box.row(align=True)
             row.alignment = 'LEFT'
 
-            #row = layout.row()
-
-            #col = row.column()
-            #col.label ( "Export Scripting" )
-            #col.prop ( self, "show_simulation_scripting" )
             if mcell4_mode:
                 if self.show_mcell4_scripting:
                     row.prop(self, "show_mcell4_scripting", icon='TRIA_DOWN', emboss=False)
@@ -1093,19 +1095,15 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                                       self, "active_mcell4_scripting_index", rows=2)
                     col = row.column(align=True)
                     col.operator("mcell.mcell4_scripting_add", icon='ZOOMIN', text="")
-                    # col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
                     col.operator("mcell.mcell4_scripting_remove", icon='ZOOMOUT', text="")
     
                     if self.mcell4_scripting_list:
                         if len(self.mcell4_scripting_list) > 0:
                             selected_script = self.mcell4_scripting_list[self.active_mcell4_scripting_index]
                             selected_script.draw_layout ( context, box )
-                    #row = box.row()
-                    #row.prop ( self, "ignore_cellblender_data" )
                 else:
                     row.prop(self, "show_mcell4_scripting", icon='TRIA_RIGHT', emboss=False)
             else:
-                # TODO: hide for mcell4
                 parent_box = layout.box()
                 row = parent_box.row(align=True)
                 row.alignment = 'LEFT'                
