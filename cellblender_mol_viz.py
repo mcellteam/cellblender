@@ -981,7 +981,6 @@ def mol_viz_file_read(mcell, filepath):
                 # generate one molecule for each used elementary molecule because 
                 # we do not have shapes/glyphs for all complexes
                 elem_mol_names = get_used_molecule_names(mol[0])
-                print(elem_mol_names)
 
                 for elem_mol_name in elem_mol_names:
                     mol_name = "mol_%s" % elem_mol_name
