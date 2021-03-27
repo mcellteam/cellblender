@@ -817,29 +817,15 @@ def remove_compartment_and_state(name):
     # Remove states and compartment, e.g. @EC:Syk(a~Y,l~Y,tSH2)@CP -> Syk
     split_by_colon = name.split(':')
     if len(split_by_colon) == 2:
-        em_no_start_comp = split_by_colon[1]
+        em_no_start_compartment = split_by_colon[1]
     else:  
-        em_no_start_comp = name
+        em_no_start_compartment = name
         
-    idx = -1
-    par = em_no_start_comp.find('(')
-    if par != -1:
-        idx = par
-    at = em_no_start_comp.find('@')
+    em_no_compartment = em_no_start_compartment.split('@')[0]
+    em_no_components = em_no_compartment.split('(')[0]
     
-    if at != -1 and par != -1 and at < par:
-        idx = at
-    elif at != -1:
-        idx = at
-    else:
-        idx = par
-        
-    if idx != -1:
-        return em_no_start_comp[:idx]
-    else:
-        # No state neither compartment
-        return em_no_start_comp
-    
+    return em_no_components
+            
         
 def get_used_molecule_names(name):
     # example of input:
