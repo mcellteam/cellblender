@@ -71,39 +71,40 @@ class MCellPBCPropertyGroup(bpy.types.PropertyGroup):
         description="The end of the Periodic boundary on the z-axis")
     #Function to draw the panel
     def draw_layout(self, context, layout):
-           #mcell = context.scene.mcell
-           #if not mcell.initialized:
-           #mcell.draw_uninitialized ( layout )
-           # else:
-                #Making the include option
-                layout.prop(self, "include")
-                #If the include checkbox is checked
-                if self.include:
-                    #The start coordinates
-                    row = layout.row(align=True)
-                    row.prop(self, "x_start")
-                    row.prop(self, "y_start")
-                    row.prop(self, "z_start")
-                    #The end coordinates
-                    row = layout.row(align=True)
-                    row.prop(self, "x_end")
-                    row.prop(self, "y_end")
-                    row.prop(self, "z_end")
-                    #Boolean variables
-                    row = layout.row(align=True)
-                    layout.label("Defaulted to True, uncheck the boxes to set them to false.")
+        mcell4_mode = context.scene.mcell.cellblender_preferences.mcell4_mode
+        if mcell4_mode:
+            layout.label("Periodic Boundary Conditions are not supported in MCell4.")
+        else:
+            #Making the include option
+            layout.prop(self, "include")
+        
+        #If the include checkbox is checked
+        if self.include and not mcell4_mode:
+            #The start coordinates
+            row = layout.row(align=True)
+            row.prop(self, "x_start")
+            row.prop(self, "y_start")
+            row.prop(self, "z_start")
+            #The end coordinates
+            row = layout.row(align=True)
+            row.prop(self, "x_end")
+            row.prop(self, "y_end")
+            row.prop(self, "z_end")
+            #Boolean variables
+            row = layout.row(align=True)
+            layout.label("Defaulted to True, uncheck the boxes to set them to false.")
 
-                    row = layout.row(align=True)
-                    #Periodic Traditional variable
-                    row.prop(self, "peri_trad")
-                    #Periodic X variable
-                    row.prop(self, "peri_x")
+            row = layout.row(align=True)
+            #Periodic Traditional variable
+            row.prop(self, "peri_trad")
+            #Periodic X variable
+            row.prop(self, "peri_x")
 
-                    row = layout.row(align=True)
-                    #Periodic Y variable
-                    row.prop(self, "peri_y")
-                    #Periodic Z variable
-                    row.prop(self, "peri_z")
+            row = layout.row(align=True)
+            #Periodic Y variable
+            row.prop(self, "peri_y")
+            #Periodic Z variable
+            row.prop(self, "peri_z")
 
     def build_data_model_from_properties ( self, context ):
         print ( "Periodic Boundary Conditions building Data Model" )
