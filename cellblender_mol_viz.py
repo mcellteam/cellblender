@@ -870,6 +870,9 @@ def mol_viz_file_read(mcell, filepath):
         if mv.viz_code == 'custom':
             return
 
+    # check whether the viz file is not empty (may happen for ASCII files)
+    if os.path.getsize(filepath) == 0:
+        return
 
     dup_check = False
     try:
