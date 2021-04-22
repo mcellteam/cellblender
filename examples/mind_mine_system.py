@@ -127,7 +127,7 @@ mind_mine_dm = {
         'fwd_rate' : "k2",
         'name' : "mind_atp@IN + surf -> mind_m",
         'products' : "mind_m",
-        'reactants' : "mind_atp@IN + surf'",
+        'reactants' : "mind_atp@IN + surf",
         'rxn_name' : "",
         'rxn_type' : "irreversible",
         'variable_rate' : "",

@@ -149,8 +149,8 @@ class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
 
 class MCELL_OT_load_fceri_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_fceri_mcell3r"
-    bl_label = "FCERI MCell Rules"
-    bl_description = "Loads a model of FCERI utilizing MCell Rules"
+    bl_label = "FceRI Model with BNGL Reactions"
+    bl_description = "Loads a model of FceRI utilizing BNGL Reaction Rules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -164,8 +164,8 @@ class MCELL_OT_load_fceri_mcell3r(bpy.types.Operator):
 
 class MCELL_OT_load_lr_cbngl_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_lr_cbngl_mcell3r"
-    bl_label = "LR CBNGL MCell Rules"
-    bl_description = "Loads an LR CBNGL model utilizing MCell Rules"
+    bl_label = "LR Model with BNGL Reactions"
+    bl_description = "Loads an LR model utilizing BNGL Reaction Rules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -179,8 +179,8 @@ class MCELL_OT_load_lr_cbngl_mcell3r(bpy.types.Operator):
 
 class MCELL_OT_load_tlbr_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_tlbr_mcell3r"
-    bl_label = "TLBR MCell Rules"
-    bl_description = "Loads a TLBR model utilizing MCell Rules"
+    bl_label = "TLBR Model with BNGL Reactions"
+    bl_description = "Loads a TLBR model utilizing BNGL Reaction Rules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -195,7 +195,7 @@ class MCELL_OT_load_tlbr_mcell3r(bpy.types.Operator):
 class MCELL_OT_load_schain_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_schain_mcell3r"
     bl_label = "Simple Chain MCell Rules [MCell3]"
-    bl_description = "Loads a simple chain model utilizing MCell Rules"
+    bl_description = "Loads a simple chain model utilizing BNGL Reaction Rules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -212,7 +212,7 @@ class MCELL_OT_load_schain_mcell3r(bpy.types.Operator):
 class MCELL_OT_load_scoil_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_scoil_mcell3r"
     bl_label = "Simple Coil MCell Rules [MCell3]"
-    bl_description = "Loads a simple coil model utilizing MCell Rules"
+    bl_description = "Loads a simple coil model utilizing BNGL Reaction Rules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -229,7 +229,7 @@ class MCELL_OT_load_scoil_mcell3r(bpy.types.Operator):
 class MCELL_OT_load_organelle(bpy.types.Operator):
     bl_idname = "mcell.load_organelle"
     bl_label = "Organelle Model"
-    bl_description = "Loads the Organelle model using MCell"
+    bl_description = "Loads the Organelle model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -289,7 +289,7 @@ class MCELL_OT_load_mind_mine(bpy.types.Operator):
 class MCELL_OT_load_rat_nmj(bpy.types.Operator):
     bl_idname = "mcell.load_rat_nmj"
     bl_label = "Rat NMJ"
-    bl_description = "Loads a model of the rat NMJ"
+    bl_description = "Loads a model of the rat neuromuscular junction"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
