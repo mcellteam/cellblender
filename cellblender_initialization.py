@@ -206,6 +206,8 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
 
 
     def build_data_model_from_properties ( self, context ):
+        mcell4_mode = context.scene.mcell.cellblender_preferences.mcell4_mode
+
         dm_dict = {}
 
         dm_dict['data_model_version'] = "DM_2017_11_18_0130"
@@ -227,6 +229,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
 
         notify_dict = {}
         notify_dict['all_notifications'] = str(self.all_notifications)
+        notify_dict['species_reactions_report'] = self.species_reactions_report
         notify_dict['diffusion_constant_report'] = str(self.diffusion_constant_report)
         notify_dict['file_output_report'] = self.file_output_report==True
         notify_dict['final_summary'] = self.final_summary==True
@@ -245,7 +248,10 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         warn_dict['all_warnings'] = str(self.all_warnings)
         warn_dict['large_molecular_displacement'] = str(self.large_molecular_displacement)
         warn_dict['degenerate_polygons'] = str(self.degenerate_polygons)
-        warn_dict['high_reaction_probability'] = str(self.high_reaction_probability)
+        if not mcell4_mode:
+            warn_dict['high_reaction_probability'] = str(self.high_reaction_probability)
+        else:
+            warn_dict['high_reaction_probability'] = str(self.high_reaction_probability_mcell4)
         warn_dict['high_probability_threshold'] = "%g" % (self.high_probability_threshold)
         warn_dict['lifetime_too_short'] = str(self.lifetime_too_short)
         warn_dict['lifetime_threshold'] = str(self.lifetime_threshold)
@@ -281,7 +287,8 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
 
 
     def build_properties_from_data_model ( self, context, dm_dict ):
-
+        mcell4_mode = context.scene.mcell.cellblender_preferences.mcell4_mode
+        
         print ( "Top of MCellInitializationPropertyGroup.build_properties_from_data_model" )
 
         if dm_dict['data_model_version'] != "DM_2017_11_18_0130":
@@ -308,6 +315,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
             note_dict = dm_dict['notifications']
             if "all_notifications" in note_dict: self.all_notifications = note_dict['all_notifications']
             if "diffusion_constant_report" in note_dict: self.diffusion_constant_report = note_dict['diffusion_constant_report']
+            if "species_reactions_report" in note_dict: self.species_reactions_report = note_dict['species_reactions_report']
             if "file_output_report" in note_dict: self.file_output_report = note_dict['file_output_report']
             if "final_summary" in note_dict: self.final_summary = note_dict['final_summary']
             if "iteration_report" in note_dict: self.iteration_report = note_dict['iteration_report']
@@ -326,7 +334,10 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
             if "all_warnings" in warn_dict: self.all_warnings = warn_dict['all_warnings']
             if "large_molecular_displacement" in warn_dict: self.large_molecular_displacement = warn_dict['large_molecular_displacement']
             if "degenerate_polygons" in warn_dict: self.degenerate_polygons = warn_dict['degenerate_polygons']
-            if "high_reaction_probability" in warn_dict: self.high_reaction_probability = warn_dict['high_reaction_probability']
+            if "high_reaction_probability" in warn_dict: 
+                self.high_reaction_probability = warn_dict['high_reaction_probability']
+                self.high_reaction_probability_mcell4 = warn_dict['high_reaction_probability']
+            
             if "high_probability_threshold" in warn_dict: self.high_probability_threshold = float(warn_dict['high_probability_threshold'])
             if "lifetime_too_short" in warn_dict: self.lifetime_too_short = warn_dict['lifetime_too_short']
             if "lifetime_threshold" in warn_dict: self.lifetime_threshold = float(warn_dict['lifetime_threshold'])
@@ -390,6 +401,10 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         items=diffusion_constant_report_enum, name="Diffusion Constant Report",
         description="If brief, Mcell will report average diffusion distance "
                     "per step for each molecule.")
+    species_reactions_report = BoolProperty( # MCell4-specific
+        name="Species and Reactions Report",
+        description="If enabled, MCell will generate report files containing information on species and reactions used during simulation.",
+        default=False)
     file_output_report = BoolProperty(
         name="File Output Report",
         description="If selected, MCell will report every time that reaction "
@@ -476,6 +491,14 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         description="Generate warnings or errors if probability reaches a "
                     "specified threshold.",
         default='IGNORED')
+    high_reaction_probability_enum_mcell4 = [
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", "")]
+    high_reaction_probability_mcell4 = EnumProperty(
+        items=high_reaction_probability_enum_mcell4, name="High Reaction Probability",
+        description="Generate warnings if bimolecular reaction probability reaches 50%, "
+            "warnings when reaction probability reaches 100% are always printed.",
+        default='IGNORED')
     high_probability_threshold = bpy.props.FloatProperty(
         name="High Probability Threshold", min=0.0, max=1.0, default=1.0,
         precision=2)
@@ -547,6 +570,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
 
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
+        mcell4_mode = mcell.cellblender_preferences.mcell4_mode
 
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
@@ -571,23 +595,21 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
                 self.time_step_max.draw(box,ps)
                 self.space_step.draw(box,ps)
                 self.interaction_radius.draw(box,ps)
-                self.radial_directions.draw(box,ps)
-                self.radial_subdivisions.draw(box,ps)
+                if not mcell4_mode:
+                    self.radial_directions.draw(box,ps)
+                    self.radial_subdivisions.draw(box,ps)
                 self.vacancy_search_distance.draw(box,ps)
                 self.surface_grid_density.draw(box,ps)
 
-                #row = box.row()
-                # row.prop(mcell.initialization, "accurate_3d_reactions")
-                helptext = """Specifies which method to use for computing 3D
+                if not mcell4_mode:
+                    helptext = """Specifies which method to use for computing 3D
 molecule-molecule interactions. If value is TRUE, then molecules will look
 through partition boundaries for potential interacting partners – this is
 slower but more accurate. If boolean is FALSE, then molecule interaction disks
 will be clipped at partition boundaries and probabilities adjusted to get the
 correct rate – this is faster but can be less accurate. The default is TRUE."""
-                ps.draw_prop_with_help ( box, "Accurate 3D Reactions", mcell.initialization, "accurate_3d_reactions", "acc3D_show_help", self.acc3D_show_help, helptext )
+                    ps.draw_prop_with_help ( box, "Accurate 3D Reactions", mcell.initialization, "accurate_3d_reactions", "acc3D_show_help", self.acc3D_show_help, helptext )
 
-                #row = box.row()
-                #row.prop(mcell.initialization, "center_molecules_grid")
                 helptext = """If boolean is set to TRUE, then all molecules on
 a surface will be located exactly at the center of their grid element. If
 FALSE, the molecules will be randomly located when placed, and reactions will
@@ -595,75 +617,85 @@ take place at the location of the target (or the site of impact in the case of
 3D molecule/surface reactions). The default is FALSE."""
                 ps.draw_prop_with_help ( box, "Center Molecules on Grid", mcell.initialization, "center_molecules_grid", "center_on_grid_show_help", self.center_on_grid_show_help, helptext )
 
-                #row = box.row()
-                #row.prop(mcell.initialization, "microscopic_reversibility")
-                helptext = """If value is set to OFF, then binding- unbinding
+                if not mcell4_mode:
+                    helptext = """If value is set to OFF, then binding- unbinding
 reactions between molecules will be somewhat more efficient but may not be
 accurate if the probability of binding is high (close to 1).  If ON, a more
 computationally demanding routine will be used to make sure binding- unbinding
 is more similar in both directions.  If value is set to SURFACE_ONLY or
 VOLUME_ONLY, the more accurate routines will be used only for reactions at
 surfaces or only for those in the volume. OFF is the default."""
-                ps.draw_prop_with_help ( box, "Microscopic Reversibility", mcell.initialization, "microscopic_reversibility", "micro_rev_show_help", self.micro_rev_show_help, helptext )
+                    ps.draw_prop_with_help ( box, "Microscopic Reversibility", mcell.initialization, "microscopic_reversibility", "micro_rev_show_help", self.micro_rev_show_help, helptext )
 
-                helptext = """Generate visualization data in ASCII format.
-The default is OFF."""
+                helptext = """Generate visualization data in ASCII format. The default is OFF."""
                 ps.draw_prop_with_help ( box, "ASCII Molecule Files", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
 
-                helptext = "Command Line Parameters - \n" \
-                           "These options are passed directly to the program.\n" \
-                           "Use -h to print MCell's help to console or text overlay.\n" \
-                           "Visualization options (-z) are defined in viz_output.c.\n" \
-                           "\n" \
-                           "  0x01=All_components_share_name\n" \
-                           "  0x02=All_components_by_global_name\n" \
-                           "  0x03=All_components_by_mol_comp_name\n" \
-                           "  0x08=Force_output_of_proxy_molecules\n" \
-                           "  0x10=Generate_Text_BNGL_Viz_Files\n" \
-                           "  0x20=Generate_JSON_BNGL_Viz_Files\n" \
-                           "\n" \
-                           "Debug output with -d # (between 0 and 100)"
-                ps.draw_prop_with_help ( box, "Command Options", mcell.initialization, "command_options", "command_options_show_help", self.command_options_show_help, helptext )
+                if not mcell4_mode:
+                    helptext = "Command Line Parameters - \n" \
+                               "These options are passed directly to the program.\n" \
+                               "Use -h to print MCell's help to console or text overlay.\n" \
+                               "Visualization options (-z) are defined in viz_output.c.\n" \
+                               "\n" \
+                               "  0x01=All_components_share_name\n" \
+                               "  0x02=All_components_by_global_name\n" \
+                               "  0x03=All_components_by_mol_comp_name\n" \
+                               "  0x08=Force_output_of_proxy_molecules\n" \
+                               "  0x10=Generate_Text_BNGL_Viz_Files\n" \
+                               "  0x20=Generate_JSON_BNGL_Viz_Files\n" \
+                               "\n" \
+                               "Debug output with -d # (between 0 and 100)"
+                    ps.draw_prop_with_help ( box, "Command Options", mcell.initialization, "command_options", "command_options_show_help", self.command_options_show_help, helptext )
 
             else:
                 row.prop(mcell.initialization, "advanced", icon='TRIA_RIGHT',
                          text="Advanced Options", emboss=False)
 
             # Notifications
-            #box = layout.box(align=True)
             box = layout.box()
             row = box.row(align=True)
             row.alignment = 'LEFT'
             if self.notifications:
                 row.prop(mcell.initialization, "notifications", icon='TRIA_DOWN',
                          text="Notifications", emboss=False)
-                row = box.row()
-                row.prop(mcell.initialization, "all_notifications")
+                if not mcell4_mode:
+                    row = box.row()
+                    row.prop(mcell.initialization, "all_notifications")
                 if self.all_notifications == 'INDIVIDUAL':
-                    row = box.row(align=True)
-                    row.prop(mcell.initialization, "probability_report")
-                    if self.probability_report == 'THRESHOLD':
-                        row.prop(
-                            mcell.initialization, "probability_report_threshold",
-                            slider=True)
-                    row = box.row()
-                    row.prop(mcell.initialization, "diffusion_constant_report")
-                    row = box.row()
-                    row.prop(mcell.initialization, "file_output_report")
-                    row = box.row()
-                    row.prop(mcell.initialization, "final_summary")
-                    row = box.row()
-                    row.prop(mcell.initialization, "iteration_report")
-                    row = box.row()
-                    row.prop(mcell.initialization, "partition_location_report")
+                    if not mcell4_mode:
+                        row = box.row(align=True)
+                        row.prop(mcell.initialization, "probability_report")
+                        if self.probability_report == 'THRESHOLD':
+                            row.prop(
+                                mcell.initialization, "probability_report_threshold",
+                                slider=True)
+                    
+                        row = box.row()
+                        row.prop(mcell.initialization, "diffusion_constant_report")
+
+                    if mcell4_mode:
+                        row = box.row()
+                        row.prop(mcell.initialization, "species_reactions_report")
+                    
+                    if not mcell4_mode:
+                        row = box.row()
+                        row.prop(mcell.initialization, "file_output_report")
+                        row = box.row()
+                        row.prop(mcell.initialization, "final_summary")
+                        row = box.row()
+                        row.prop(mcell.initialization, "iteration_report")
+                        row = box.row()
+                        row.prop(mcell.initialization, "partition_location_report")
+                        
                     row = box.row()
                     row.prop(mcell.initialization, "varying_probability_report")
-                    row = box.row()
-                    row.prop(mcell.initialization, "progress_report")
-                    row = box.row()
-                    row.prop(mcell.initialization, "release_event_report")
-                    row = box.row()
-                    row.prop(mcell.initialization, "molecule_collision_report")
+                        
+                    if not mcell4_mode:
+                        row = box.row()
+                        row.prop(mcell.initialization, "progress_report")
+                        row = box.row()
+                        row.prop(mcell.initialization, "release_event_report")
+                        row = box.row()
+                        row.prop(mcell.initialization, "molecule_collision_report")
             else:
                 row.prop(mcell.initialization, "notifications", icon='TRIA_RIGHT',
                          text="Notifications", emboss=False)
@@ -676,37 +708,40 @@ The default is OFF."""
                 row.prop(mcell.initialization, "warnings", icon='TRIA_DOWN',
                          text="Warnings", emboss=False)
                 row = box.row()
-                row.prop(mcell.initialization, "all_warnings")
-                if self.all_warnings == 'INDIVIDUAL':
+                if not mcell4_mode:
+                    row.prop(mcell.initialization, "all_warnings")
+                    if self.all_warnings == 'INDIVIDUAL':
+                        row = box.row()
+                        row.prop(mcell.initialization, "large_molecular_displacement")
+                        row = box.row()
+                        row.prop(mcell.initialization, "degenerate_polygons")
+                        row = box.row()
+                        row.prop(mcell.initialization, "missing_surface_orientation")
+                        row = box.row()
+                        row.prop(mcell.initialization, "negative_diffusion_constant")
+                        row = box.row()
+                        row.prop(mcell.initialization, "negative_reaction_rate")
+                        row = box.row()
+                        row.prop(mcell.initialization, "useless_volume_orientation")
+                        row = box.row(align=True)
+                        row.prop(mcell.initialization, "high_reaction_probability")
+                        if self.high_reaction_probability != 'IGNORED':
+                            row.prop(mcell.initialization,
+                                     "high_probability_threshold", slider=True)
+                        row = box.row(align=True)
+                        row.prop(mcell.initialization, "lifetime_too_short")
+                        if self.lifetime_too_short == 'WARNING':
+                            row.prop(mcell.initialization, "lifetime_threshold")
+                        row = box.row(align=True)
+                        row.prop(mcell.initialization, "missed_reactions")
+                        if self.missed_reactions == 'WARNING':
+                            row.prop(mcell.initialization, "missed_reaction_threshold")
+                else: # mcell4   
                     row = box.row()
-                    row.prop(mcell.initialization, "large_molecular_displacement")
-                    row = box.row()
-                    row.prop(mcell.initialization, "degenerate_polygons")
-                    row = box.row()
-                    row.prop(mcell.initialization, "missing_surface_orientation")
-                    row = box.row()
-                    row.prop(mcell.initialization, "negative_diffusion_constant")
-                    row = box.row()
-                    row.prop(mcell.initialization, "negative_reaction_rate")
-                    row = box.row()
-                    row.prop(mcell.initialization, "useless_volume_orientation")
-                    row = box.row(align=True)
-                    row.prop(mcell.initialization, "high_reaction_probability")
-                    if self.high_reaction_probability != 'IGNORED':
-                        row.prop(mcell.initialization,
-                                 "high_probability_threshold", slider=True)
-                    row = box.row(align=True)
-                    row.prop(mcell.initialization, "lifetime_too_short")
-                    if self.lifetime_too_short == 'WARNING':
-                        row.prop(mcell.initialization, "lifetime_threshold")
-                    row = box.row(align=True)
-                    row.prop(mcell.initialization, "missed_reactions")
-                    if self.missed_reactions == 'WARNING':
-                        row.prop(mcell.initialization, "missed_reaction_threshold")
+                    row.prop(mcell.initialization, "high_reaction_probability_mcell4")
             else:
                 row.prop(mcell.initialization, "warnings", icon='TRIA_RIGHT',
-                         text="Warnings", emboss=False)
-
+                         text="Warnings", emboss=False)                    
             if (self.status != ""):
                 row = layout.row()
                 row.label(text=self.status, icon='ERROR')
