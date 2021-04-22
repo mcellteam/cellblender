@@ -373,6 +373,6 @@ lv_rxn_lim_dm = {
 # copy dict so we can replace rate constants decrease shrink timestep
 lv_diff_lim_dm = copy.deepcopy(lv_rxn_lim_dm)
 lv_diff_lim_dm['define_reactions']['reaction_list'][0]['fwd_rate'] = "8.6e6"
-lv_diff_lim_dm['define_reactions']['reaction_list'][1]['fwd_rate'] = "1e12"
+lv_diff_lim_dm['define_reactions']['reaction_list'][1]['fwd_rate'] = "6.6e10" # originally 1e12 but this led to prob. > 1
 lv_diff_lim_dm['define_reactions']['reaction_list'][2]['fwd_rate'] = "5e6"
 lv_diff_lim_dm['initialization']['time_step'] = "1e-8"

@@ -285,7 +285,7 @@ delayed_transport_dm = {
     'model_parameters' : [
       {
         'par_description' : "",
-        'par_expression' : "1e9",
+        'par_expression' : "3e8",
         'par_name' : "binding_rate",
         'par_units' : "",
         'sweep_enabled' : False,

@@ -693,7 +693,7 @@ organelle_dm = {
      "variable_rate_valid": False,
      "description": "",
      "variable_rate_switch": False,
-     "fwd_rate": "3e9",
+     "fwd_rate": "3.3e8",
      "rxn_type": "irreversible",
      "name": "c' + t2' -> d, + t2'",
      "variable_rate_text": "",

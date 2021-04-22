@@ -69,7 +69,7 @@ lipid_raft_dm = {
       {
         'bkwd_rate' : "",
         'data_model_version' : "DM_2014_10_24_1638",
-        'fwd_rate' : "1e8",
+        'fwd_rate' : "59",
         'name' : "Rf' + chol' -> Rs' + chol'",
         'products' : "Rs' + chol'",
         'reactants' : "Rf' + chol'",
