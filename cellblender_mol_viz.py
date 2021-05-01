@@ -887,7 +887,8 @@ def mol_viz_file_read(mcell, filepath):
 
         mol_dict = {}
 
-        if b[0] == 1:
+        if b[0] == 1 or b[0] == 2:
+            ver = b[0] 
             # Read MCell/CellBlender Binary Format molecule file, version 1:
             # print ("Reading binary file " + filepath )
             bin_data = 1
@@ -899,22 +900,35 @@ def mol_viz_file_read(mcell, filepath):
                     # ns = Array of ascii character codes for molecule name.
                     # s = String of molecule name.
                     # mt = Surface molecule flag.
-                    ni = array.array("B")          # Create a binary byte ("B") array
-                    ni.fromfile(mol_file, 1)       # Read one byte which is the number of characters in the molecule name
+                    if ver == 1:
+                        ni = array.array("B")          # Create a binary byte ("B") array to read one byte
+                    else:
+                        ni = array.array("I")          # Create a binary integer ("I") array to read 4 bytes
+                    ni.fromfile(mol_file, 1)       # Read one or four bytes which is the number of characters in the molecule name
+                    
                     ns = array.array("B")          # Create another byte array to hold the molecule name
                     ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
                     mol_name_from_file = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
                     
-                    
                     mt = array.array("B")          # Create a byte array for the molecule type
                     mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
                     ni = array.array("I")          # Re-use ni as an integer array to hold the number of molecules of this name in this frame
-                    ni.fromfile(mol_file, 1)       # Read the 4 byte integer value which is 3 times the number of molecules
+                    ni.fromfile(mol_file, 1)       # Read the 4 byte integer value which is the number of molecules (v2) or 3 times the number of molecules (v1)
+                    
+                    if ver > 1:
+                        num_mols = ni[0]
+                        num_floats = 3*ni[0]
+                        mol_ids = array.array("I")  # Molecule ids are gnored in cellblender         
+                        mol_ids.fromfile(mol_file, num_mols)
+                    else:
+                        num_floats = ni[0]
+                        mol_ids = None 
+                        
                     mol_pos = array.array("f")     # Create a floating point array to hold the positions
                     mol_orient = array.array("f")  # Create a floating point array to hold the orientations
-                    mol_pos.fromfile(mol_file, ni[0])  # Read all the positions which should be 3 floats per molecule
+                    mol_pos.fromfile(mol_file, num_floats)  # Read all the positions which should be 3 floats per molecule
                     if mt[0] == 1:                                        # If mt==1, it's a surface molecule
-                        mol_orient.fromfile(mol_file, ni[0])              # Read all the surface molecule orientations
+                        mol_orient.fromfile(mol_file, num_floats)              # Read all the surface molecule orientations
                     
                     if mcell.cellblender_preferences.mcell4_mode:
                         elem_mol_names = get_used_molecule_names(mol_name_from_file)
