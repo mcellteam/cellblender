@@ -177,21 +177,6 @@ class MCELL_OT_load_lr_cbngl_mcell3r(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_load_tlbr_mcell3r(bpy.types.Operator):
-    bl_idname = "mcell.load_tlbr_mcell3r"
-    bl_label = "TLBR Model with BNGL Reactions"
-    bl_description = "Loads a TLBR model utilizing BNGL Reaction Rules"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-
-        dm = {}
-        dm['mcell'] = examples.tlbr_mcell3r.tlbr_mcell3r_dm
-        cellblender.replace_data_model(dm, geometry=True, scripts=False)
-        view_all()
-        return {'FINISHED'}
-
-
 class MCELL_OT_load_schain_mcell3r(bpy.types.Operator):
     bl_idname = "mcell.load_schain_mcell3r"
     bl_label = "Simple Chain MCell Rules [MCell3]"
@@ -767,8 +752,6 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_fceri_mcell3r")
             row = layout.row()
             row.operator("mcell.load_lr_cbngl_mcell3r")
-            row = layout.row()
-            row.operator("mcell.load_tlbr_mcell3r")
             row = layout.row()
             row.operator("mcell.load_mind_mine")
             row = layout.row()
