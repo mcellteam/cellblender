@@ -1053,17 +1053,17 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellPropertyGroup Data Model" )
-        # cellblender.data_model.dump_data_model ( "Dump of dm passed to MCellPropertyGroup.upgrade_data_model", dm )
+        cellblender.data_model.dump_data_model ( "Dump of dm passed to MCellPropertyGroup.upgrade_data_model", dm )
+
+        # Set the model_language field which should be "mcell4" for any upgraded models
+        dm['model_language'] = 'mcell4'
 
         # Perform any upgrades to this top level data model
-
-        if not ('data_model_version' in dm):
+        if 'data_model_version' not in dm:
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] == "DM_2014_10_24_1638":
-            # Add the model_language field which should be "mcell4" for any existing models
-            dm['model_language'] = 'mcell4'
             dm['data_model_version'] = "DM_2017_06_23_1300"
 
         if dm['data_model_version'] != "DM_2017_06_23_1300":
@@ -1191,14 +1191,19 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         # Set the bionetgen_mode based on model_language
         if 'model_language' in dm:
             if dm['model_language'] == 'mcell4':
-              self.cellblender_preferences.mcell4_mode = True
-              self.cellblender_preferences.bionetgen_mode = True
-            else:
-              self.cellblender_preferences.mcell4_mode = False
-              if dm['model_language'] == 'mcell3r':
+                self.cellblender_preferences.mcell4_mode = True
                 self.cellblender_preferences.bionetgen_mode = True
-              else:
-                self.cellblender_preferences.bionetgen_mode = False
+            else:
+                self.cellblender_preferences.mcell4_mode = False
+                if dm['model_language'] == 'mcell3r':
+                    self.cellblender_preferences.bionetgen_mode = True
+                else:
+                    self.cellblender_preferences.bionetgen_mode = False
+        else:
+            # default
+            self.cellblender_preferences.mcell4_mode = True
+            self.cellblender_preferences.bionetgen_mode = True
+            
 
         # Then add each section
 
