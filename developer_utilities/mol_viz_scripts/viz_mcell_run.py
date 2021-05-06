@@ -34,6 +34,7 @@ else:
 
 g_last_data_model_loaded = ""
 g_last_viz_file_loaded = ""
+g_last_obj_file_loaded = ""
 
 # this is a dictionary that maps frame index onto a pair (viz file, data model file)
 g_frame_to_files = {}
@@ -64,13 +65,48 @@ def update_frame_data(scene):
         print('Warning: data for frame number '+ str(bpy.context.scene.frame_current) + ' were not found.')
         return
         
-    viz, dm = g_frame_to_files[frame_index]
+    viz, dm, obj = g_frame_to_files[frame_index]
     
     # data model does not have to be present
     if dm != "" and dm != g_last_data_model_loaded:
         data_model.import_datamodel_all_json(dm, bpy.context)
         global g_last_data_model_loaded
         g_last_data_model_loaded = dm
+        
+    # obj file does not have to be present, it overrides geometry that coudl be loaded 
+    # through data model 
+    if obj != "" and obj != g_last_obj_file_loaded:
+        # delete all objects not used to visualize molecules
+        bpy.ops.object.select_all(action='DESELECT')
+        deleted_obj_names = []
+        for scene_object in bpy.context.scene.objects:
+            # we must not remove molecule shapes
+            if scene_object.type == 'MESH' and \
+                not (scene_object.name == 'molecules' or \
+                     scene_object.name.startswith('mol_')):
+                #print ( "Deleting Mesh object: " + scene_object.name )
+                scene_object.hide = False
+                scene_object.select = True
+                # rename so that the newly imported objects gen new name 
+                deleted_obj_names.append(scene_object.name)
+                scene_object.name = scene_object.name + '_old'
+                scene_object.data.name = scene_object.name + '_old'
+                bpy.ops.object.delete()
+               
+        # TODO: remove unused materials here, not sure how to do it  
+            
+        # load object file
+        ret = bpy.ops.import_scene.obj(filepath=obj)
+        obj_objects = bpy.context.selected_objects[:]
+        
+        # set all objects as transparent
+        for obj in obj_objects:
+            obj.show_transparent = True
+            
+        bpy.ops.object.select_all(action='DESELECT')
+        
+        global g_last_obj_file_loaded
+        g_last_obj_file_loaded = obj
     
     # molecule positions must be found        
     if viz != g_last_viz_file_loaded:
@@ -80,13 +116,13 @@ def update_frame_data(scene):
         g_last_viz_file_loaded = viz
 
     
-def get_corresponding_dm_file(dm_files, iteration):
+def get_corresponding_file(dm_files, iteration):
     best_match = ""
     for k, v in sorted(dm_files.items()):
         if k <= iteration:
             best_match = v
     return best_match
-    
+
 
 def init_frame_files_mapping():
     
@@ -94,6 +130,7 @@ def init_frame_files_mapping():
     max_frame_nr = -1
     filepath = os.scandir(INPUT_DIRECTORY_ARG)
     viz_files = []
+    obj_files = {}
     dm_files = {}
     for file in filepath:
         # --- viz data ---
@@ -101,9 +138,13 @@ def init_frame_files_mapping():
             name = str(file.path)
             iteration = int(name.split('.')[-2])
             viz_files.append(name)
+
+        elif re.match(r'(.*\.[0-9]+\.obj)', str(file)):
+            name = str(file.path)
+            iteration = int(name.split('.')[-2])
+            obj_files[iteration] = name
             
-            
-        if not DATA_MODEL_FILE_ARG:
+        elif not DATA_MODEL_FILE_ARG:
             if re.match(r'(.*\.data_model\.[0-9]+\.json)'.format(), str(file)):
                 name = str(file.path)
                 iteration = int(name.split('.')[-2])
@@ -122,8 +163,9 @@ def init_frame_files_mapping():
     # 
     global g_frame_to_files
     for i in range(0, len(viz_files)):
-        dm = get_corresponding_dm_file(dm_files, i)
-        g_frame_to_files[i] = (viz_files[i], dm)
+        dm = get_corresponding_file(dm_files, i)
+        obj = get_corresponding_file(obj_files, i)
+        g_frame_to_files[i] = (viz_files[i], dm, obj)
                 
     bpy.context.scene.frame_end = len(g_frame_to_files)
     
