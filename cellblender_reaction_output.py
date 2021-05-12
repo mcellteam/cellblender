@@ -932,8 +932,11 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         print ( "Reaction Output Panel building Data Model" )
         ro_dm = {}
         ro_dm['data_model_version'] = "DM_2016_03_15_1800"
-        ro_dm['rxn_step'] = self.rxn_step.get_expr()
-        ro_dm['output_buf_size'] = self.output_buf_size.get_expr()
+        try:
+            ro_dm['rxn_step'] = self.rxn_step.get_expr()
+            ro_dm['output_buf_size'] = self.output_buf_size.get_expr()
+        except:
+            print("WARNING: Exception caught while calling get_expr(), the resultign data model might not be correct.")
         ro_dm['plot_layout'] = self.plot_layout
         ro_dm['plot_legend'] = self.plot_legend
         ro_dm['combine_seeds'] = self.combine_seeds
