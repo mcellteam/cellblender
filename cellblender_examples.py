@@ -726,34 +726,49 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
-            row = layout.row()
-            row.operator("mcell.load_organelle")
+            
             row = layout.row()
             row.operator("mcell.load_ficks_1d")
+            
             row = layout.row()
             row.operator("mcell.load_ficks_3d")
-            row = layout.row()
-            row.operator("mcell.load_rat_nmj")
-            row = layout.row()
-            row.operator("mcell.load_lipid_raft")
+            
             row = layout.row()
             row.operator("mcell.load_variable_rate_constant")
-            row = layout.row()
-            row.operator("mcell.load_lotka_volterra_rxn_limited")
-            row = layout.row()
-            row.operator("mcell.load_lotka_volterra_diff_limited")
+            
             row = layout.row()
             row.operator("mcell.load_dir_transp")
+            
             row = layout.row()
             row.operator("mcell.load_del_transp")
+
             row = layout.row()
             row.operator("mcell.load_dir_tr_bngl")
+
             row = layout.row()
-            row.operator("mcell.load_fceri_mcell3r")
+            row.operator("mcell.load_lotka_volterra_rxn_limited")
+
             row = layout.row()
-            row.operator("mcell.load_lr_cbngl_mcell3r")
+            row.operator("mcell.load_lotka_volterra_diff_limited")
+            
+            row = layout.row()
+            row.operator("mcell.load_organelle")
+            
             row = layout.row()
             row.operator("mcell.load_mind_mine")
+
+            row = layout.row()
+            row.operator("mcell.load_lipid_raft")
+            
+            row = layout.row()
+            row.operator("mcell.load_lr_cbngl_mcell3r")
+
+            row = layout.row()
+            row.operator("mcell.load_fceri_mcell3r")
+
+            row = layout.row()
+            row.operator("mcell.load_rat_nmj")
+            
             row = layout.row()
             row.operator("mcell.load_pbc")
             row = layout.row()
