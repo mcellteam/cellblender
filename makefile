@@ -24,7 +24,7 @@ INSTALL_DIR ?= ~/my_cellblender_link/
 SHELL = /bin/sh
 
 ifeq ($(UNAME_S),Linux)
-	SUBDIRS = icons io_mesh_mcell_mdl engine_runner_combos sim_engines sim_runners data_plotters developer_utilities
+	SUBDIRS = icons io_mesh_mcell_mdl sim_engines sim_runners data_plotters developer_utilities
 else
 	SUBDIRS = icons io_mesh_mcell_mdl sim_engines sim_runners data_plotters developer_utilities
 endif
