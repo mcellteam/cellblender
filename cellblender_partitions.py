@@ -92,9 +92,13 @@ class MCELL_OT_create_partitions_object(bpy.types.Operator):
             partition_object.name = "partitions"
             partition_mesh = partition_object.data
             partition_mesh.name = "partitions"
-            transform_x_partition_boundary(self, context)
-            transform_y_partition_boundary(self, context)
-            transform_z_partition_boundary(self, context)
+            
+            if context.scene.mcell.cellblender_preferences.mcell4_mode:
+                transform_all_axes_partition_boundary(self, context)
+            else:
+                transform_x_partition_boundary(self, context)
+                transform_y_partition_boundary(self, context)
+                transform_z_partition_boundary(self, context)
 
         return {'FINISHED'}
 
@@ -129,6 +133,7 @@ class MCELL_OT_auto_generate_boundaries(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
+        mcell4_mode = mcell.cellblender_preferences.mcell4_mode
         partitions = mcell.partitions
         object_list = mcell.model_objects.object_list
         first_time = True
@@ -161,6 +166,7 @@ class MCELL_OT_auto_generate_boundaries(bpy.types.Operator):
                             z_max = z
                         elif z < z_min:
                             z_min = z
+                    
             # In case object was deleted, but still in model objects list
             except KeyError:
                 pass
@@ -168,12 +174,17 @@ class MCELL_OT_auto_generate_boundaries(bpy.types.Operator):
         # If we don't iterate through object_list, then we don't have values
         # for x_min, x_max, etc, therefore we need to skip over setting bounds
         if not first_time:
-            partitions.x_start = x_min
-            partitions.x_end = x_max
-            partitions.y_start = y_min
-            partitions.y_end = y_max
-            partitions.z_start = z_min
-            partitions.z_end = z_max
+                                        
+            if mcell4_mode:
+                partitions.start = min(x_min, y_min, z_min)
+                partitions.end = max(x_max, y_max, z_max)
+            else:
+                partitions.x_start = x_min
+                partitions.x_end = x_max
+                partitions.y_start = y_min
+                partitions.y_end = y_max
+                partitions.z_start = z_min
+                partitions.z_end = z_max
 
         return {'FINISHED'}
 
@@ -228,12 +239,24 @@ def transform_z_partition_boundary(self, context):
     transform_partition_boundary(self, context, z_start, z_end, 2)
 
 
+def transform_all_axes_partition_boundary(self, context):
+    """ Transform the partition object along all axes """
+    partitions = context.scene.mcell.partitions
+    start = partitions.start
+    end = partitions.end
+    step = partitions.step
+    partitions.step = check_partition_step(
+        self, context, start, end, step)
+    transform_partition_boundary(self, context, start, end, -1)
+
+
 def transform_partition_boundary(self, context, start, end, xyz_index):
     """ Transform the partition object along the provided axis.
 
     Change the scaling and location of the cube that represents partition
     boundaries. Also, make sure the step lengths are valid.
-
+    
+    xyz_index -1 is used for MCell4
     """
 
     difference = end-start
@@ -244,8 +267,14 @@ def transform_partition_boundary(self, context, start, end, xyz_index):
     # Move the partition boundary object if it exists
     if "partitions" in bpy.data.objects:
         partition_object = bpy.data.objects["partitions"]
-        partition_object.location[xyz_index] = location
-        partition_object.scale[xyz_index] = scale
+        if xyz_index == -1:
+            for i in range(3):
+                partition_object.location[i] = location
+                partition_object.scale[i] = scale
+        else:
+            partition_object.location[xyz_index] = location
+            partition_object.scale[xyz_index] = scale
+            
 
 
 def check_x_partition_step(self, context):
@@ -290,6 +319,20 @@ def check_z_partition_step(self, context):
         partitions.recursion_flag = False
 
 
+def check_all_axes_partition_step(self, context):
+    """ Make sure the partition's step is valid. """
+
+    partitions = context.scene.mcell.partitions
+    if not partitions.recursion_flag:
+        partitions.recursion_flag = True
+        start = partitions.start
+        end = partitions.end
+        step = partitions.step
+        partitions.z_step = check_partition_step(
+            self, context, start, end, step)
+        partitions.recursion_flag = False
+        
+        
 def check_partition_step(self, context, start, end, step):
     """ Make sure the partition's step along the provided axis is valid. """
 
@@ -362,22 +405,57 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         name="Z Step", default=0.05, precision=3,
         description="The distance between partitions on the z-axis",
         update=check_z_partition_step)
+    
+    # mcell4
+    start = bpy.props.FloatProperty(
+        name="Start", default=-10, precision=3,
+        description="The x,y,z coordinates of the lowest left bottom point",
+        update=transform_all_axes_partition_boundary)
+
+    end = bpy.props.FloatProperty(
+        name="End", default=10, precision=3,
+        description="The x,y,z coordinates of the upper right top point",
+        update=transform_all_axes_partition_boundary)
+
+    step = bpy.props.FloatProperty(
+        name="Step", default=0.1, precision=3,
+        description="The distance between subpartitions",
+        update=check_all_axes_partition_step)
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Partitions building Data Model" )
+        
+        mcell = context.scene.mcell
+        mcell4_mode = mcell.cellblender_preferences.mcell4_mode
+        
         dm_dict = {}
         dm_dict['data_model_version'] = "DM_2016_04_15_1600"
-        dm_dict['include'] = self.include==True
-        dm_dict['recursion_flag'] = self.recursion_flag==True
-        dm_dict['x_start'] = "%g" % (self.x_start)
-        dm_dict['x_end'] =   "%g" % (self.x_end)
-        dm_dict['x_step'] =  "%g" % (self.x_step)
-        dm_dict['y_start'] = "%g" % (self.y_start)
-        dm_dict['y_end'] =   "%g" % (self.y_end)
-        dm_dict['y_step'] =  "%g" % (self.y_step)
-        dm_dict['z_start'] = "%g" % (self.z_start)
-        dm_dict['z_end'] =   "%g" % (self.z_end)
-        dm_dict['z_step'] =  "%g" % (self.z_step)
+        
+        if mcell4_mode:
+            dm_dict['include'] = True
+            dm_dict['recursion_flag'] = False # in case some tools require it in the data model
+            dm_dict['x_start'] = "%g" % (self.start)
+            dm_dict['x_end'] =   "%g" % (self.end)
+            dm_dict['x_step'] =  "%g" % (self.step)
+            dm_dict['y_start'] = "%g" % (self.start)
+            dm_dict['y_end'] =   "%g" % (self.end)
+            dm_dict['y_step'] =  "%g" % (self.step)
+            dm_dict['z_start'] = "%g" % (self.start)
+            dm_dict['z_end'] =   "%g" % (self.end)
+            dm_dict['z_step'] =  "%g" % (self.step)
+        else:
+            dm_dict['include'] = self.include==True
+            dm_dict['recursion_flag'] = self.recursion_flag==True
+            dm_dict['x_start'] = "%g" % (self.x_start)
+            dm_dict['x_end'] =   "%g" % (self.x_end)
+            dm_dict['x_step'] =  "%g" % (self.x_step)
+            dm_dict['y_start'] = "%g" % (self.y_start)
+            dm_dict['y_end'] =   "%g" % (self.y_end)
+            dm_dict['y_step'] =  "%g" % (self.y_step)
+            dm_dict['z_start'] = "%g" % (self.z_start)
+            dm_dict['z_end'] =   "%g" % (self.z_end)
+            dm_dict['z_step'] =  "%g" % (self.z_step)
         return dm_dict
 
 
@@ -418,20 +496,31 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
 
+        mcell = context.scene.mcell
+        mcell4_mode = mcell.cellblender_preferences.mcell4_mode
+        
         if dm['data_model_version'] != "DM_2016_04_15_1600":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
 
-        self.include = dm["include"]
-        self.recursion_flag = dm["recursion_flag"]
-        self.x_start = float(dm["x_start"])
-        self.x_end = float(dm["x_end"])
-        self.x_step = float(dm["x_step"])
-        self.y_start = float(dm["y_start"])
-        self.y_end = float(dm["y_end"])
-        self.y_step = float(dm["y_step"])
-        self.z_start = float(dm["z_start"])
-        self.z_end = float(dm["z_end"])
-        self.z_step = float(dm["z_step"])
+        if mcell4_mode:
+            self.include = True
+            self.recursion_flag = False
+            self.start = min(float(dm["x_start"]), float(dm["y_start"]), float(dm["z_start"]))
+            self.end = max(float(dm["x_end"]), float(dm["y_end"]), float(dm["z_end"]))
+            self.step = min(float(dm["x_step"]), float(dm["y_step"]), float(dm["z_step"]))
+        else:
+            self.include = dm["include"]
+            # not sure why this is read from data model, this is an internal state
+            self.recursion_flag = dm["recursion_flag"] 
+            self.x_start = float(dm["x_start"])
+            self.x_end = float(dm["x_end"])
+            self.x_step = float(dm["x_step"])
+            self.y_start = float(dm["y_start"])
+            self.y_end = float(dm["y_end"])
+            self.y_step = float(dm["y_step"])
+            self.z_start = float(dm["z_start"])
+            self.z_end = float(dm["z_end"])
+            self.z_step = float(dm["z_step"])
 
 
     def check_properties_after_building ( self, context ):
@@ -440,40 +529,45 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
     def remove_properties ( self, context ):
         print ( "Removing all Partition Properties... no collections to remove." )
 
-
-
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
+        mcell4_mode = mcell.cellblender_preferences.mcell4_mode
 
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
-            layout.prop(self, "include")
-            if self.include:
+            if mcell4_mode:
                 row = layout.row(align=True)
-                row.prop(self, "x_start")
-                row.prop(self, "x_end")
-                row.prop(self, "x_step")
-
-                row = layout.row(align=True)
-                row.prop(self, "y_start")
-                row.prop(self, "y_end")
-                row.prop(self, "y_step")
-
-                row = layout.row(align=True)
-                row.prop(self, "z_start")
-                row.prop(self, "z_end")
-                row.prop(self, "z_step")
-
-                if mcell.model_objects.object_list:
-                    layout.operator("mcell.auto_generate_boundaries",
-                                    icon='OUTLINER_OB_LATTICE')
-                if not "partitions" in bpy.data.objects:
-                    layout.operator("mcell.create_partitions_object",
-                                    icon='OUTLINER_OB_LATTICE')
-                else:
-                    layout.operator("mcell.remove_partitions_object",
-                                    icon='OUTLINER_OB_LATTICE')
+                row.prop(self, "start")
+                row.prop(self, "end")
+                row.prop(self, "step")
+            else:
+                layout.prop(self, "include")
+                if self.include:
+                    row = layout.row(align=True)
+                    row.prop(self, "x_start")
+                    row.prop(self, "x_end")
+                    row.prop(self, "x_step")
+    
+                    row = layout.row(align=True)
+                    row.prop(self, "y_start")
+                    row.prop(self, "y_end")
+                    row.prop(self, "y_step")
+    
+                    row = layout.row(align=True)
+                    row.prop(self, "z_start")
+                    row.prop(self, "z_end")
+                    row.prop(self, "z_step")
+    
+            if mcell.model_objects.object_list:
+                layout.operator("mcell.auto_generate_boundaries",
+                                icon='OUTLINER_OB_LATTICE')
+            if not "partitions" in bpy.data.objects:
+                layout.operator("mcell.create_partitions_object",
+                                icon='OUTLINER_OB_LATTICE')
+            else:
+                layout.operator("mcell.remove_partitions_object",
+                                icon='OUTLINER_OB_LATTICE')
 
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
