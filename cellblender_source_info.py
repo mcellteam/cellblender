@@ -305,25 +305,6 @@ def print_source_list (addon_path,verbose=False):
 
 if __name__ == '__main__':
 
-    """Run this file from the command line to print the file list and update the cellblender_id.py file."""
-
-    id_file_name = "cellblender_id.py"
-    identify_source_version(os.path.dirname(__file__),verbose=False)
-    
-    cb_id_statement = "cellblender_id = '" + cellblender_info['cellblender_source_sha1'] + "'\n"
-    sha_file_name = os.path.join(os.path.dirname(__file__), id_file_name)
-    rebuild = True
-    if os.path.exists(sha_file_name):
-        sha_file = open(sha_file_name, 'r')
-        current_statement = sha_file.read()
-        sha_file.close()
-        if current_statement.strip() == cb_id_statement.strip():
-            rebuild = False
-    
-    if rebuild:
-        open(sha_file_name, 'w').write(cb_id_statement)
-
+    """Run this file from the command line to print the file list."""
     print_source_list(os.path.dirname(__file__))
-    import sys
-    sys.exit(0)
 

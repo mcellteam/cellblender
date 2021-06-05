@@ -78,7 +78,6 @@ $(SUBDIRS):
 # Note that files which auto-change but are included in the zip file are not part of the source list
 cellblender.zip: cellblender $(SOURCES)
 	@echo Updating cellblender.zip
-	touch -t 201502050000 cellblender_id.py
 	@zip $(ZIPOPTS) cellblender.zip $(ZIPFILES)
 
 
