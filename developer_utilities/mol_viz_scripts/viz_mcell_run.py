@@ -13,7 +13,6 @@ import os
 import re
 import sys
 
-#FIXME: need to find cellblender plugin directory, maybe pass as argument
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 CELLBLENDER_DIR = os.path.join(THIS_DIR, '..', '..')
 if not os.path.exists(CELLBLENDER_DIR):
@@ -58,6 +57,10 @@ def mol_viz_update_from_file(mcell, filename):
 
 
 def update_frame_data(scene):
+    global g_last_data_model_loaded
+    global g_last_obj_file_loaded
+    global g_last_viz_file_loaded
+
     # this is our iteration
     frame_index = bpy.context.scene.frame_current - 1
     
@@ -70,7 +73,6 @@ def update_frame_data(scene):
     # data model does not have to be present
     if dm != "" and dm != g_last_data_model_loaded:
         data_model.import_datamodel_all_json(dm, bpy.context)
-        global g_last_data_model_loaded
         g_last_data_model_loaded = dm
         
     # obj file does not have to be present, it overrides geometry that coudl be loaded 
@@ -105,14 +107,12 @@ def update_frame_data(scene):
             
         bpy.ops.object.select_all(action='DESELECT')
         
-        global g_last_obj_file_loaded
         g_last_obj_file_loaded = obj
     
     # molecule positions must be found        
     if viz != g_last_viz_file_loaded:
         # file.path gets the entire folder path as well as the file name as a string.
         mol_viz_update_from_file(bpy.context.scene.mcell, viz)
-        global g_last_viz_file_loaded
         g_last_viz_file_loaded = viz
 
     
@@ -123,6 +123,18 @@ def get_corresponding_file(dm_files, iteration):
             best_match = v
     return best_match
 
+
+def get_index_from_file_name(viz_file_name):
+    # example input: 'viz_data/seed_00001/Scene.cellbin.020.dat'
+    no_ext = os.path.splitext(viz_file_name)[0]
+    pos = no_ext.rfind('.')
+    if pos == -1:
+        print("Warning: could not get interation number from " + viz_file_name + ", defaulting to 0.")
+        return 0
+    
+    index_str = no_ext[pos+1:]
+    return int(index_str)
+    
 
 def init_frame_files_mapping():
     
@@ -163,10 +175,13 @@ def init_frame_files_mapping():
     # 
     global g_frame_to_files
     for i in range(0, len(viz_files)):
-        dm = get_corresponding_file(dm_files, i)
-        obj = get_corresponding_file(obj_files, i)
+        index = get_index_from_file_name(viz_files[i])
+        dm = get_corresponding_file(dm_files, index)
+        obj = get_corresponding_file(obj_files, index)
         g_frame_to_files[i] = (viz_files[i], dm, obj)
                 
+    print(g_frame_to_files)
+    
     bpy.context.scene.frame_end = len(g_frame_to_files)
     
 

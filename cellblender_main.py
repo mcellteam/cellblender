@@ -1053,7 +1053,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellPropertyGroup Data Model" )
-        cellblender.data_model.dump_data_model ( "Dump of dm passed to MCellPropertyGroup.upgrade_data_model", dm )
+        #cellblender.data_model.dump_data_model ( "Dump of dm passed to MCellPropertyGroup.upgrade_data_model", dm )
 
         # Set the model_language field which should be "mcell4" for any upgraded models
         dm['model_language'] = 'mcell4'
