@@ -45,14 +45,6 @@ from . import cellblender_release
 from . import cellblender_utils
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 # Meshalyzer Operators:
 
@@ -155,9 +147,9 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
                 mcell.meshalyzer.watertight = "Mesh Not Triangulated"
                 return {'FINISHED'}
 
-            tv0 = mesh.vertices[f.vertices[0]].co * t_mat
-            tv1 = mesh.vertices[f.vertices[1]].co * t_mat
-            tv2 = mesh.vertices[f.vertices[2]].co * t_mat
+            tv0 = mesh.vertices[f.vertices[0]].co @ t_mat
+            tv1 = mesh.vertices[f.vertices[1]].co @ t_mat
+            tv2 = mesh.vertices[f.vertices[2]].co @ t_mat
             area = area + mathutils.geometry.area_tri(tv0, tv1, tv2)
 
         mcell.meshalyzer.area = area
@@ -252,9 +244,9 @@ class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
                     mcell.meshalyzer.watertight = 'Mesh Not Triangulated'
                     return {'FINISHED'}
 
-                tv0 = mesh.vertices[f.vertices[0]].co * t_mat
-                tv1 = mesh.vertices[f.vertices[1]].co * t_mat
-                tv2 = mesh.vertices[f.vertices[2]].co * t_mat
+                tv0 = mesh.vertices[f.vertices[0]].co @ t_mat
+                tv1 = mesh.vertices[f.vertices[1]].co @ t_mat
+                tv2 = mesh.vertices[f.vertices[2]].co @ t_mat
                 area = area + mathutils.geometry.area_tri(tv0,tv1,tv2)
 
             mcell.meshalyzer.area = area
@@ -311,9 +303,9 @@ def mesh_vol(mesh, t_mat):
 
     volume = 0.0
     for f in mesh.polygons:
-        tv0 = mesh.vertices[f.vertices[0]].co * t_mat
-        tv1 = mesh.vertices[f.vertices[1]].co * t_mat
-        tv2 = mesh.vertices[f.vertices[2]].co * t_mat
+        tv0 = mesh.vertices[f.vertices[0]].co @ t_mat
+        tv1 = mesh.vertices[f.vertices[1]].co @ t_mat
+        tv2 = mesh.vertices[f.vertices[2]].co @ t_mat
         x0 = tv0.x
         y0 = tv0.y
         z0 = tv0.z
@@ -395,7 +387,7 @@ def check_orientable(mesh, edge_faces, edge_face_count):
 class MCELL_PT_meshalyzer(bpy.types.Panel):
     bl_label = "CellBlender - Mesh Analysis"
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     bl_category = "CellBlender"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -454,21 +446,37 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
 # Meshalyzer Property Groups
 
 class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
-    object_name = StringProperty(name="Object Name")
-    vertices = IntProperty(name="Vertices", default=0)
-    edges = IntProperty(name="Edges", default=0)
-    faces = IntProperty(name="Faces", default=0)
-    watertight = StringProperty(name="Watertight")
-    manifold = StringProperty(name="Manifold")
-    normal_status = StringProperty(name="Surface Normals")
-    components = IntProperty(name="Components", default=0)
-    genus = IntProperty(name="Genus", default=0)
-    genus_string = StringProperty(name="", default="")
-    area = FloatProperty(name="Area", default=0)
-    volume = FloatProperty(name="Volume", default=0)
-    sav_ratio = FloatProperty(name="SA/V Ratio", default=0)
-    status = StringProperty(name="Status")
+    object_name: StringProperty(name="Object Name")
+    vertices: IntProperty(name="Vertices", default=0)
+    edges: IntProperty(name="Edges", default=0)
+    faces: IntProperty(name="Faces", default=0)
+    watertight: StringProperty(name="Watertight")
+    manifold: StringProperty(name="Manifold")
+    normal_status: StringProperty(name="Surface Normals")
+    components: IntProperty(name="Components", default=0)
+    genus: IntProperty(name="Genus", default=0)
+    genus_string: StringProperty(name="", default="")
+    area: FloatProperty(name="Area", default=0)
+    volume: FloatProperty(name="Volume", default=0)
+    sav_ratio: FloatProperty(name="SA/V Ratio", default=0)
+    status: StringProperty(name="Status")
 
     def remove_properties ( self, context ):
         print ( "Removing all Meshalyzer Properties... no collections to remove." )
+
+
+classes = ( 
+            MCELL_OT_meshalyzer,
+            MCELL_OT_gen_meshalyzer_report,
+            MCELL_PT_meshalyzer,
+            MCellMeshalyzerPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

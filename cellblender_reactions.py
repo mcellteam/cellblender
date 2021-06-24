@@ -45,14 +45,6 @@ from . import cellblender_release
 from . import cellblender_utils
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 # Reaction Operators:
 
@@ -94,7 +86,7 @@ class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
     bl_description = "Add a variable rate constant to a reaction."
     bl_options = {'REGISTER', 'UNDO'}
 
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    filepath: StringProperty(subtype='FILE_PATH', default="")
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -299,9 +291,9 @@ class MCELL_UL_check_reaction(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            layout.label(text=item.name, icon='CHECKMARK')
 
 
 class MCELL_PT_define_reactions(bpy.types.Panel):
@@ -320,54 +312,54 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
 # Reaction Property Groups
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="The Reaction")
-    rxn_name = StringProperty(
+    name: StringProperty(name="The Reaction")
+    rxn_name: StringProperty(
         name="Reaction Name",
         description="The name of the reaction. "
                     "Can be used in Reaction Output.",
         update=check_reaction)
-    description = StringProperty(name="Description", default="")
-    reactants = StringProperty(
+    description: StringProperty(name="Description", default="")
+    reactants: StringProperty(
         name="Reactants", 
         description="Specify 1-3 reactants separated by a + symbol. "
                     "Optional: end with @ surface class. Ex: a; + b; @ sc;",
         update=check_reaction)
-    products = StringProperty(
+    products: StringProperty(
         name="Products",
         description="Specify zero(NULL) or more products separated by a + symbol.",
         update=check_reaction)
     type_enum = [
         ('irreversible', "->", ""),
         ('reversible', "<->", "")]
-    type = EnumProperty(
+    type: EnumProperty(
         items=type_enum, name="Reaction Type",
         description="A unidirectional/irreversible(->) reaction or a "
                     "bidirectional/reversible(<->) reaction.",
         update=check_reaction)
-    variable_rate_switch = BoolProperty(
+    variable_rate_switch: BoolProperty(
         name="Enable Variable Rate Constant",
         description="If set, use a variable rate constant defined by a two "
                     "column file (col1=time, col2=rate).",
         default=False, update=check_reaction)
-    variable_rate = StringProperty(
+    variable_rate: StringProperty(
         name="Variable Rate", subtype='FILE_PATH', default="")
-    variable_rate_valid = BoolProperty(name="Variable Rate Valid",
+    variable_rate_valid: BoolProperty(name="Variable Rate Valid",
         default=False, update=check_reaction)
 
 
-    fwd_rate = PointerProperty ( name="Forward Rate", type=parameter_system.Parameter_Reference )
-    bkwd_rate = PointerProperty ( name="Backward Rate", type=parameter_system.Parameter_Reference )
+    fwd_rate: PointerProperty ( name="Forward Rate", type=parameter_system.Parameter_Reference )
+    bkwd_rate: PointerProperty ( name="Backward Rate", type=parameter_system.Parameter_Reference )
 
 
-    reactants_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    rxn_type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    products_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    variable_rate_switch_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    rxn_name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    rxn_name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    reactants_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    rxn_type_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    products_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    variable_rate_switch_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    rxn_name_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    rxn_name_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
 
     def init_properties ( self, parameter_system ):
@@ -548,7 +540,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 class RxnStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
-    name = StringProperty(name="Text")
+    name: StringProperty(name="Text")
     def remove_properties ( self, context ):
         #print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
         pass
@@ -556,10 +548,10 @@ class RxnStringProperty(bpy.types.PropertyGroup):
 
 
 class MCellReactionsListProperty(bpy.types.PropertyGroup):
-    reaction_list = CollectionProperty(
+    reaction_list: CollectionProperty(
         type=MCellReactionProperty, name="Reaction List")
-    active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
-    reaction_name_list = CollectionProperty(
+    active_rxn_index: IntProperty(name="Active Reaction Index", default=0)
+    reaction_name_list: CollectionProperty(
         type=RxnStringProperty, name="Reaction Name List")
 
     def add_reaction ( self, context ):
@@ -661,8 +653,8 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
                                   self, "reaction_list",
                                   self, "active_rxn_index", rows=2)
                 col = row.column(align=True)
-                col.operator("mcell.reaction_add", icon='ZOOMIN', text="")
-                col.operator("mcell.reaction_remove", icon='ZOOMOUT', text="")
+                col.operator("mcell.reaction_add", icon='ADD', text="")
+                col.operator("mcell.reaction_remove", icon='REMOVE', text="")
                 if len(self.reaction_list) > 0:
                     rxn = self.reaction_list[
                         self.active_rxn_index]
@@ -695,18 +687,18 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
                     ps.draw_prop_with_help ( layout, "Enable Variable Rate", rxn, "variable_rate_switch", "variable_rate_switch_show_help", rxn.variable_rate_switch_show_help, helptext )
 
                     if rxn.variable_rate_switch:
-                        layout.operator("mcell.variable_rate_add", icon='FILESEL')
+                        layout.operator("mcell.variable_rate_add", icon='FILEBROWSER')
                         # Do we need these messages in addition to the status
                         # message that appears in the list? I'll leave it for now.
                         if not rxn.variable_rate:
-                            layout.label("Rate file not set", icon='UNPINNED')
+                            layout.label(text="Rate file not set", icon='UNPINNED')
                         elif not rxn.variable_rate_valid:
-                            layout.label("File/Permissions Error: " +
+                            layout.label(text="File/Permissions Error: " +
                                 rxn.variable_rate, icon='ERROR')
                         else:
                             layout.label(
                                 text="Rate File: " + rxn.variable_rate,
-                                icon='FILE_TICK')
+                                icon='CHECKMARK')
                     else:
                         #rxn.fwd_rate.draw_in_new_row(layout)
                         rxn.fwd_rate.draw(layout,ps)
@@ -761,4 +753,24 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
+
+
+classes = ( 
+            MCELL_OT_reaction_add,
+            MCELL_OT_reaction_remove,
+            MCELL_OT_add_variable_rate_constant,
+            MCELL_UL_check_reaction,
+            MCELL_PT_define_reactions,
+            MCellReactionProperty,
+            RxnStringProperty,
+            MCellReactionsListProperty,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

@@ -917,17 +917,17 @@ def save_geometry(context, out_file, object_list):
     # Export Model Geometry:
     for object_item in object_list:
 
-        data_object = context.scene.objects[object_item.name]
+        data_object = context.scene.collection.children[0].objects[object_item.name]
 
         if data_object.type == 'MESH':
 
             # NOTE (Markus): I assume this is what is happening
             # here. We need to unhide objects (if hidden) during
             # writing and then restore the state in the end.
-            saved_hide_status = data_object.hide
-            data_object.hide = False
+            saved_hide_status = data_object.hide_viewport
+            data_object.hide_viewport= False
 
-            context.scene.objects.active = data_object
+            context.view_layer.objects.active = data_object
             bpy.ops.object.mode_set(mode='OBJECT')
 
             # Begin POLYGON_LIST block
@@ -941,7 +941,7 @@ def save_geometry(context, out_file, object_list):
             matrix = data_object.matrix_world
             vertices = mesh.vertices
             for v in vertices:
-                t_vec = matrix * v.co
+                t_vec = matrix @ v.co
                 out_file.write("    [ %.15g, %.15g, %.15g ]\n" %
                                (t_vec.x, t_vec.y, t_vec.z))
 
@@ -984,7 +984,7 @@ def save_geometry(context, out_file, object_list):
             out_file.write("}\n\n")
 
             # restore proper object visibility state
-            data_object.hide = saved_hide_status
+            data_object.hide_viewport = saved_hide_status
 
 
 def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all, export_all_ascii):

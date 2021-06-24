@@ -70,14 +70,6 @@ from . import cellblender_utils
 from cellblender.cellblender_utils import mcell_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 
 # Surface Regions callback functions
@@ -205,7 +197,7 @@ class MCELL_OT_mod_surf_regions_remove(bpy.types.Operator):
 class MCELL_PT_object_selector(bpy.types.Panel):
     bl_label = "CellBlender - Object Selector"
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     bl_category = "CellBlender"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -232,9 +224,9 @@ class MCELL_UL_check_mod_surface_regions(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            layout.label(text=item.name, icon='CHECKMARK')
 
 
 class MCELL_PT_mod_surface_regions(bpy.types.Panel):
@@ -255,14 +247,14 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
 class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     """ Assign a surface class to a surface region. """
 
-    name = StringProperty(name="Assign Surface Class")
-    description = StringProperty(name="Description", default="")
-    surf_class_name = StringProperty(
+    name: StringProperty(name="Assign Surface Class")
+    description: StringProperty(name="Description", default="")
+    surf_class_name: StringProperty(
         name="Surface Class Name",
         description="This surface class will be assigned to the surface "
                     "region listed below.",
         update=check_active_mod_surf_regions)
-    object_name = StringProperty(
+    object_name: StringProperty(
         name="Object Name",
         description="A region on this object will have the above surface "
                     "class assigned to it.",
@@ -270,18 +262,18 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     region_selection_enum = [
         ('ALL', "All Surfaces", ""),
         ('SEL', "Specified Region", "")]
-    region_selection = EnumProperty(
+    region_selection: EnumProperty(
         items=region_selection_enum, name="Region Selection",
         default='ALL',
         description="Choose between ALL Surfaces or Specified Regions. ")
-    region_name = StringProperty(
+    region_name: StringProperty(
         name="Region Name",
         description="This surface region will have the above surface class "
                     "assigned to it.",
         update=check_active_mod_surf_regions)
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
-    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def remove_properties ( self, context ):
         print ( "Removing all Surface Regions Properties... no collections to remove." )
@@ -356,8 +348,8 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
 
 class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
-    mod_surf_regions_list = CollectionProperty( type=MCellModSurfRegionsProperty, name="Assign Surface Class List")
-    active_mod_surf_regions_index = IntProperty(
+    mod_surf_regions_list: CollectionProperty( type=MCellModSurfRegionsProperty, name="Assign Surface Class List")
+    active_mod_surf_regions_index: IntProperty(
         name="Active Assign Surface Class Index", default=0)
 
     def build_data_model_from_properties ( self, context ):
@@ -444,8 +436,8 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                                   "mod_surf_regions_list", self,
                                   "active_mod_surf_regions_index", rows=2)
                 col = row.column(align=True)
-                col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
-                col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT',
+                col.operator("mcell.mod_surf_regions_add", icon='ADD', text="")
+                col.operator("mcell.mod_surf_regions_remove", icon='REMOVE',
                              text="")
                 if self.mod_surf_regions_list:
                     active_mod_surf_regions =  self.mod_surf_regions_list[self.active_mod_surf_regions_index]
@@ -460,7 +452,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                     row = layout.row()
                     row.prop_search(active_mod_surf_regions, "surf_class_name",
                                     mcell.surface_classes, "surf_class_list",
-                                    icon='FACESEL_HLT')
+                                    icon='LIGHTPROBE_CUBEMAP')
                     row = layout.row()
                     row.prop_search(active_mod_surf_regions, "object_name",
                                     mcell.model_objects, "object_list",
@@ -474,7 +466,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                             if active_mod_surf_regions.region_selection == 'SEL':
                                 layout.prop_search(active_mod_surf_regions,
                                                    "region_name", regions,
-                                                   "region_list", icon='FACESEL_HLT')
+                                                   "region_list", icon='UV_DATA')
                         except KeyError:
                             pass
 
@@ -485,8 +477,21 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
         self.draw_layout ( context, layout )
 
 
+classes = ( 
+            MCELL_OT_mod_surf_regions_add,
+            MCELL_OT_mod_surf_regions_remove,
+            MCELL_PT_object_selector,
+            MCELL_UL_check_mod_surface_regions,
+            MCELL_PT_mod_surface_regions,
+            MCellModSurfRegionsProperty,
+            MCellModSurfRegionsPropertyGroup,
+          )
 
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
 
-#Custom Properties
-
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

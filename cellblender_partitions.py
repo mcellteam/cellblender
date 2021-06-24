@@ -44,14 +44,6 @@ from . import cellblender_utils
 from . import data_model
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 
 class MCELL_OT_create_partitions_object(bpy.types.Operator):
@@ -62,15 +54,15 @@ class MCELL_OT_create_partitions_object(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        scene_objs = scene.objects
+        scene_objs = context.scene.collection.children[0].objects
         objs = bpy.data.objects
         meshes = bpy.data.meshes
         if not "partitions" in objs:
             # Save object selections and mode
-            object_list = bpy.context.scene.objects
-            selected_objs = [obj for obj in object_list if obj.select]
+            object_list = bpy.context.scene.collection.children[0].objects
+            selected_objs = [obj for obj in object_list if obj.select_get()]
             for obj in selected_objs:
-                obj.select = False
+                obj.select_set(False)
             active_object = bpy.context.active_object
             active_object_mode = active_object.mode
             bpy.ops.object.mode_set(mode='OBJECT')
@@ -78,17 +70,17 @@ class MCELL_OT_create_partitions_object(bpy.types.Operator):
             bpy.ops.mesh.primitive_cube_add()
             partition_object = bpy.context.active_object
             # Restore selections and mode
-            scene.objects.active = active_object
+            context.view_layer.objects.active = active_object
             for obj in selected_objs:
-                obj.select = True
+                obj.select_set(True)
             bpy.ops.object.mode_set(mode=active_object_mode)
-            partition_object.select = False
+            partition_object.select_set(False)
             # Prevent user from manipulating the box, because I don't yet have
             # a good way of updating the partitions when the box object is
             # moved/scaled in the 3D view window
             partition_object.hide_select = True
             # Set draw_type to wireframe so the user can see what's inside
-            partition_object.draw_type = 'WIRE'
+            partition_object.display_type = 'WIRE'
             partition_object.name = "partitions"
             partition_mesh = partition_object.data
             partition_mesh.name = "partitions"
@@ -107,7 +99,7 @@ class MCELL_OT_remove_partitions_object(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        scene_objects = scene.objects
+        scene_objects = context.scene.collection.children[0].objects
         objects = bpy.data.objects
         meshes = bpy.data.meshes
         if "partitions" in scene_objects:
@@ -139,7 +131,7 @@ class MCELL_OT_auto_generate_boundaries(bpy.types.Operator):
                 vertices = obj.data.vertices
                 for vert in vertices:
                     # Transform local coordinates to global coordinates
-                    (x, y, z) = obj_matrix * vert.co
+                    (x, y, z) = obj_matrix @ vert.co
                     if first_time:
                         x_min = x_max = x
                         y_min = y_max = y
@@ -317,48 +309,48 @@ def check_partition_step(self, context, start, end, step):
 
 
 class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
-    include = BoolProperty(
+    include: BoolProperty(
         name="Include Partitions",
         description="Partitions are a way of speeding up a simulation if used "
                     "properly.",
         default=False)
-    recursion_flag = BoolProperty(
+    recursion_flag: BoolProperty(
         name="Recursion Flag",
         description="Flag to prevent infinite recursion",
         default=False)
-    x_start = bpy.props.FloatProperty(
+    x_start: FloatProperty(
         name="X Start", default=-1, precision=3,
         description="The start of the partitions on the x-axis",
         update=transform_x_partition_boundary)
-    x_end = bpy.props.FloatProperty(
+    x_end: FloatProperty(
         name="X End", default=1, precision=3,
         description="The end of the partitions on the x-axis",
         update=transform_x_partition_boundary)
-    x_step = bpy.props.FloatProperty(
+    x_step: FloatProperty(
         name="X Step", default=0.05, precision=3,
         description="The distance between partitions on the x-axis",
         update=check_x_partition_step)
-    y_start = bpy.props.FloatProperty(
+    y_start: FloatProperty(
         name="Y Start", default=-1, precision=3,
         description="The start of the partitions on the y-axis",
         update=transform_y_partition_boundary)
-    y_end = bpy.props.FloatProperty(
+    y_end: FloatProperty(
         name="Y End", default=1, precision=3,
         description="The end of the partitions on the y-axis",
         update=transform_y_partition_boundary)
-    y_step = bpy.props.FloatProperty(
+    y_step: FloatProperty(
         name="Y Step", default=0.05, precision=3,
         description="The distance between partitions on the y-axis",
         update=check_y_partition_step)
-    z_start = bpy.props.FloatProperty(
+    z_start: FloatProperty(
         name="Z Start", default=-1, precision=3,
         description="The start of the partitions on the z-axis",
         update=transform_z_partition_boundary)
-    z_end = bpy.props.FloatProperty(
+    z_end: FloatProperty(
         name="Z End", default=1, precision=3,
         description="The end of the partitions on the z-axis",
         update=transform_z_partition_boundary)
-    z_step = bpy.props.FloatProperty(
+    z_step: FloatProperty(
         name="Z Step", default=0.05, precision=3,
         description="The distance between partitions on the z-axis",
         update=check_z_partition_step)
@@ -482,4 +474,19 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
 
 
 
+classes = ( 
+            MCELL_OT_create_partitions_object,
+            MCELL_OT_remove_partitions_object,
+            MCELL_OT_auto_generate_boundaries,
+            MCELL_PT_partitions,
+            MCellPartitionsPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

@@ -4,17 +4,17 @@ import platform
 from . import sbml2blender
 from cellblender.cellblender_utils import get_python_path
 
-# We use per module class registration/unregistration
 
 filePath = ''
 
 
-def register():
-    bpy.utils.register_module(__name__)
+# We use per module class registration/unregistration
+#def register():
+#    bpy.utils.register_module(__name__)
 
 
-def unregister():
-    bpy.utils.unregister_module(__name__)
+#def unregister():
+#    bpy.utils.unregister_module(__name__)
 
 
 def execute_sbml2mcell(filepath, context):

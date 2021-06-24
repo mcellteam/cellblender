@@ -51,14 +51,6 @@ from . import cellblender_objects
 from cellblender.cellblender_utils import mcell_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 class MCELL_PT_project_settings(bpy.types.Panel):
     bl_label = "CellBlender - Project Settings"
@@ -75,10 +67,10 @@ class MCELL_PT_project_settings(bpy.types.Panel):
 
 
 class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
-    base_name = StringProperty(
+    base_name: StringProperty(
         name="Project Base Name", default="cellblender_project")
 
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
     def draw_layout (self, context, layout):
         mcell = context.scene.mcell
@@ -88,7 +80,7 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
         else:
 
             row = layout.row()
-            split = row.split(0.96)
+            split = row.split(factor=0.96)
             col = split.column()
             col.label(text="CellBlender ID: "+cellblender.cellblender_info['cellblender_source_sha1'])
             col = split.column()
@@ -97,21 +89,21 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
                 # This means that the source ID didn't match the refreshed version
                 # Draw a second line showing the original file ID as an error
                 row = layout.row()
-                row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
+                row.label(text="File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
 
             # if not mcell.versions_match:
             if not cellblender.cellblender_info['versions_match']:
                 # Version in Blend file does not match Addon, so give user a button to upgrade if desired
                 row = layout.row()
-                row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
+                row.label ( text="Blend File version doesn't match CellBlender version", icon='ERROR' )
 
                 row = layout.row()
-                row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+                row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='GHOST_ENABLED' )
                 #row = layout.row()
-                #row.operator ( "mcell.delete", text="Delete CellBlender Collection Properties", icon='RADIO' )
+                #row.operator ( "mcell.delete", text="Delete CellBlender Collection Properties", icon='GHOST_ENABLED' )
 
                 row = layout.row()
-                row.label ( "Note: Saving this file will FORCE an upgrade!!!", icon='ERROR' )
+                row.label ( text="Note: Saving this file will FORCE an upgrade!!!", icon='ERROR' )
 
             row = layout.row()
             if not bpy.data.filepath:
@@ -121,7 +113,7 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
             else:
                 row.label(
                     text="Project Directory: " + os.path.dirname(bpy.data.filepath),
-                    icon='FILE_TICK')
+                    icon='CHECKMARK')
 
             row = layout.row()
             layout.prop(context.scene, "name", text="Project Base Name")
@@ -141,7 +133,7 @@ class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
     export_format_enum = [
         ('mcell_mdl_unified', "Single Unified MCell MDL File", ""),
         ('mcell_mdl_modular', "Modular MCell MDL Files", "")]
-    export_format = EnumProperty(items=export_format_enum,
+    export_format: EnumProperty(items=export_format_enum,
                                  name="Export Format",
                                  default='mcell_mdl_modular')
 
@@ -361,9 +353,9 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
                                 print ( " cellblender_project.py: Build MDL mesh from Blender object for frame " + str(frame_number) )
 
-                                geom_obj = context.scene.objects[obj.name]
-                                mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
-                                mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
+                                geom_obj = context.scene.collection.children[0].objects[obj.name]
+                                mesh = geom_obj.to_mesh(preserve_all_data_layers=True, depsgraph=context.evaluated_depsgraph_get())
+                                mesh.transform(mathutils.Matrix() @ geom_obj.matrix_world)
                                 points = [v.co for v in mesh.vertices]
                                 faces = [f.vertices for f in mesh.polygons]
                                 regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
@@ -504,4 +496,18 @@ class MCELL_OT_export_project(bpy.types.Operator):
         return {'FINISHED'}
 
 
+classes = (
+            MCELL_PT_project_settings,
+            MCellProjectPropertyGroup,
+            MCellExportProjectPropertyGroup,
+            MCELL_OT_export_project,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

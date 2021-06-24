@@ -45,15 +45,6 @@ from . import parameter_system
 from . import cellblender_utils
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
-
 def check_mcell_binary(self, context):
     """Callback to check for mcell executable"""
     mcell = context.scene.mcell
@@ -338,7 +329,7 @@ class MCELL_OT_set_mcell_binary(bpy.types.Operator):
                       "mcell.org/download.html")
     bl_options = {'REGISTER'}
 
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    filepath: StringProperty(subtype='FILE_PATH', default="")
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -356,7 +347,7 @@ class MCELL_OT_set_python_binary(bpy.types.Operator):
     bl_description = "Set Python Binary"
     bl_options = {'REGISTER'}
 
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    filepath: StringProperty(subtype='FILE_PATH', default="")
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -375,7 +366,7 @@ class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
                       "bionetgen.org")
     bl_options = {'REGISTER'}
 
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    filepath: StringProperty(subtype='FILE_PATH', default="")
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -422,94 +413,94 @@ def show_proxy_callback(self, context):
     # print ( "Glyph vis change callback for molecule " + self.name )
     mcell_prefs = context.scene.mcell.cellblender_preferences
     proxy_names = [ "mol_volume_proxy", "mol_surface_proxy" ]
-    objs = context.scene.objects
+    objs = context.scene.collection.children[0].objects
     for name in proxy_names:
       if name in objs:
         objs[name].hide = not mcell_prefs.show_mcellr_proxies
 
 class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
-    mcell_binary = StringProperty(name="MCell Binary", update=check_mcell_binary)
-    mcell_binary_valid = BoolProperty(name="MCell Binary Valid", default=False)
-    python_binary = StringProperty(name="Python Binary", update=check_python_binary)
-    python_binary_valid = BoolProperty(name="Python Binary Valid", default=False)
-    bionetgen_location = StringProperty(name="BioNetGen Location", update=check_bionetgen_location)
-    bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid", default=False)
+    mcell_binary: StringProperty(name="MCell Binary", update=check_mcell_binary)
+    mcell_binary_valid: BoolProperty(name="MCell Binary Valid", default=False)
+    python_binary: StringProperty(name="Python Binary", update=check_python_binary)
+    python_binary_valid: BoolProperty(name="Python Binary Valid", default=False)
+    bionetgen_location: StringProperty(name="BioNetGen Location", update=check_bionetgen_location)
+    bionetgen_location_valid: BoolProperty(name="BioNetGen Location Valid", default=False)
 
     invalid_policy_enum = [
         ('dont_run', "Do not run with errors", ""),
         ('filter', "Filter errors and run", ""),
         ('ignore', "Ignore errors and attempt run", "")]
-    invalid_policy = EnumProperty(
+    invalid_policy: EnumProperty(
         items=invalid_policy_enum,
         name="Invalid Policy",
         default='dont_run',
         update=save_preferences)
 
-    decouple_export_run = BoolProperty(
+    decouple_export_run: BoolProperty(
         name="Decouple Export and Run", default=False,
         description="Allow the project to be exported without also running"
                     " the simulation.",
         update=save_preferences)
 
-    debug_level = IntProperty(
+    debug_level: IntProperty(
         name="Debug Level", default=0, min=0, max=101,
         description="Amount of debug information to print: 0 to 100 (greater at your own risk)")
     
-    bionetgen_mode = BoolProperty(
+    bionetgen_mode: BoolProperty(
         name="BioNetGen Language Mode", default=False,
         description="Show BioNetGen Options and disable some checking")
 
-    show_mcellr_proxies = BoolProperty(
+    show_mcellr_proxies: BoolProperty(
         name="Show MCellR Proxies", default=False,
         description="Show MCellR Proxy molecules",
         update=show_proxy_callback)
 
-    use_long_menus = BoolProperty(
+    use_long_menus: BoolProperty(
         name="Show Long Menu Buttons", default=True,
         description="Show Menu Buttons with Text Labels")
 
-    use_stock_icons = BoolProperty (
+    use_stock_icons: BoolProperty (
         name="Use only internal Blender Icons", default=True,
         description="Use only internal Blender Icons")
 
 
-    show_extra_options = BoolProperty (
+    show_extra_options: BoolProperty (
         name="Specialized CellBlender Options", default=False,
         description="Show Additional Options (mostly for debugging)" )
 
-    show_blender_preferences = BoolProperty (
+    show_blender_preferences: BoolProperty (
         name="Selected Blender Preferences", default=False,
         description="Show handy Blender Settings and Preferences" )
 
     # This provides a quick way to show or hide individual buttons in the SHORT button list
     # Position 0 is generally reserved for the refresh and pin buttons
     # All other buttons should start at 1 and progress forward from left to right
-    show_button_num = BoolVectorProperty ( size=17, default=[True for i in range(17)] )
+    show_button_num: BoolVectorProperty ( size=17, default=[True for i in range(17)] )
 
 
-    show_old_scene_panels = BoolProperty(
+    show_old_scene_panels: BoolProperty(
         name="Old CellBlender in Scene Tab", default=True,
         description="Show Old CellBlender Panels in Scene Tab", update=set_old_scene_panels_callback)
 
-    show_scene_panel = BoolProperty(
+    show_scene_panel: BoolProperty(
         name="CellBlender in Scene Tab", default=True,
         description="Show CellBlender Panel in Scene Tab", update=set_scene_panel_callback)
 
-    show_tool_panel = BoolProperty(
+    show_tool_panel: BoolProperty(
         name="CellBlender in Tool Tab", default=True,
         description="Show CellBlender Panel in Tool Tab", update=set_tool_panel_callback)
 
-    show_sim_runner_options = BoolProperty(name="Show Alternate Simulation Runners", default=False)
+    show_sim_runner_options: BoolProperty(name="Show Alternate Simulation Runners", default=False)
 
-    developer_mode = BoolProperty(name="Show Developer Options in Panels", default=False)
-    require_mcell = BoolProperty(name="Require MCell to Run", default=True)
+    developer_mode: BoolProperty(name="Show Developer Options in Panels", default=False)
+    require_mcell: BoolProperty(name="Require MCell to Run", default=True)
 
-    tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
-    double_sided = BoolProperty(name="Show Double Sided Mesh Objects", default=False, update=set_double_sided_callback)
-    backface_culling = BoolProperty(name="Backface Culling", default=False, update=set_backface_culling_callback)
+    tab_autocomplete: BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
+    double_sided: BoolProperty(name="Show Double Sided Mesh Objects", default=False, update=set_double_sided_callback)
+    backface_culling: BoolProperty(name="Backface Culling", default=False, update=set_backface_culling_callback)
 
-    lockout_export = BoolProperty(name="Lockout Exporting of MDL", default=False)
+    lockout_export: BoolProperty(name="Lockout Exporting of MDL", default=False)
 
 
     def remove_properties ( self, context ):
@@ -531,48 +522,48 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.operator("mcell.set_mcell_binary",
-                         text="Set Path to MCell Binary", icon='FILESEL')
+                         text="Set Path to MCell Binary", icon='FILEBROWSER')
             row = layout.row()
             mcell_binary = self.mcell_binary
             if not mcell_binary:
-                row.label("MCell Binary not set", icon='UNPINNED')
+                row.label(text="MCell Binary not set", icon='UNPINNED')
             elif not self.mcell_binary_valid:
-                row.label("MCell File/Permissions Error: " +
+                row.label(text="MCell File/Permissions Error: " +
                     self.mcell_binary, icon='ERROR')
             else:
                 row.label(
                     text="MCell Binary: "+self.mcell_binary,
-                    icon='FILE_TICK')
+                    icon='CHECKMARK')
 
             row = layout.row()
             row.operator("mcell.set_bionetgen_location",
-                         text="Set Path to BioNetGen File", icon='FILESEL')
+                         text="Set Path to BioNetGen File", icon='FILEBROWSER')
             row = layout.row()
             bionetgen_location = self.bionetgen_location
             if not bionetgen_location:
-                row.label("BioNetGen location not set", icon='UNPINNED')
+                row.label(text="BioNetGen location not set", icon='UNPINNED')
             elif not self.bionetgen_location_valid:
-                row.label("BioNetGen File/Permissions Error: " +
+                row.label(text="BioNetGen File/Permissions Error: " +
                     self.bionetgen_location, icon='ERROR')
             else:
                 row.label(
                     text="BioNetGen Location: " + self.bionetgen_location,
-                    icon='FILE_TICK')
+                    icon='CHECKMARK')
 
             row = layout.row()
             row.operator("mcell.set_python_binary",
-                         text="Set Path to Python Binary", icon='FILESEL')
+                         text="Set Path to Python Binary", icon='FILEBROWSER')
             row = layout.row()
             python_path = self.python_binary
             if not python_path:
-                row.label("Python Binary not set", icon='UNPINNED')
+                row.label(text="Python Binary not set", icon='UNPINNED')
             elif not self.python_binary_valid:
-                row.label("Python File/Permissions Error: " +
+                row.label(text="Python File/Permissions Error: " +
                     self.python_binary, icon='ERROR')
             else:
                 row.label(
                     text="Python Binary: " + self.python_binary,
-                    icon='FILE_TICK')
+                    icon='CHECKMARK')
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "invalid_policy")
@@ -628,7 +619,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
 
                 row = box.row()
-                row.label ( "Enable/Disable individual short menu buttons:" )
+                row.label ( text="Enable/Disable individual short menu buttons:" )
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "show_button_num", text="")
 
@@ -639,8 +630,8 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                 #row = box.row()
                 #row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
 
-                #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
-                #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
+                #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ADD')
+                #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='REMOVE')
 
 
             else:
@@ -656,7 +647,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
 
               row = box.row()
-              row.label ( "Blender File Preferences", icon="BLENDER" )
+              row.label ( text="Blender File Preferences", icon="BLENDER" )
 
               row = box.row()
               row.prop ( context.scene.world, "horizon_color", text="World Horizon" )
@@ -674,7 +665,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
               col.prop ( mcell.cellblender_preferences, "double_sided" )
 
               row = box.row()
-              split = row.split(percentage=0.55)
+              split = row.split(factor=0.55)
               split.prop(context.space_data, "show_floor", text="Grid Floor")
 
               row = split.row(align=True)
@@ -687,7 +678,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
 
               row = box.row()
-              row.label ( "Blender Global Preferences", icon="BLENDER" )
+              row.label ( text="Blender Global Preferences", icon="BLENDER" )
 
               row = box.row()
               row.operator ( "mcell.black_3d_theme" )
@@ -738,4 +729,25 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
         # Call the draw function of the object itself
         context.scene.mcell.cellblender_preferences.draw_panel ( context, self )
 
+
+classes = (
+            MCELL_OT_save_preferences,
+            MCELL_OT_reset_preferences,
+            MCELL_OT_set_mcell_binary,
+            MCELL_OT_set_python_binary,
+            MCELL_OT_set_check_bionetgen_location,
+            MCELL_OT_reset_theme,
+            MCELL_OT_black_theme,
+            MCELL_OT_white_theme,
+            CellBlenderPreferencesPropertyGroup,
+            MCELL_PT_cellblender_preferences,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

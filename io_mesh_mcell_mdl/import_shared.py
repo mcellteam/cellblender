@@ -35,7 +35,7 @@ def import_obj(mdlobj, obj_mat, reg_mat, add_to_model_objects=True):
     meshes = bpy.data.meshes
     objs = bpy.data.objects
     scn = bpy.context.scene
-    scn_objs = scn.objects
+    scn_objs = bpy.context.scene.collection.children[0].objects
 
     objname = mdlobj.name
     print(objname, len(mdlobj.vertices), len(mdlobj.faces))
@@ -58,7 +58,7 @@ def import_obj(mdlobj, obj_mat, reg_mat, add_to_model_objects=True):
 
     # Object needs to be active to add a region to it because of how
     # init_region (called by add_region_by_name) works.
-    scn.objects.active = obj
+    bpy.context.view_layer.objects.active = obj
     
     all_regions = []
     for reg_name, regions in mdlobj.regions.items():
@@ -95,12 +95,12 @@ def create_materials():
     obj_mat = mats.get('obj_mat')
     if not obj_mat:
         obj_mat = mats.new('obj_mat')
-        obj_mat.diffuse_color = [0.7, 0.7, 0.7]
+        obj_mat.diffuse_color = [0.7, 0.7, 0.7, 1.0]
 
     # This material is used by all faces that do have a surface region.
     reg_mat = mats.get('reg_mat')
     if not reg_mat:
         reg_mat = mats.new('reg_mat')
-        reg_mat.diffuse_color = [0.8, 0.0, 0.0]
+        reg_mat.diffuse_color = [0.8, 0.0, 0.0, 1.0]
 
     return (obj_mat, reg_mat)

@@ -68,12 +68,28 @@ class ImportMDLData(bpy.types.Operator, ImportHelper):
 
 def menu_func_import(self, context):
     self.layout.operator("mdl.import_parameters", text="MCell MDL Parameters (.mdl)")
-   
+
+
+
+classes = (
+            ImportMDLData,
+          )
+
 def register():
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
+    for cls in classes:
+      bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.types.INFO_MT_file_import.remove(menu_func_import)
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
+
+
+#def register():
+#    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+
+#def unregister():
+#    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+
 
 if __name__ == "__main__":
     register()

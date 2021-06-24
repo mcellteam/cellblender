@@ -6,7 +6,7 @@
 #  of the License, or (at your option) any later version.#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURARMATURE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
@@ -65,14 +65,6 @@ from multiprocessing import cpu_count
 import cellblender.sim_engines as engine_manager
 import cellblender.sim_runners as runner_manager
 
-
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
 
 
 def get_pid(item):
@@ -694,9 +686,9 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
                     simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
 
             # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
-            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
-            color.h += 0.01
-            color.h -= 0.01
+            color = context.preferences.themes[0].view_3d.empty
+            color[0] += 0.01
+            color[0] -= 0.01
             # if every MCell job is done, quit updating the screen
             if task_len == task_ctr:
                 self.cancel(context)
@@ -711,7 +703,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
         delay = run_sim.text_update_timer_delay   # this is how often we should update this in seconds
         print ( "Setting timer to delay of " + str(delay) )
         wm = context.window_manager
-        self._timer = wm.event_timer_add(delay, context.window)
+        self._timer = wm.event_timer_add(time_step=delay, window=context.window)
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
@@ -771,8 +763,8 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
             # the run commands. Otherwise it needs to be saved between exporting and running.
             #
             # For now, this is handled with these two flags:
-            #    export_requested = BoolProperty(name="Export Requested", default=True)
-            #    run_requested = BoolProperty(name="Run Requested", default=True)
+            #    export_requested: BoolProperty(name="Export Requested", default=True)
+            #    run_requested: BoolProperty(name="Run Requested", default=True)
             # This allows the same code to do what's appropriate for the current requests.
 
             if (run_sim.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
@@ -2141,7 +2133,7 @@ def check_end_seed(self, context):
 class MCELL_UL_error_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
-        layout.label(item.name, icon='ERROR')
+        layout.label(text=item.name, icon='ERROR')
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -2151,16 +2143,16 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
             sp = cellblender.simulation_popen_list[index]
             # Simulations are still running
             if sp.poll() is None:
-                layout.label(item.name, icon='POSE_DATA')
+                layout.label(text=item.name, icon='ARMATURE_DATA')
             # Simulations have failed or were killed
             elif sp.returncode != 0:
-                layout.label(item.name, icon='ERROR')
+                layout.label(text=item.name, icon='ERROR')
             # Simulations have finished
             else:
-                layout.label(item.name, icon='FILE_TICK')
+                layout.label(text=item.name, icon='CHECKMARK')
         else:
             # Indexing error may be caused by stale data in the simulation_popen_list?? Maybe??
-            layout.label(item.name, icon='ERROR')
+            layout.label(text=item.name, icon='ERROR')
 
 
 class MCELL_PT_run_simulation(bpy.types.Panel):
@@ -2184,22 +2176,22 @@ class MCELL_UL_run_simulation_queue(bpy.types.UIList):
             proc = q_item['process']
             if q_item['status'] == 'queued':
                 # Simulation is queued, waiting to run
-                layout.label(item.name, icon='TIME')
+                layout.label(text=item.name, icon='TIME')
             elif q_item['status'] == 'running':
                 # Simulation is still running
-                layout.label(item.name, icon='POSE_DATA')
+                layout.label(text=item.name, icon='ARMATURE_DATA')
             elif q_item['status'] == 'mcell_error':
                 # Simulation failed due to error detected by MCell
-                layout.label(item.name, icon='ERROR')
+                layout.label(text=item.name, icon='ERROR')
             elif q_item['status'] == 'died':
                 # Simulation was killed or failed due to some other error
-                layout.label(item.name, icon='CANCEL')
+                layout.label(text=item.name, icon='CANCEL')
             else:
                 # Simulation has finished normally
-                layout.label(item.name, icon='FILE_TICK')
+                layout.label(text=item.name, icon='CHECKMARK')
         else:
             # Indexing error may be caused by stale data in the simulation_popen_list?? Maybe??
-            layout.label(item.name, icon='ERROR')
+            layout.label(text=item.name, icon='ERROR')
 
 
 class MCELL_PT_run_simulation_queue(bpy.types.Panel):
@@ -2216,8 +2208,8 @@ class MCELL_PT_run_simulation_queue(bpy.types.Panel):
 # Simulation Property Groups
 
 class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="Simulation Runner Process")
-    #pid = IntProperty(name="PID")
+    name: StringProperty(name="Simulation Runner Process")
+    #pid: IntProperty(name="PID")
 
     def remove_properties ( self, context ):
         print ( "Removing all Run Simulation Process Properties for " + self.name + "... no collections to remove." )
@@ -2254,63 +2246,63 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
 
 class MCellSimStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
-    name = StringProperty(name="Text")
+    name: StringProperty(name="Text")
     def remove_properties ( self, context ):
         #print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
         pass
 
 
 class MCellComputerProperty(bpy.types.PropertyGroup):
-    comp_name = StringProperty ( default="", description="Computer name" )
-    comp_mem = FloatProperty ( default=0, description="Total Memory" )
-    cores_in_use = IntProperty ( default=0, description="Cores in use" )
-    cores_total = IntProperty ( default=0, description="Cores total" )
-    comp_props = StringProperty ( default="", description="Computer properties" )
-    selected = BoolProperty ( default=False, description="Select for running" )
+    comp_name: StringProperty ( default="", description="Computer name" )
+    comp_mem: FloatProperty ( default=0, description="Total Memory" )
+    cores_in_use: IntProperty ( default=0, description="Cores in use" )
+    cores_total: IntProperty ( default=0, description="Cores total" )
+    comp_props: StringProperty ( default="", description="Computer properties" )
+    selected: BoolProperty ( default=False, description="Select for running" )
 
 class MCell_UL_computer_item ( bpy.types.UIList ):
     def draw_item (self, context, layout, data, item, icon, active_data, active_propname, index):
       col = layout.column()
-      col.label ( item.comp_name + "  " + str(int(item.comp_mem)) + "G " + str(item.cores_in_use) + "/" + str(item.cores_total) )
+      col.label ( text=item.comp_name + "  " + str(int(item.comp_mem)) + "G " + str(item.cores_in_use) + "/" + str(item.cores_total) )
       col = layout.column()
       if item.selected:
-          col.prop ( item, "selected", text="", icon="POSE_DATA" )
+          col.prop ( item, "selected", text="", icon="ARMATURE_DATA" )
       else:
           col.prop ( item, "selected", text="" )
 
 
 
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
-    enable_python_scripting = BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
-    sge_host_name = StringProperty ( default="", description="Name of Grid Engine Scheduler" )
-    sge_email_addr = StringProperty ( default="", description="Email address for notifications" )
-    computer_list = CollectionProperty(type=MCellComputerProperty, name="Computer List")
-    required_memory_gig = FloatProperty(default=2.0, description="Minimum memory per job - used for selecting hosts")
-    required_free_slots = IntProperty(default=1, description="Minimum free slots for selecting hosts")
-    active_comp_index = IntProperty(name="Active Computer Index", default=0)
+    enable_python_scripting: BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
+    sge_host_name: StringProperty ( default="", description="Name of Grid Engine Scheduler" )
+    sge_email_addr: StringProperty ( default="", description="Email address for notifications" )
+    computer_list: CollectionProperty(type=MCellComputerProperty, name="Computer List")
+    required_memory_gig: FloatProperty(default=2.0, description="Minimum memory per job - used for selecting hosts")
+    required_free_slots: IntProperty(default=1, description="Minimum free slots for selecting hosts")
+    active_comp_index: IntProperty(name="Active Computer Index", default=0)
 
-    show_run_once_options = BoolProperty ( name='Run Once Options', default=False )
-    enable_run_once_script = BoolProperty ( name='Enable Run Once Script', default=False )
+    show_run_once_options: BoolProperty ( name='Run Once Options', default=False )
+    enable_run_once_script: BoolProperty ( name='Enable Run Once Script', default=False )
 
     internal_external_enum = [
         ('internal', "Internal", ""),
         ("external", "External",  "")]
-    internal_external = bpy.props.EnumProperty(
+    internal_external: EnumProperty(
         items=internal_external_enum, name="Internal/External",
         default='internal',
         description="Choose location of file (internal text or external file).")
 
 
-    dm_run_once_internal_fn = StringProperty ( name = "Internal File Name" )
-    dm_run_once_external_fn = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+    dm_run_once_internal_fn: StringProperty ( name = "Internal File Name" )
+    dm_run_once_external_fn: StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
 
-    export_requested = BoolProperty(name="Export Requested", default=True)
-    run_requested = BoolProperty(name="Run Requested", default=True)
+    export_requested: BoolProperty(name="Export Requested", default=True)
+    run_requested: BoolProperty(name="Run Requested", default=True)
 
-    start_seed = PointerProperty ( name="Start Seed", type=parameter_system.Parameter_Reference )
-    end_seed   = PointerProperty ( name="End Seed", type=parameter_system.Parameter_Reference )
-    run_limit  = PointerProperty ( name="Run Limit", type=parameter_system.Parameter_Reference )
-    mcell_processes = IntProperty(
+    start_seed: PointerProperty ( name="Start Seed", type=parameter_system.Parameter_Reference )
+    end_seed: PointerProperty ( name="End Seed", type=parameter_system.Parameter_Reference )
+    run_limit: PointerProperty ( name="Run Limit", type=parameter_system.Parameter_Reference )
+    mcell_processes: IntProperty(
         name="Number of Processes",
         default=cpu_count(),
         min=1,
@@ -2320,49 +2312,49 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         ('none', "Do not Generate", ""),
         ('file', "Send to File", ""),
         ('console', "Send to Console", "")]
-    log_file = EnumProperty(
+    log_file: EnumProperty(
         items=log_file_enum, name="Output Log", default='console',
         description="Where to send MCell log output")
     error_file_enum = [
         ('none', "Do not Generate", ""),
         ('file', "Send to File", ""),
         ('console', "Send to Console", "")]
-    error_file = EnumProperty(
+    error_file: EnumProperty(
         items=error_file_enum, name="Error Log", default='console',
         description="Where to send MCell error output")
     remove_append_enum = [
         ('remove', "Remove Previous Data", ""),
         ('append', "Append to Previous Data", "")]
-    remove_append = EnumProperty(
+    remove_append: EnumProperty(
         items=remove_append_enum, name="Previous Simulation Data",
         default='remove',
         description="Remove or append to existing rxn/viz data from previous"
                     " simulations before running new simulations.")
-    processes_list = CollectionProperty(
+    processes_list: CollectionProperty(
         type=MCellRunSimulationProcessesProperty,
         name="Simulation Runner Processes")
-    active_process_index = IntProperty(
+    active_process_index: IntProperty(
         name="Active Simulation Runner Process Index", default=0)
-    status = StringProperty(name="Status")
-    error_list = CollectionProperty(
+    status: StringProperty(name="Status")
+    error_list: CollectionProperty(
         type=MCellSimStringProperty,
         name="Error List")
-    active_err_index = IntProperty(
+    active_err_index: IntProperty(
         name="Active Error Index", default=0)
 
-    show_output_options = BoolProperty ( name='Output Options', default=False )
-    show_engine_runner_options = BoolProperty ( name='Engine/Runners (experimental)', default=False )
-    show_engine_runner_help = BoolProperty ( default=False )
-    python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    show_output_options: BoolProperty ( name='Output Options', default=False )
+    show_engine_runner_options: BoolProperty ( name='Engine/Runners (experimental)', default=False )
+    show_engine_runner_help: BoolProperty ( default=False )
+    python_scripting_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    python_initialize_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
-    save_text_logs = BoolProperty ( name='Save Text Logs', default=False, description="Create a text log for each run" )
+    save_text_logs: BoolProperty ( name='Save Text Logs', default=False, description="Create a text log for each run" )
 
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
-    last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
+    last_simulation_run_time: StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
-    text_update_timer_delay = FloatProperty ( name='Text Update Interval (s)', default=0.5, description="Text update timer delay" )
-    print_timer_ticks = BoolProperty ( name='Print Timer Ticks', default=False, description="Print a message for each timer tick" )
+    text_update_timer_delay: FloatProperty ( name='Text Update Interval (s)', default=0.5, description="Text update timer delay" )
+    print_timer_ticks: BoolProperty ( name='Print Timer Ticks', default=False, description="Print a message for each timer tick" )
 
     simulation_engine_and_run_enum = [
          ('SWEEP_QUEUE', "MCell Local", ""),
@@ -2372,14 +2364,14 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
          #('SWEEP', "MCell via Sweep Runner", ""),
          ('DYNAMIC', "Engine/Runner (Experimental)", "") ]
 
-    simulation_run_control = EnumProperty(
+    simulation_run_control: EnumProperty(
         items=simulation_engine_and_run_enum, name="",
         description="Mechanism for running and controlling a specific simulation",
         # default='QUEUE', # Cannot set a default when "items" is a function
         update=sim_runner_changed_callback)
 
-    show_sge_control_panel = BoolProperty ( name="Host Selection Details", default=False, description="Show or hide the Grid Engine host selection controls" )
-    manual_sge_host = BoolProperty ( name="Select execution hosts manually", default=False, description="Select execution hosts from a capabilities list" )
+    show_sge_control_panel: BoolProperty ( name="Host Selection Details", default=False, description="Show or hide the Grid Engine host selection controls" )
+    manual_sge_host: BoolProperty ( name="Select execution hosts manually", default=False, description="Select execution hosts from a capabilities list" )
 
     def init_properties ( self, parameter_system ):
         helptext = "The first seed used in running a series of simulations.\n" \
@@ -2716,7 +2708,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                             # Use the new Export operator
                             row.operator( "mcell.dm_export_mdl", text="Export CellBlender Project", icon='EXPORT')
                     # Show the run operator as available (always available when exporting is locked out)
-                    row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
+                    row.operator("mcell.run_simulation", text="Run", icon='ARMATURE_DATA')
                 else:
                     if mcell.cellblender_preferences.lockout_export:
                         # The lockout indicates that the MDL should not be over-written (likely hand edited)
@@ -2725,7 +2717,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     else:
                         # Show the export as enabled
                         # The poll function should be returning true to show this export/run option as available
-                        row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
+                        row.operator("mcell.run_simulation", text="Export & Run", icon='ARMATURE_DATA')
 
                 # This is just for testing and verification that the flags are being set properly ... TODO: delete eventually.
                 #if not ( self.simulation_run_control in [ "QUEUE" ] ):
@@ -2775,20 +2767,20 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                                 serr = str(q_item['stderr'])
                                 if len(serr) > 0:
                                     row = layout.row()
-                                    row.label ( "Error from task " + str(pid), icon="ERROR" )
+                                    row.label ( text="Error from task " + str(pid), icon="ERROR" )
 
                                     tool_shelf = cellblender_utils.get_tool_shelf()
-                                    lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), serr)
+                                    lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width*0.9), serr)
 
                                     for var in lines:
                                       row = layout.row(align = True)
                                       row.alignment = 'EXPAND'
-                                      row.label(var)
+                                      row.label(text=var)
 
                             sout = str(q_item['stdout'])
                             if False and (len(sout) > 0):
                                 row = layout.row()
-                                row.label ( "Out: " + sout )
+                                row.label ( text="Out: " + sout )
 
 
                         row = layout.row()
@@ -2801,9 +2793,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     col = row.column()
                     global showing_text
                     if not showing_text:
-                      col.operator("mcell.show_text_overlay", icon='RESTRICT_VIEW_OFF')
+                      col.operator("mcell.show_text_overlay", icon='HIDE_OFF')
                     else:
-                      col.operator("mcell.hide_text_overlay", icon='RESTRICT_VIEW_ON')
+                      col.operator("mcell.hide_text_overlay", icon='HIDE_ON')
                     col = row.column()
                     col.operator("mcell.page_overlay_hm", icon='SOLO_OFF')
                     col = row.column()
@@ -3094,7 +3086,7 @@ class PLUGGABLE_OT_Interact(bpy.types.Operator):
 class PLUGGABLE_OT_User(bpy.types.Operator):
   bl_idname = "pluggable.user_function"
   bl_label = "User"
-  user_function_name = StringProperty ( default="", description="Name of function to call for this button" )
+  user_function_name: StringProperty ( default="", description="Name of function to call for this button" )
 
   def execute(self, context):
     global active_engine_module
@@ -3173,28 +3165,28 @@ def plug_filename_update_callback ( self, context ):
 
 
 class PluggableValue(bpy.types.PropertyGroup):
-    set_name = StringProperty ( default="", description="Name of the set type (such as engine or runner)" )
-    key_name = StringProperty ( default="x", description="Key name into the parameters dictionary" )
-    val_type = StringProperty ( default="x" )
-    icon_code = StringProperty ( default="NONE" )
+    set_name: StringProperty ( default="", description="Name of the set type (such as engine or runner)" )
+    key_name: StringProperty ( default="x", description="Key name into the parameters dictionary" )
+    val_type: StringProperty ( default="x" )
+    icon_code: StringProperty ( default="NONE" )
 
-    func_val = StringProperty ( default="x", description="A function value" )
-    func_val_shadow = StringProperty ( default="x" )
+    func_val: StringProperty ( default="x", description="A function value" )
+    func_val_shadow: StringProperty ( default="x" )
 
-    int_val = IntProperty ( default=-1, description="An integer value", set=plug_int_set_callback, get=plug_int_get_callback, update=plug_int_update_callback )
-    int_val_shadow = IntProperty ( default=-1 )
+    int_val: IntProperty ( default=-1, description="An integer value", set=plug_int_set_callback, get=plug_int_get_callback, update=plug_int_update_callback )
+    int_val_shadow: IntProperty ( default=-1 )
 
-    float_val = FloatProperty ( default=-1.0, description="A float value", set=plug_float_set_callback, get=plug_float_get_callback, update=plug_float_update_callback )
-    float_val_shadow = FloatProperty ( default=-1.0 )
+    float_val: FloatProperty ( default=-1.0, description="A float value", set=plug_float_set_callback, get=plug_float_get_callback, update=plug_float_update_callback )
+    float_val_shadow: FloatProperty ( default=-1.0 )
 
-    bool_val = BoolProperty ( default=True, description="A boolean value", set=plug_bool_set_callback, get=plug_bool_get_callback, update=plug_bool_update_callback )
-    bool_val_shadow = BoolProperty ( default=True )
+    bool_val: BoolProperty ( default=True, description="A boolean value", set=plug_bool_set_callback, get=plug_bool_get_callback, update=plug_bool_update_callback )
+    bool_val_shadow: BoolProperty ( default=True )
 
-    string_val = StringProperty ( default="x", description="A string value", set=plug_string_set_callback, get=plug_string_get_callback, update=plug_string_update_callback )
-    string_val_shadow = StringProperty ( default="x" )
+    string_val: StringProperty ( default="x", description="A string value", set=plug_string_set_callback, get=plug_string_get_callback, update=plug_string_update_callback )
+    string_val_shadow: StringProperty ( default="x" )
 
-    filename_val = StringProperty ( subtype='FILE_PATH', default="x", description="A file name string value", set=plug_filename_set_callback, get=plug_filename_get_callback, update=plug_filename_update_callback )
-    filename_val_shadow = StringProperty ( subtype='FILE_PATH', default="x" )
+    filename_val: StringProperty ( subtype='FILE_PATH', default="x", description="A file name string value", set=plug_filename_set_callback, get=plug_filename_get_callback, update=plug_filename_update_callback )
+    filename_val_shadow: StringProperty ( subtype='FILE_PATH', default="x" )
 
 
 
@@ -3292,18 +3284,18 @@ def plugs_changed_callback ( self, context ):
     self.plugs_changed_callback(context)
 
 class Pluggable(bpy.types.PropertyGroup):
-    file_name = StringProperty ( subtype='FILE_PATH', default="")
-    engines_enum = EnumProperty ( items=get_engines_as_items, name="", description="Engines", update=plugs_changed_callback )
-    runners_enum = EnumProperty ( items=get_runners_as_items, name="", description="Runners", update=plugs_changed_callback )
-    engines_show = BoolProperty ( default=False, description="Show Engine Options" )
-    runners_show = BoolProperty ( default=False, description="Show Runner Options" )
+    file_name: StringProperty ( subtype='FILE_PATH', default="")
+    engines_enum: EnumProperty ( items=get_engines_as_items, name="", description="Engines", update=plugs_changed_callback )
+    runners_enum: EnumProperty ( items=get_runners_as_items, name="", description="Runners", update=plugs_changed_callback )
+    engines_show: BoolProperty ( default=False, description="Show Engine Options" )
+    runners_show: BoolProperty ( default=False, description="Show Runner Options" )
 
     # This property holds the list of values for the currently selected plug.
     # The list is emptied and loaded whenever the chosen plug changes
-    plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
-    active_plug_val_index = IntProperty(name="Active String Index", default=0)
+    plug_val_list: CollectionProperty(type=PluggableValue, name="String List")
+    active_plug_val_index: IntProperty(name="Active String Index", default=0)
 
-    debug_mode = BoolProperty ( default=False, description="Debugging" )
+    debug_mode: BoolProperty ( default=False, description="Debugging" )
 
 
     def plugs_changed_callback ( self, context ):
@@ -3475,7 +3467,7 @@ class Pluggable(bpy.types.PropertyGroup):
 
         if (active_module == None) or (something_selected == False):
             row = layout.row()
-            row.label ( "No module selected" )
+            row.label ( text="No module selected" )
         elif engine_runner_options_showing:
             if ('parameter_dictionary' in dir(active_module)) and ('parameter_layout' in dir(active_module)):
 
@@ -3532,4 +3524,58 @@ class Pluggable(bpy.types.PropertyGroup):
         #### Above here: layout is in the box
 
         layout = panel
+
+
+classes = ( 
+            MCELL_OT_show_text_overlay,
+            MCELL_OT_hide_text_overlay,
+            MCELL_OT_page_overlay_up,
+            MCELL_OT_page_overlay_dn,
+            MCELL_OT_page_overlay_hm,
+            MCELL_OT_dm_export_mdl,
+            MCELL_OT_run_simulation,
+            MCELL_OT_run_simulation_control_sweep,
+            MCELL_OT_percentage_done_timer,
+            MCELL_OT_run_simulation_sweep_queue,
+            MCELL_OT_run_simulation_control_sweep_sge, 
+            MCELL_OT_run_simulation_control_normal,
+            MCELL_OT_run_simulation_control_queue,
+            MCELL_OT_kill_simulation,
+            MCELL_OT_kill_all_simulations,
+            MCELL_OT_run_simulation_dynamic,
+            MCELL_OT_refresh_sge_list,
+            MCELL_OT_select_all_computers,
+            MCELL_OT_deselect_all_computers,
+            MCELL_OT_kill_all_users_jobs,
+            MCELL_OT_select_with_required,
+            MCELL_OT_remove_text_logs,
+            MCELL_OT_clear_run_list,
+            MCELL_OT_clear_simulation_queue,
+            MCELL_OT_initialize_scripting ,
+            MCELL_UL_error_list,
+            MCELL_UL_run_simulation,
+            MCELL_PT_run_simulation,
+            MCELL_UL_run_simulation_queue,
+            MCELL_PT_run_simulation_queue,
+            MCellRunSimulationProcessesProperty,
+            MCellSimStringProperty,
+            MCellComputerProperty,
+            MCell_UL_computer_item, 
+            MCellRunSimulationPropertyGroup,
+            PLUGGABLE_OT_Reload,
+            PLUGGABLE_OT_Print,
+            PLUGGABLE_OT_Run,
+            PLUGGABLE_OT_Interact,
+            PLUGGABLE_OT_User,
+            PluggableValue,
+            Pluggable,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

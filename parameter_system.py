@@ -139,11 +139,11 @@ class profile:
     def __call__(self,fun):
         def profile_fun(*args, **kwargs):
             #self.print_call_stack()               # This will print the call stack as each function is called
-            start = time.clock()
+            start = time.process_time()
             try:
                 return fun(*args, **kwargs)
             finally:
-                duration = time.clock() - start
+                duration = time.process_time() - start
                 if fun in prof:
                     prof[fun][1] += duration
                     prof[fun][2] += 1
@@ -158,7 +158,7 @@ class profile:
 #  3: Start Time (for non-decorated version)
 
 def start_timer(fun):
-    start = time.clock()
+    start = time.process_time()
     if fun in prof:
         prof[fun][2] += 1
         prof[fun][3] = start
@@ -166,7 +166,7 @@ def start_timer(fun):
         prof[fun] = [fun, 0, 1, start]
 
 def stop_timer(fun):
-    stop = time.clock()
+    stop = time.process_time()
     if fun in prof:
         prof[fun][1] += stop - prof[fun][3]   # Stop - Start
         # prof[fun][2] += 1
@@ -564,7 +564,7 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         mcell = context.scene.mcell
         #icon = 'FILE_TICK'
-        #layout.label("parameter goes here", icon=icon)
+        #layout.label(text="parameter goes here", icon=icon)
         ps = mcell.parameter_system
 
         par = ps.general_parameter_list[index]
@@ -576,7 +576,7 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
           if id_par['sweep_enabled']:
             is_swept = True
 
-        icon = 'FILE_TICK'
+        icon = 'CHECKMARK'
         if 'status' in id_par:
             status = id_par['status']
             if 'undef' in status:
@@ -596,7 +596,7 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
               disp += " = ??"
 
         col = layout.column()
-        col.label(disp, icon=icon)
+        col.label(text=disp, icon=icon)
 
         col = layout.column()
         icon = 'BLANK1'
@@ -605,7 +605,7 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
           if 'sweep_enabled' in id_par:
             if id_par['sweep_enabled']:
               icon = 'FCURVE'
-        col.label("", icon=icon)
+        col.label(text="", icon=icon)
 
         # BLANK1 = no sweep specification
         # DOT = sweepable but off
@@ -654,9 +654,9 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
     """ Holds the actual properties needed for a panel parameter """
     # There are only a few properties for items in this class ... most of the rest are in the parameter system itself.
     #self.name is a Blender defined key that should be set to the unique_static_name (new_pid_key) on creation (typically "p#")
-    expr = StringProperty(name="Expression", default="0", description="Expression to be evaluated for this parameter", update=update_panel_expr)
-    elist = StringProperty(name="elist", default="(lp0\n.", description="Pickled Expression List")  # This ("(lp0\n.") is a pickled empty list: pickle.dumps([],protocol=0).decode('latin1')
-    show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    expr: StringProperty(name="Expression", default="0", description="Expression to be evaluated for this parameter", update=update_panel_expr)
+    elist: StringProperty(name="elist", default="(lp0\n.", description="Pickled Expression List")  # This ("(lp0\n.") is a pickled empty list: pickle.dumps([],protocol=0).decode('latin1')
+    show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     # The following PanelParameterData (PPD) ID properties are added dynamically (for performance reasons):
 
@@ -768,7 +768,7 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
 class Parameter_Reference ( bpy.types.PropertyGroup ):
     """ Simple class to reference a panel parameter - used throughout the application """
     # There is ONLY ONE property in this class ... don't add any more without careful thought
-    unique_static_name = StringProperty ( name="unique_name", default="" )
+    unique_static_name: StringProperty ( name="unique_name", default="" )
 
 
     # __init__ does not appear to be called
@@ -1006,7 +1006,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             icon = 'NONE'
 
         if parameter_system.param_display_mode == 'one_line':
-            split = row.split(parameter_system.param_label_fraction)
+            split = row.split(factor=parameter_system.param_label_fraction)
             col = split.column()
             col.label ( text=rna_par['user_name']+" = "+val, icon=icon )
             col = split.column()
@@ -1016,7 +1016,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         elif parameter_system.param_display_mode == 'two_line':
             row.label ( text=rna_par['user_name']+" = "+val, icon=icon )
             row = layout.row()
-            split = row.split(0.03)
+            split = row.split(factor=0.03)
             col = split.column()
             col = split.column()
             col.prop ( rna_par, "expr", text="", icon=icon )
@@ -1027,13 +1027,13 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             # Draw the help information in a box inset from the left side
             row = layout.row()
             # Use a split with two columns to indent the box
-            split = row.split(0.03)
+            split = row.split(factor=0.03)
             col = split.column()
             col = split.column()
             box = col.box()
 
             tool_shelf = cellblender_utils.get_tool_shelf()
-            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), rna_par['user_descr'])
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width*0.9), rna_par['user_descr'])
             write_lines_in_box(lines, layout, box)
 
             if len(rna_par['user_units']) > 0:
@@ -1041,7 +1041,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             if parameter_system.show_all_details:
                 box = box.box()
                 row = box.row()
-                row.label ( "Paremeter ID: " + self.unique_static_name )
+                row.label ( text="Paremeter ID: " + self.unique_static_name )
                 parameter_system.draw_rna_par_details ( rna_par, box )
 
 
@@ -1136,7 +1136,7 @@ def update_sweep_enabled ( self, context ):
 
 class ParameterMappingProperty(bpy.types.PropertyGroup):
     """An instance of this class exists for every general parameter"""
-    par_id = StringProperty(default="", description="Unique ID for each parameter used as a key into the Python Dictionary") # name="Par_ID",
+    par_id: StringProperty(default="", description="Unique ID for each parameter used as a key into the Python Dictionary") # name="Par_ID",
 
 
 #######################################################################
@@ -1179,48 +1179,48 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     # ID Property: gp_dict - Indexed by g# key. Holds the data for each parameter (name, expression, elist, units, description, dependencies)
     # ID Property: gp_ordered_list - List of g# keys in dependency order for evaluation.
 
-    general_parameter_list = CollectionProperty(type=ParameterMappingProperty) # , name="Parameters List"
-    panel_parameter_list = CollectionProperty(type=PanelParameterData) # , name="Panel Parameters List"
-    next_gid = IntProperty(default=0) # name="Counter for Unique General Parameter IDs",
-    next_pid = IntProperty(default=0) # name="Counter for Unique Panel Parameter IDs",
+    general_parameter_list: CollectionProperty(type=ParameterMappingProperty) # , name="Parameters List"
+    panel_parameter_list: CollectionProperty(type=PanelParameterData) # , name="Panel Parameters List"
+    next_gid: IntProperty(default=0) # name="Counter for Unique General Parameter IDs",
+    next_pid: IntProperty(default=0) # name="Counter for Unique Panel Parameter IDs",
 
     # The following "active" RNA properties are used to temporarily hold the
     # data that's otherwise stored in ID properties. Changing active_par_index
     # will trigger a callback that moves data from the active ID property into
     # the active RNA property. Changing the other "active_" values will similarly
     # trigger an update that puts the new RNA changes back into the ID properties.
-    active_par_index = IntProperty(default=0,                                                                 update=update_parameter_index)  # name="Active Parameter",
-    active_name  = StringProperty(default="Par", description="User name for this parameter (must be unique)", update=update_parameter_name)   # name="Parameter Name",
-    active_elist = StringProperty(default="",    description="Pickled Expression list for this parameter",    update=update_parameter_elist)  # name="Expression List",
-    active_expr  = StringProperty(default="0",   description="Expression to be evaluated for this parameter", update=update_parameter_expression) # name="Expression",
-    active_units = StringProperty(default="",    description="Units for this parameter",                      update=update_parameter_units)  # name="Units",
-    active_desc  = StringProperty(default="",    description="Description of this parameter",                 update=update_parameter_desc)   # name="Description",
-    active_sweep_expr    = StringProperty(default="",   description="Sweep Expression such as: 3, 4:8:2, 25:35, 50",  update=update_sweep_expression)
-    active_sweep_enabled = BoolProperty(default=False,  description="Sweep Enabled",                          update=update_sweep_enabled)
-    last_selected_id = StringProperty(default="")
+    active_par_index: IntProperty(default=0,                                                                 update=update_parameter_index)  # name="Active Parameter",
+    active_name : StringProperty(default="Par", description="User name for this parameter (must be unique)", update=update_parameter_name)   # name="Parameter Name",
+    active_elist: StringProperty(default="",    description="Pickled Expression list for this parameter",    update=update_parameter_elist)  # name="Expression List",
+    active_expr : StringProperty(default="0",   description="Expression to be evaluated for this parameter", update=update_parameter_expression) # name="Expression",
+    active_units: StringProperty(default="",    description="Units for this parameter",                      update=update_parameter_units)  # name="Units",
+    active_desc : StringProperty(default="",    description="Description of this parameter",                 update=update_parameter_desc)   # name="Description",
+    active_sweep_expr   : StringProperty(default="",   description="Sweep Expression such as: 3, 4:8:2, 25:35, 50",  update=update_sweep_expression)
+    active_sweep_enabled: BoolProperty(default=False,  description="Sweep Enabled",                          update=update_sweep_enabled)
+    last_selected_id: StringProperty(default="")
 
-    show_options_panel = BoolProperty(name="Show Options Panel", default=False)
+    show_options_panel: BoolProperty(name="Show Options Panel", default=False)
 
-    debug_level = IntProperty(name="Debug Level", default=0, description="Higher values print more detail")
+    debug_level: IntProperty(name="Debug Level", default=0, description="Higher values print more detail")
     
-    status = StringProperty ( name="status", default="" )
+    status: StringProperty ( name="status", default="" )
 
-    show_all_details = BoolProperty(name="Show All Details", default=False)
-    max_field_width = IntProperty(name="Max Field Width", default=20)
-    num_pars_to_gen = IntProperty(name="Num Pars", default=5)
-    num_pars_back = IntProperty(name="Num Back", default=2)
+    show_all_details: BoolProperty(name="Show All Details", default=False)
+    max_field_width: IntProperty(name="Max Field Width", default=20)
+    num_pars_to_gen: IntProperty(name="Num Pars", default=5)
+    num_pars_back: IntProperty(name="Num Back", default=2)
 
     param_display_mode_enum = [ ('one_line',  "One line per parameter", ""), ('two_line',  "Two lines per parameter", "") ]
-    param_display_mode = bpy.props.EnumProperty ( items=param_display_mode_enum, default='one_line', name="Parameter Display Mode", description="Display layout for each parameter" )
-    param_display_format = StringProperty ( default='%.6g', description="Formatting string for each parameter" )
-    param_label_fraction = FloatProperty(precision=4, min=0.0, max=1.0, default=0.35, description="Width (0 to 1) of parameter's label")
+    param_display_mode: EnumProperty ( items=param_display_mode_enum, default='one_line', name="Parameter Display Mode", description="Display layout for each parameter" )
+    param_display_format: StringProperty ( default='%.6g', description="Formatting string for each parameter" )
+    param_label_fraction: FloatProperty(precision=4, min=0.0, max=1.0, default=0.35, description="Width (0 to 1) of parameter's label")
 
-    export_as_expressions = BoolProperty ( default=True, description="Export Parameters as Expressions rather than Numbers" )
+    export_as_expressions: BoolProperty ( default=True, description="Export Parameters as Expressions rather than Numbers" )
 
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
-    last_parameter_update_time = StringProperty ( default="-1.0", description="Time that the last parameter was updated" )
+    last_parameter_update_time: StringProperty ( default="-1.0", description="Time that the last parameter was updated" )
 
-    show_debugging = BoolProperty ( default=False, description="Show Debugging" )
+    show_debugging: BoolProperty ( default=False, description="Show Debugging" )
 
 
     @profile('ParameterSystem.build_ordered_data_model_from_properties')
@@ -1446,26 +1446,26 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 if k == 'elist':
                     elist = pickle.loads(id_par['elist'].encode('latin1'))
                     row = box.row()
-                    row.label ( "  " + str(k) + " = " + str(elist) )
+                    row.label ( text="  " + str(k) + " = " + str(elist) )
                     row = box.row()
-                    row.label ( "  " + str(k) + " = " + str(id_par[k]) )
+                    row.label ( text="  " + str(k) + " = " + str(id_par[k]) )
                 elif k == 'who_i_depend_on':
                     row = box.row()
-                    row.label ( "  Who I Depend On = " + str(id_par['who_i_depend_on'].keys()) )
+                    row.label ( text="  Who I Depend On = " + str(id_par['who_i_depend_on'].keys()) )
                 elif k == 'who_depends_on_me':
                     row = box.row()
-                    row.label ( "  Who Depends On Me = " + str(id_par['who_depends_on_me'].keys()) )
+                    row.label ( text="  Who Depends On Me = " + str(id_par['who_depends_on_me'].keys()) )
                 elif k == 'what_depends_on_me':
                     row = box.row()
-                    row.label ( "  What Depends On Me = " + str(id_par['what_depends_on_me'].keys()) )
+                    row.label ( text="  What Depends On Me = " + str(id_par['what_depends_on_me'].keys()) )
                 else:
                     row = box.row()
-                    row.label ( "  " + str(k) + " = " + str(id_par[k]) )
+                    row.label ( text="  " + str(k) + " = " + str(id_par[k]) )
         # End by drawing unknown things in no particular order
         for k in id_par.keys():
             if not (k in pref_found):
                 row = box.row()
-                row.label ( "  " + str(k) + " = " + str(id_par[k]) )
+                row.label ( text="  " + str(k) + " = " + str(id_par[k]) )
 
     @profile('ParameterSystem.draw_rna_par_details')
     def draw_rna_par_details ( self, rna_par, drawable ):
@@ -1479,26 +1479,26 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 if k == 'elist':
                     elist = pickle.loads(rna_par['elist'].encode('latin1'))
                     row = box.row()
-                    row.label ( "  " + str(k) + " = " + str(elist) )
+                    row.label ( text="  " + str(k) + " = " + str(elist) )
                     row = box.row()
-                    row.label ( "  " + str(k) + " = " + str(rna_par[k]) )
+                    row.label ( text="  " + str(k) + " = " + str(rna_par[k]) )
                 elif k == 'who_i_depend_on':
                     row = box.row()
-                    row.label ( "  Who I Depend On = " + str(rna_par['who_i_depend_on'].keys()) )
+                    row.label ( text="  Who I Depend On = " + str(rna_par['who_i_depend_on'].keys()) )
                 elif k == 'who_depends_on_me':
                     row = box.row()
-                    row.label ( "  Who Depends On Me = " + str(rna_par['who_depends_on_me'].keys()) )
+                    row.label ( text="  Who Depends On Me = " + str(rna_par['who_depends_on_me'].keys()) )
                 elif k == 'what_depends_on_me':
                     row = box.row()
-                    row.label ( "  What Depends On Me = " + str(rna_par['what_depends_on_me'].keys()) )
+                    row.label ( text="  What Depends On Me = " + str(rna_par['what_depends_on_me'].keys()) )
                 else:
                     row = box.row()
-                    row.label ( "  " + str(k) + " = " + str(rna_par[k]) )
+                    row.label ( text="  " + str(k) + " = " + str(rna_par[k]) )
         # End by drawing unknown things in no particular order
         for k in rna_par.keys():
             if not (k in pref_found):
                 row = box.row()
-                row.label ( "  " + str(k) + " = " + str(rna_par[k]) )
+                row.label ( text="  " + str(k) + " = " + str(rna_par[k]) )
 
     @profile('ParameterSystem.init_parameter_system')
     def init_parameter_system( self ):
@@ -2324,7 +2324,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def draw_label_with_help ( self, layout, label, prop_group, show, show_help, help_string ):
         """ This function helps draw non-parameter properties with help (info) button functionality """
         row = layout.row()
-        split = row.split(self.param_label_fraction)
+        split = row.split(factor=self.param_label_fraction)
         col = split.column()
         col.label ( text=label )
         col = split.column()
@@ -2334,13 +2334,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         if show_help:
             row = layout.row()
             # Use a split with two columns to indent the box
-            split = row.split(0.03)
+            split = row.split(factor=0.03)
             col = split.column()
             col = split.column()
             box = col.box()
 
             tool_shelf = cellblender_utils.get_tool_shelf()
-            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width*0.9), help_string)
             write_lines_in_box(lines, layout, box)
 
 
@@ -2348,7 +2348,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def draw_prop_with_help ( self, layout, prop_label, prop_group, prop, show, show_help, help_string ):
         """ This function helps draw non-parameter properties with help (info) button functionality """
         row = layout.row()
-        split = row.split(self.param_label_fraction)
+        split = row.split(factor=self.param_label_fraction)
         col = split.column()
         col.label ( text=prop_label )
         col = split.column()
@@ -2358,13 +2358,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         if show_help:
             row = layout.row()
             # Use a split with two columns to indent the box
-            split = row.split(0.03)
+            split = row.split(factor=0.03)
             col = split.column()
             col = split.column()
             box = col.box()
 
             tool_shelf = cellblender_utils.get_tool_shelf()
-            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width*0.9), help_string)
             write_lines_in_box(lines, layout, box)
 
 
@@ -2372,7 +2372,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def draw_operator_with_help ( self, layout, op_label, prop_group, op, show, show_help, help_string ):
         """ This function helps draw operators with help (info) button functionality """
         row = layout.row()
-        split = row.split(self.param_label_fraction)
+        split = row.split(factor=self.param_label_fraction)
         col = split.column()
         col.label ( text=op_label )
         col = split.column()
@@ -2382,13 +2382,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         if show_help:
             row = layout.row()
             # Use a split with two columns to indent the box
-            split = row.split(0.03)
+            split = row.split(factor=0.03)
             col = split.column()
             col = split.column()
             box = col.box()
 
             tool_shelf = cellblender_utils.get_tool_shelf()
-            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width*0.9), help_string)
             write_lines_in_box(lines, layout, box)
 
 
@@ -2396,7 +2396,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def draw_prop_search_with_help ( self, layout, prop_label, prop_group, prop, prop_parent, prop_list_name, show, show_help, help_string, icon='FORCE_LENNARDJONES' ):
         """ This function helps draw non-parameter properties with help (info) button functionality """
         row = layout.row()
-        split = row.split(self.param_label_fraction)
+        split = row.split(factor=self.param_label_fraction)
         col = split.column()
         col.label ( text=prop_label )
         col = split.column()
@@ -2408,13 +2408,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         if show_help:
             row = layout.row()
             # Use a split with two columns to indent the box
-            split = row.split(0.03)
+            split = row.split(factor=0.03)
             col = split.column()
             col = split.column()
             box = col.box()
 
             tool_shelf = cellblender_utils.get_tool_shelf()
-            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width*0.9), help_string)
             write_lines_in_box(lines, layout, box)
 
 
@@ -2463,10 +2463,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         for err in errors:
             if 'loop' in err:
                 row = layout.row()
-                row.label ( "Parameter Error: Circular References Detected", icon='ERROR' )
+                row.label ( text="Parameter Error: Circular References Detected", icon='ERROR' )
             if 'undef' in err:
                 row = layout.row()
-                row.label ( "Parameter Error: Undefined Values Detected", icon='ERROR' )
+                row.label ( text="Parameter Error: Undefined Values Detected", icon='ERROR' )
 
 
         row = layout.row()
@@ -2475,8 +2475,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                           self, "general_parameter_list",
                           self, "active_par_index", rows=7)
         col = row.column(align=True)
-        col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
-        col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
+        col.operator("mcell.add_parameter", icon='ADD', text="")
+        col.operator("mcell.remove_parameter", icon='REMOVE', text="")
 
         col.separator()
         col.operator("mcell.delete_all_pars", icon='PANEL_CLOSE', text="")  # Had been X_VEC before it was removed from Blender 2.79
@@ -2515,11 +2515,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                     for i in range(len(elist)-1):
                         if elist[i] == None:
                             undefs += " " + str(elist[i+1])
-                    layout.label ( "  Undefined Value(s) [" + undefs + " ] in Expression:   " + par_name + " = " + str(self['gp_dict'][par_id]['expr']), icon='ERROR' )
+                    layout.label ( text="  Undefined Value(s) [" + undefs + " ] in Expression:   " + par_name + " = " + str(self['gp_dict'][par_id]['expr']), icon='ERROR' )
                 if 'loop' in pstatus:
-                    layout.label ( "  Circular Reference:   " + par_name + " = " + str(self['gp_dict'][par_id]['expr']), icon='LOOP_BACK' )
+                    layout.label ( text="  Circular Reference:   " + par_name + " = " + str(self['gp_dict'][par_id]['expr']), icon='LOOP_BACK' )
                 if not (('undef' in pstatus) or ('loop' in pstatus)):
-                    layout.label ( "  Unknown Error:   " + par_name + " = " + str(self['gp_dict'][par_id]['expr']) + " = ?", icon='ERROR' )
+                    layout.label ( text="  Unknown Error:   " + par_name + " = " + str(self['gp_dict'][par_id]['expr']) + " = ?", icon='ERROR' )
 
 
             # TODO
@@ -2584,20 +2584,20 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
                     elist = pickle.loads(self['gp_dict'][par_id]['elist'].encode('latin1'))
                     if None in elist:
-                        detail_box.label ( "Parameter \'" + par_name + "\' is {" + par_id + "} = " + str(elist) + " = ?" )
+                        detail_box.label ( text="Parameter \'" + par_name + "\' is {" + par_id + "} = " + str(elist) + " = ?" )
                     else:
-                        detail_box.label ( "Parameter \'" + par_name + "\' is {" + par_id + "} = " + str(elist) + " = " + self.build_expression ( elist ) )
+                        detail_box.label ( text="Parameter \'" + par_name + "\' is {" + par_id + "} = " + str(elist) + " = " + self.build_expression ( elist ) )
                     if 'status' in self['gp_dict'][par_id]:
                         if len(self['gp_dict'][par_id]['status']) > 0:
-                            detail_box.label ( "  Status = " + str(self['gp_dict'][par_id]['status']) )
-                    detail_box.label ( "Who I Depend On ID = " + str(self['gp_dict'][par_id]['who_i_depend_on'].keys()) )
-                    detail_box.label ( "Who Depends On Me ID = " + str(self['gp_dict'][par_id]['who_depends_on_me'].keys()) )
-                    detail_box.label ( "What Depends On Me ID = " + str(self['gp_dict'][par_id]['what_depends_on_me'].keys()) )
+                            detail_box.label ( text="  Status = " + str(self['gp_dict'][par_id]['status']) )
+                    detail_box.label ( text="Who I Depend On ID = " + str(self['gp_dict'][par_id]['who_i_depend_on'].keys()) )
+                    detail_box.label ( text="Who Depends On Me ID = " + str(self['gp_dict'][par_id]['who_depends_on_me'].keys()) )
+                    detail_box.label ( text="What Depends On Me ID = " + str(self['gp_dict'][par_id]['what_depends_on_me'].keys()) )
 
                     self.draw_id_par_details ( self['gp_dict'][par_id], detail_box )
 
-                    #detail_box.label ( "elist pickle = " + str(self.active_elist) )
-                    #detail_box.label ( "elist = " + str(elist) )
+                    #detail_box.label ( text="elist pickle = " + str(self.active_elist) )
+                    #detail_box.label ( text="elist = " + str(elist) )
 
 
                     row = detail_box.row()
@@ -3137,16 +3137,30 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return None
 
 
-
+classes = (
+            MCELL_OT_print_profiling,
+            MCELL_OT_clear_profiling,
+            MCELL_OT_print_gen_parameters,
+            MCELL_OT_print_par_expressions,
+            MCELL_OT_print_pan_parameters,
+            MCELL_OT_add_par_list,
+            MCELL_OT_add_parameter,
+            MCELL_OT_remove_parameter,
+            MCELL_OT_remove_all_pars,
+            MCELL_UL_draw_parameter,
+            PanelParameterData,
+            Parameter_Reference,
+            ParameterMappingProperty,
+            ParameterSystemPropertyGroup,
+)
 
 def register():
-    print ("Registering ", __name__)
-    bpy.utils.register_module(__name__)
+    for cls in classes:
+      bpy.utils.register_class(cls)
 
 def unregister():
-    print ("Unregistering ", __name__)
-    bpy.utils.unregister_module(__name__)
-
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 
 if __name__ == "__main__":
     register()

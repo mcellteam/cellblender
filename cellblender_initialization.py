@@ -43,14 +43,6 @@ from . import parameter_system
 from . import cellblender_utils
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 # Initialization Panel Classes
 
@@ -71,28 +63,29 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
     def __init__(self):
         print ( "\n\nMCellInitializationPropertyGroup.__init__() called\n\n" )
 
-    iterations = PointerProperty ( name="iterations", type=parameter_system.Parameter_Reference )
-    time_step =  PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
+    iterations: PointerProperty ( name="iterations", type=parameter_system.Parameter_Reference )
+    time_step:  PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
 
-    status = StringProperty(name="Status")
-    advanced = bpy.props.BoolProperty(default=False)
-    warnings = bpy.props.BoolProperty(default=False)
-    notifications = bpy.props.BoolProperty(default=False)
+    status: StringProperty(name="Status")
+    advanced: BoolProperty(default=False)
+    warnings: BoolProperty(default=False)
+    notifications: BoolProperty(default=False)
 
     # Advanced/Optional Commands
 
-    time_step_max = PointerProperty ( name="Time Step Max", type=parameter_system.Parameter_Reference )
-    space_step = PointerProperty ( name="Space Step", type=parameter_system.Parameter_Reference )
-    interaction_radius = PointerProperty ( name="Interaction Radius", type=parameter_system.Parameter_Reference )
-    radial_directions = PointerProperty ( name="Radial Directions", type=parameter_system.Parameter_Reference )
-    radial_subdivisions = PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
-    vacancy_search_distance = PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
-    surface_grid_density = PointerProperty ( name="Surface Grid Density", type=parameter_system.Parameter_Reference )
+    time_step_max: PointerProperty ( name="Time Step Max", type=parameter_system.Parameter_Reference )
+    space_step: PointerProperty ( name="Space Step", type=parameter_system.Parameter_Reference )
+    interaction_radius: PointerProperty ( name="Interaction Radius", type=parameter_system.Parameter_Reference )
+    radial_directions: PointerProperty ( name="Radial Directions", type=parameter_system.Parameter_Reference )
+    radial_subdivisions: PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
+    vacancy_search_distance: PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
+    surface_grid_density: PointerProperty ( name="Surface Grid Density", type=parameter_system.Parameter_Reference )
 
-    command_options = StringProperty(name="Command Options", default="")
+    command_options: StringProperty(name="Command Options", default="")
 
     def init_properties ( self, parameter_system ):
         helptext = "Number of iterations to run"
+        print('Initializing iterations')
         self.iterations.init_ref    ( parameter_system,
                                       user_name="Iterations",
                                       user_expr="1000",
@@ -101,6 +94,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                                       user_int=True )
 
         helptext = "Simulation Time Step\n1e-6 is a common value."
+        print('Initializing time_step')
         self.time_step.init_ref     ( parameter_system,
                                       user_name="Time Step",
                                       user_expr="1e-6",
@@ -344,12 +338,12 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         print ( "check_properties_after_building not implemented for " + str(self) )
 
 
-    accurate_3d_reactions = BoolProperty(
+    accurate_3d_reactions: BoolProperty(
         name="Accurate 3D Reaction",
         description="If selected, molecules will look through partitions to "
                     "react.",
         default=True)
-    center_molecules_grid = BoolProperty(
+    center_molecules_grid: BoolProperty(
         name="Center Molecules on Grid",
         description="If selected, surface molecules will be centered on the "
                     "grid.",
@@ -361,13 +355,13 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('OFF', "Off", ""),
         ('SURFACE_ONLY', "Surface Only", ""),
         ('VOLUME_ONLY', "Volume Only", "")]
-    microscopic_reversibility = EnumProperty(
+    microscopic_reversibility: EnumProperty(
         items=microscopic_reversibility_enum, name="Microscopic Reversibility",
         description="If false, more efficient but less accurate reactions",
         default='OFF')
 
     # Export all ascii
-    export_all_ascii = BoolProperty(
+    export_all_ascii: BoolProperty(
         name="ASCII Molecule Files",
         description="Positions of all molecules are also exported in ASCII format",
         default=False)
@@ -377,7 +371,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('INDIVIDUAL', "Set Individually", ""),
         ('ON', "On", ""),
         ('OFF', "Off", "")]
-    all_notifications = EnumProperty(
+    all_notifications: EnumProperty(
         items=all_notifications_enum, name="All Notifications",
         description="If on/off, all notifications will be set to on/off "
                     "respectively.",
@@ -386,25 +380,25 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('BRIEF', "Brief", ""),
         ('ON', "On", ""),
         ('OFF', "Off", "")]
-    diffusion_constant_report = EnumProperty(
+    diffusion_constant_report: EnumProperty(
         items=diffusion_constant_report_enum, name="Diffusion Constant Report",
         description="If brief, Mcell will report average diffusion distance "
                     "per step for each molecule.")
-    file_output_report = BoolProperty(
+    file_output_report: BoolProperty(
         name="File Output Report",
         description="If selected, MCell will report every time that reaction "
                     "data is written.",
         default=False)
-    final_summary = BoolProperty(
+    final_summary: BoolProperty(
         name="Final Summary",
         description="If selected, MCell will report about the CPU time used",
         default=True)
-    iteration_report = BoolProperty(
+    iteration_report: BoolProperty(
         name="Iteration Report",
         description="If selected, MCell will report how many iterations have "
                     "completed based on total.",
         default=True)
-    partition_location_report = BoolProperty(
+    partition_location_report: BoolProperty(
         name="Partition Location Report",
         description="If selected, the partition locations will be printed.",
         default=False)
@@ -412,28 +406,28 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('ON', "On", ""),
         ('OFF', "Off", ""),
         ('THRESHOLD', "Threshold", "")]
-    probability_report = EnumProperty(
+    probability_report: EnumProperty(
         items=probability_report_enum, name="Probability Report", default='ON',
         description="If on, MCell will report reaction probabilites for each "
                     "reaction.")
-    probability_report_threshold = bpy.props.FloatProperty(
+    probability_report_threshold: FloatProperty(
         name="Threshold", min=0.0, max=1.0, precision=2)
-    varying_probability_report = BoolProperty(
+    varying_probability_report: BoolProperty(
         name="Varying Probability Report",
         description="If selected, MCell will print out the reaction "
                     "probabilites for time-varying reaction.",
         default=True)
-    progress_report = BoolProperty(
+    progress_report: BoolProperty(
         name="Progress Report",
         description="If selected, MCell will print out messages indicating "
                     "which part of the simulation is underway.",
         default=True)
-    release_event_report = BoolProperty(
+    release_event_report: BoolProperty(
         name="Release Event Report",
         description="If selected, MCell will print a message every time "
                     "molecules are released through a release site.",
         default=True)
-    molecule_collision_report = BoolProperty(
+    molecule_collision_report: BoolProperty(
         name="Molecule Collision Report",
         description="If selected, MCell will print the number of "
                     "bi/trimolecular collisions that occured.",
@@ -446,7 +440,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
         ('ERROR', "Error", "")]
-    all_warnings = EnumProperty(
+    all_warnings: EnumProperty(
         items=all_warnings_enum, name="All Warnings",
         description="If not \"Set Individually\", all warnings will be set "
                     "the same.",
@@ -455,7 +449,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
         ('ERROR', "Error", "")]
-    large_molecular_displacement = EnumProperty(
+    large_molecular_displacement: EnumProperty(
         items=large_molecular_displacement_enum, name="Large Molecular Displacement",
         description="Generate warnings or errors for large molecular displacement.",
         default='WARNING')
@@ -463,7 +457,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
         ('ERROR', "Error", "")]
-    degenerate_polygons = EnumProperty(
+    degenerate_polygons: EnumProperty(
         items=degenerate_polygons_enum, name="Degenerate Polygons",
         description="Degenerate polygons have zero area and must be removed.",
         default='WARNING')
@@ -471,38 +465,38 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
         ('ERROR', "Error", "")]
-    high_reaction_probability = EnumProperty(
+    high_reaction_probability: EnumProperty(
         items=high_reaction_probability_enum, name="High Reaction Probability",
         description="Generate warnings or errors if probability reaches a "
                     "specified threshold.",
         default='IGNORED')
-    high_probability_threshold = bpy.props.FloatProperty(
+    high_probability_threshold: FloatProperty(
         name="High Probability Threshold", min=0.0, max=1.0, default=1.0,
         precision=2)
     lifetime_too_short_enum = [
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", "")]
-    lifetime_too_short = EnumProperty(
+    lifetime_too_short: EnumProperty(
         items=lifetime_too_short_enum, name="Lifetime Too Short",
         description="Generate warning if molecules have short lifetimes.",
         default='WARNING')
-    lifetime_threshold = IntProperty(
+    lifetime_threshold: IntProperty(
         name="Threshold", min=0, default=50)
     missed_reactions_enum = [
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", "")]
-    missed_reactions = EnumProperty(
+    missed_reactions: EnumProperty(
         items=missed_reactions_enum, name="Missed Reactions",
         description="Generate warning if there are missed reactions.",
         default='WARNING')
-    missed_reaction_threshold = bpy.props.FloatProperty(
+    missed_reaction_threshold: FloatProperty(
         name="Threshold", min=0.0, max=1.0, default=0.001,
         precision=4)
     negative_diffusion_constant_enum = [
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
         ('ERROR', "Error", "")]
-    negative_diffusion_constant = EnumProperty(
+    negative_diffusion_constant: EnumProperty(
         items=negative_diffusion_constant_enum,
         description="Diffusion constants cannot be negative and will be set "
                     "to zero.",
@@ -511,7 +505,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
         ('ERROR', "Error", "")]
-    missing_surface_orientation = EnumProperty(
+    missing_surface_orientation: EnumProperty(
         items=missing_surface_orientation_enum,
         description="Generate errors/warnings if molecules are placed on "
                     "surfaces or reactions occur at surfaces without "
@@ -522,7 +516,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
         ('ERROR', "Error", "")]
-    negative_reaction_rate = EnumProperty(
+    negative_reaction_rate: EnumProperty(
         items=negative_reaction_rate_enum, name="Negative Reaction Rate",
         description="Reaction rates cannot be negative and will be set "
                     "to zero.",
@@ -531,7 +525,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
         ('ERROR', "Error", "")]
-    useless_volume_orientation = EnumProperty(
+    useless_volume_orientation: EnumProperty(
         items=useless_volume_orientation_enum,
         description="Generate errors/warnings if molecules are released in a "
                     "volume or reactions occur in a volume with specified "
@@ -539,11 +533,11 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         name="Useless Volume Orientation", default='WARNING')
 
 
-    acc3D_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    center_on_grid_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    micro_rev_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    export_ascii_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    command_options_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    acc3D_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    center_on_grid_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    micro_rev_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    export_ascii_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    command_options_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
@@ -716,3 +710,18 @@ The default is OFF."""
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
+
+
+classes = (
+            MCELL_PT_initialization,
+            MCellInitializationPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
+

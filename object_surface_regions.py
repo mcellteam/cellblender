@@ -39,14 +39,6 @@ import cellblender
 # from . import ParameterSpace
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 # Object Surface Region Operators:
 
@@ -198,9 +190,9 @@ class MCELL_UL_check_region(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            layout.label(text=item.name, icon='CHECKMARK')
 
 
 # Region Callbacks:
@@ -213,10 +205,10 @@ def region_update(self, context):
 # CellBlender Properties Classes for Surface Regions:
 
 class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
-    id = IntProperty(name="Unique ID of This Region",default=-1)
-    name = StringProperty(
+    id: IntProperty(name="Unique ID of This Region",default=-1)
+    name: StringProperty(
         name="Region Name", default="Region", update=region_update)
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
 
     def check_region_name(self, reg_name_list):
@@ -473,11 +465,11 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
 
 
 class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
-    region_list = CollectionProperty(
+    region_list: CollectionProperty(
         type=MCellSurfaceRegionProperty, name="Surface Region List")
-    active_reg_index = IntProperty(name="Active Region Index", default=0)
-    id_counter = IntProperty(name="Counter for Unique Region IDs", default=0)
-    get_region_info = BoolProperty(
+    active_reg_index: IntProperty(name="Active Region Index", default=0)
+    id_counter: IntProperty(name="Counter for Unique Region IDs", default=0)
+    get_region_info: BoolProperty(
         name="Toggle to enable/disable region_info", default=False)
 
 
@@ -657,7 +649,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
                 row = layout.row()
                 # row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
-                row.label(text="Defined Surface Regions for %s:" % (active_obj.name), icon='SNAP_FACE')
+                row.label(text="Defined Surface Regions for %s:" % (active_obj.name), icon='FACE_MAPS')
 
                 #row = layout.row()
                 #row.prop ( active_obj, "name", text="Active Object" )
@@ -669,8 +661,8 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
                               self, "active_reg_index",
                               rows=2)
                 col = row.column(align=True)
-                col.operator("mcell.region_add", icon='ZOOMIN', text="")
-                col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
+                col.operator("mcell.region_add", icon='ADD', text="")
+                col.operator("mcell.region_remove", icon='REMOVE', text="")
                 col.operator("mcell.region_remove_all", icon='X', text="")
 
                 # Could have region item draw itself in new row here:
@@ -777,9 +769,9 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 # Properties Class for CellBlender Metadata on Blender Objects
 
 class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
-    regions = PointerProperty(
+    regions: PointerProperty(
         type=MCellSurfaceRegionListProperty, name="Defined Surface Regions")
-    include = BoolProperty(name="Include Object in Model", default=False)
+    include: BoolProperty(name="Include Object in Model", default=False)
 
     def get_regions_dictionary (self, obj):
         """ Return a dictionary with region names """
@@ -817,7 +809,7 @@ def object_regions_format_update(context):
     if not context:
         context = bpy.context
 
-    scn_objs = context.scene.objects
+    scn_objs = context.scene.collection.children[0].objects
     objs = [obj for obj in scn_objs if obj.type == 'MESH']
     for obj in objs:
           obj.mcell.regions.format_update(obj)
@@ -845,8 +837,8 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
         # For each selected object:
         for obj in select_objs:
             print(obj.name)
-            scn.objects.active = obj
-            obj.select = True
+            context.view_layer.objects.active = obj
+            obj.select_set(True)
             obj_regs = obj.mcell.regions
             vert_groups = obj.vertex_groups
 
@@ -906,4 +898,33 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+
+classes = ( 
+            MCELL_OT_region_add,
+            MCELL_OT_region_remove,
+            MCELL_OT_region_remove_all,
+            MCELL_OT_region_faces_assign,
+            MCELL_OT_region_faces_remove,
+            MCELL_OT_region_faces_select,
+            MCELL_OT_region_faces_select_all,
+            MCELL_OT_region_faces_deselect,
+            MCELL_OT_eliminate_overlapping_faces,
+            MCELL_OT_eliminate_all_overlaps,
+            MCELL_OT_face_get_regions,
+            MCELL_OT_faces_get_regions,
+            MCELL_UL_check_region,
+            MCellSurfaceRegionProperty,
+            MCellSurfaceRegionListProperty,
+            MCellObjectPropertyGroup,
+            MCELL_OT_vertex_groups_to_regions,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

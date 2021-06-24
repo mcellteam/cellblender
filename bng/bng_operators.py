@@ -6,14 +6,7 @@ from cellblender import cellblender_main
 #from cellblender import cellblender_operators
 #from . import net
 
-# We use per module class registration/unregistration
 filePath = ''
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
 
 
 
@@ -79,4 +72,13 @@ def execute_bionetgen(filepath,context):
           if (n==20):    # too many iterations; BNG not found, stop further search
               print ("Error running BioNetGen. BNG2.pl not found....")
     return{'FINISHED'}
+
+
+# We use per module class registration/unregistration
+#def register():
+#    bpy.utils.register_module(__name__)
+
+
+#def unregister():
+#    bpy.utils.unregister_module(__name__)
 

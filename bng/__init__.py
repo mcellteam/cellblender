@@ -225,13 +225,28 @@ def menu_func_bng_import(self, context):
 def menu_func_cbng_import(self, context):
     self.layout.operator("cbngl.import_data", text="Compartmental BioNetGen Model (.bngl)")
 
+
+classes = (
+            ImportBioNetGenData,
+            ImportCBNGL,
+          )
+
 def register():
-    bpy.types.INFO_MT_file_import.append(menu_func_bng_import)
-    bpy.types.INFO_MT_file_import.append(menu_func_cbng_import)
+    for cls in classes:
+      bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.types.INFO_MT_file_import.remove(menu_func_cbng_import)
-    bpy.types.INFO_MT_file_import.remove(menu_func_bng_import)
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
+
+
+#def register():
+#    bpy.types.TOPBAR_MT_file_import.append(menu_func_bng_import)
+#    bpy.types.TOPBAR_MT_file_import.append(menu_func_cbng_import)
+
+#def unregister():
+#    bpy.types.TOPBAR_MT_file_import.remove(menu_func_cbng_import)
+#    bpy.types.TOPBAR_MT_file_import.remove(menu_func_bng_import)
 
 if __name__ == "__main__": 
     register()
