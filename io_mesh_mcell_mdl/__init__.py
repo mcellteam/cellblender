@@ -53,17 +53,17 @@ class ImportMCellMDL(bpy.types.Operator, ImportHelper):
     bl_label = "Import MCell MDL"
     bl_options = {'UNDO'}
 
-    files = CollectionProperty(name="File Path",
+    files: CollectionProperty(name="File Path",
                           description="File path used for importing "
                                       "the MCell MDL file",
                           type=bpy.types.OperatorFileListElement)
 
-    directory = StringProperty()
+    directory: StringProperty()
 
     filename_ext = ".mdl"
-    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+    filter_glob: StringProperty(default="*.mdl", options={'HIDDEN'})
 
-    add_to_model_objects = BoolProperty(
+    add_to_model_objects: BoolProperty(
         name="Add to Model Objects",
         description="Automatically add all meshes to the Model Objects list",
         default=True,)
@@ -102,7 +102,7 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
     print ( ":::::::::io_mesh_mcell_mdl/__init__.py/ExportMCellMDL initialization" )
 
     filename_ext = ".mdl"
-    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+    filter_glob: StringProperty(default="*.mdl", options={'HIDDEN'})
 
     @classmethod
     def poll(cls, context):
@@ -131,18 +131,34 @@ def menu_func_export(self, context):
         ExportMCellMDL.bl_idname, text="MCell MDL Geometry (.mdl)")
 
 
+classes = (
+            ImportMCellMDL,
+            ExportMCellMDL,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
+
+
 #def register():
 #    bpy.utils.register_module(__name__)
 #
-#    bpy.types.INFO_MT_file_import.append(menu_func_import)
-#    bpy.types.INFO_MT_file_export.append(menu_func_export)
+#    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+#    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 
 #def unregister():
 #    bpy.utils.unregister_module(__name__)
 #
-#    bpy.types.INFO_MT_file_import.remove(menu_func_import)
-#    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+#    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+#    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+
+
 
 if __name__ == "__main__":
     register()

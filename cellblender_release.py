@@ -46,15 +46,6 @@ from . import cellblender_preferences
 import cellblender.data_model as data_model
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
-
 
 ########################################################
 #
@@ -249,9 +240,9 @@ class MCELL_UL_check_molecule_release(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            layout.label(text=item.name, icon='CHECKMARK')
 
 
 class MCELL_PT_molecule_release(bpy.types.Panel):
@@ -267,9 +258,9 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
 
 class MCellPointItemPropertyGroup(bpy.types.PropertyGroup):
-    x = FloatProperty ( name="X", default=0.0, precision=7 )
-    y = FloatProperty ( name="Y", default=0.0, precision=7 )
-    z = FloatProperty ( name="Z", default=0.0, precision=7 )
+    x: FloatProperty ( name="X", default=0.0, precision=7 )
+    y: FloatProperty ( name="Y", default=0.0, precision=7 )
+    z: FloatProperty ( name="Z", default=0.0, precision=7 )
 
     def build_data_model_from_properties ( self, context ):
         return [ self.x, self.y, self.z ]
@@ -311,15 +302,15 @@ class MCell_Point_List_OT_point_add_obj_sel(bpy.types.Operator):
         rs = context.scene.mcell.release_sites
         pl = rs.mol_release_list[rs.active_release_index]
 
-        for data_object in context.scene.objects:
+        for data_object in context.scene.collection.children[0].objects:
             if data_object.type == 'MESH':
-                if data_object.select:
+                if data_object.select_get():
                     print ( " Selected object: " + data_object.name )
 
                     saved_hide_status = data_object.hide
                     data_object.hide = False
 
-                    context.scene.objects.active = data_object
+                    context.view_layer.objects.active = data_object
                     bpy.ops.object.mode_set(mode='OBJECT')
 
                     loc_x = data_object.location.x
@@ -331,7 +322,7 @@ class MCell_Point_List_OT_point_add_obj_sel(bpy.types.Operator):
                     vertices = mesh.vertices
                     for v in vertices:
                         if v.select:
-                            t_vec = matrix * v.co
+                            t_vec = matrix @ v.co
                             #pl.add_point(context, x=t_vec.x+loc_x, y=t_vec.y+loc_y, z=t_vec.z+loc_z )
                             pl.add_point(context, x=t_vec.x, y=t_vec.y, z=t_vec.z )
 
@@ -368,7 +359,7 @@ class MCell_PointList_UL(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         row = layout.row()
         col = row.column()
-        col.label ( "Point:" )
+        col.label ( text="Point:" )
         col = row.column()
         col.prop ( item, 'x' )
         col = row.column()
@@ -380,12 +371,12 @@ class MCell_PointList_UL(bpy.types.UIList):
 
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
-    name = StringProperty(
+    name: StringProperty(
         name="Site Name", default="Release_Site",
         description="The name of the release site",
         update=check_release_site)
-    description = StringProperty(name="Description", default="")
-    molecule = StringProperty(
+    description: StringProperty(name="Description", default="")
+    molecule: StringProperty(
         name="Molecule",
         description="The molecule to release",
         update=check_release_site)
@@ -395,7 +386,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         ('SPHERICAL_SHELL', 'Spherical Shell', ''),
         ('LIST', 'List', ''),
         ('OBJECT', 'Object/Region', '')]
-    shape = EnumProperty(
+    shape: EnumProperty(
         items=shape_enum, name="Release Shape",
         description="Release in the specified shape. Surface molecules can only use Object/Region.",
         update=check_release_site)
@@ -403,49 +394,49 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         ('\'', "Top Front", ""),
         (',', "Top Back", ""),
         (';', "Mixed", "")]
-    orient = bpy.props.EnumProperty(
+    orient: EnumProperty(
         items=orient_enum, name="Initial Orientation",
         description="Release surface molecules with the specified initial "
                     "orientation.")
-    object_expr = StringProperty(
+    object_expr: StringProperty(
         name="Object/Region",
         description="Release in/on the specified object/region.",
         update=check_release_site)
         
-    location_x = PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
-    location_y = PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
-    location_z = PointerProperty ( name="Relese Loc Z", type=parameter_system.Parameter_Reference )
+    location_x: PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
+    location_y: PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
+    location_z: PointerProperty ( name="Relese Loc Z", type=parameter_system.Parameter_Reference )
     
-    points_list = CollectionProperty ( type=MCellPointItemPropertyGroup )
-    active_point_index = IntProperty(name="Active Point Index", default=0)
+    points_list: CollectionProperty ( type=MCellPointItemPropertyGroup )
+    active_point_index: IntProperty(name="Active Point Index", default=0)
 
-    diameter = PointerProperty ( name="Site Diameter", type=parameter_system.Parameter_Reference )
-    probability = PointerProperty ( name="Release Probability", type=parameter_system.Parameter_Reference )
+    diameter: PointerProperty ( name="Site Diameter", type=parameter_system.Parameter_Reference )
+    probability: PointerProperty ( name="Release Probability", type=parameter_system.Parameter_Reference )
 
     quantity_type_enum = [
         ('NUMBER_TO_RELEASE', "Constant Number", ""),
         ('GAUSSIAN_RELEASE_NUMBER', "Gaussian Number", ""),
         ('DENSITY', "Concentration/Density", "")]
-    quantity_type = EnumProperty(items=quantity_type_enum,
+    quantity_type: EnumProperty(items=quantity_type_enum,
                                  name="Quantity Type")
 
-    quantity = PointerProperty ( name="Quantity to Release", type=parameter_system.Parameter_Reference )
-    stddev = PointerProperty ( name="Standard Deviation", type=parameter_system.Parameter_Reference )
+    quantity: PointerProperty ( name="Quantity to Release", type=parameter_system.Parameter_Reference )
+    stddev: PointerProperty ( name="Standard Deviation", type=parameter_system.Parameter_Reference )
 
-    pattern = StringProperty(
+    pattern: StringProperty(
         name="Release Pattern",
         description="Use the named release pattern. "
                     "If blank, release molecules at start of simulation.")
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
-    name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    shape_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    object_expr_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    orient_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    quantity_type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    mol_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    rel_pattern_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    name_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    shape_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    object_expr_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    orient_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    quantity_type_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    mol_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    rel_pattern_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
 
     def add_point ( self, context, x=0, y=0, z=0 ):
@@ -603,10 +594,10 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
-    mol_release_list = CollectionProperty(
+    mol_release_list: CollectionProperty(
         type=MCellMoleculeReleaseProperty, name="Molecule Release List")
-    active_release_index = IntProperty(name="Active Release Index", default=0)
-    last_id = IntProperty(name="Counter for Unique Release Site IDs", default=0)  # This will always be incremented before assignment
+    active_release_index: IntProperty(name="Active Release Index", default=0)
+    last_id: IntProperty(name="Counter for Unique Release Site IDs", default=0)  # This will always be incremented before assignment
 
 
     def default_name ( self, item_id ):
@@ -751,8 +742,8 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                                   "mol_release_list", self,
                                   "active_release_index", rows=2)
                 col = row.column(align=True)
-                col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
-                col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
+                col.operator("mcell.release_site_add", icon='ADD', text="")
+                col.operator("mcell.release_site_remove", icon='REMOVE', text="")
 
                 if len(self.mol_release_list) > 0:
                     rel = self.mol_release_list[self.active_release_index]
@@ -855,8 +846,8 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                         col.template_list("MCell_PointList_UL", "", rel, "points_list", rel, "active_point_index", rows=5, maxrows=20)
 
                         col = row.column(align=True)
-                        col.operator("mcellptlist.point_add", icon='ZOOMIN', text="")
-                        col.operator("mcellptlist.point_remove", icon='ZOOMOUT', text="")
+                        col.operator("mcellptlist.point_add", icon='ADD', text="")
+                        col.operator("mcellptlist.point_remove", icon='REMOVE', text="")
                         col.separator()
                         col.operator("mcellptlist.point_add_cursor", icon='CURSOR', text="")
                         col.operator("mcellptlist.point_add_obj_sel", icon='EDITMODE_HLT', text="")
@@ -1015,9 +1006,9 @@ class MCELL_UL_check_release_pattern(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            layout.label(text=item.name, icon='CHECKMARK')
 
 
 class MCELL_PT_release_pattern(bpy.types.Panel):
@@ -1035,22 +1026,22 @@ class MCELL_PT_release_pattern(bpy.types.Panel):
 
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
-    name = StringProperty(
+    name: StringProperty(
         name="Pattern Name", default="Release_Pattern",
         description="The name of the release site",
         update=check_release_pattern_name)
-    description = StringProperty(name="Description", default="")
+    description: StringProperty(name="Description", default="")
 
-    delay            = PointerProperty ( name="Release Pattern Delay", type=parameter_system.Parameter_Reference )
-    release_interval = PointerProperty ( name="Relese Interval",       type=parameter_system.Parameter_Reference )
-    train_duration   = PointerProperty ( name="Train Duration",        type=parameter_system.Parameter_Reference )
-    train_interval   = PointerProperty ( name="Train Interval",        type=parameter_system.Parameter_Reference )
-    number_of_trains = PointerProperty ( name="Number of Trains",      type=parameter_system.Parameter_Reference )
+    delay           : PointerProperty ( name="Release Pattern Delay", type=parameter_system.Parameter_Reference )
+    release_interval: PointerProperty ( name="Relese Interval",       type=parameter_system.Parameter_Reference )
+    train_duration  : PointerProperty ( name="Train Duration",        type=parameter_system.Parameter_Reference )
+    train_interval  : PointerProperty ( name="Train Interval",        type=parameter_system.Parameter_Reference )
+    number_of_trains: PointerProperty ( name="Number of Trains",      type=parameter_system.Parameter_Reference )
 
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
-    name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    name_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def init_properties ( self, parameter_system ):
         self.name = "Release_Pattern"
@@ -1129,7 +1120,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
 
 class RelStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
-    name = StringProperty(name="Text")
+    name: StringProperty(name="Text")
     def remove_properties ( self, context ):
         #print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
         pass
@@ -1137,11 +1128,11 @@ class RelStringProperty(bpy.types.PropertyGroup):
 
 
 class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
-    release_pattern_list = CollectionProperty ( type=MCellReleasePatternProperty, name="Release Pattern List" )
+    release_pattern_list: CollectionProperty ( type=MCellReleasePatternProperty, name="Release Pattern List" )
     # Contains release patterns AND reaction names. Used in "Release Placement"
-    release_pattern_rxn_name_list = CollectionProperty ( type=RelStringProperty, name="Release Pattern and Reaction Name List")
-    active_release_pattern_index = IntProperty ( name="Active Release Pattern Index", default=0 )
-    last_id = IntProperty(name="Counter for Unique Release Pattern IDs", default=0)  # This will be incremented before use for first ID's of 1
+    release_pattern_rxn_name_list: CollectionProperty ( type=RelStringProperty, name="Release Pattern and Reaction Name List")
+    active_release_pattern_index: IntProperty ( name="Active Release Pattern Index", default=0 )
+    last_id: IntProperty(name="Counter for Unique Release Pattern IDs", default=0)  # This will be incremented before use for first ID's of 1
 
     def default_name ( self, item_id ):
         return "Release_Pattern_"+str(item_id)
@@ -1269,8 +1260,8 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
                               "release_pattern_list", mcell.release_patterns,
                               "active_release_pattern_index", rows=2)
           col = row.column(align=True)
-          col.operator("mcell.release_pattern_add", icon='ZOOMIN', text="")
-          col.operator("mcell.release_pattern_remove", icon='ZOOMOUT', text="")
+          col.operator("mcell.release_pattern_add", icon='ADD', text="")
+          col.operator("mcell.release_pattern_remove", icon='REMOVE', text="")
           if mcell.release_patterns.release_pattern_list:
               rel_pattern = mcell.release_patterns.release_pattern_list[
                   mcell.release_patterns.active_release_pattern_index]
@@ -1302,4 +1293,36 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
+
+
+classes = ( 
+            MCELL_OT_release_site_add,
+            MCELL_OT_release_site_remove,
+            MCELL_UL_check_molecule_release,
+            MCELL_PT_molecule_release,
+            MCellPointItemPropertyGroup,
+            MCell_Point_List_OT_point_add,
+            MCell_Point_List_OT_point_add_cursor,
+            MCell_Point_List_OT_point_add_obj_sel,
+            MCell_Point_List_OT_point_remove,
+            MCell_Point_List_OT_point_remove_all,
+            MCell_PointList_UL,
+            MCellMoleculeReleaseProperty,
+            MCellMoleculeReleasePropertyGroup,
+            MCELL_OT_release_pattern_add,
+            MCELL_OT_release_pattern_remove,
+            MCELL_UL_check_release_pattern,
+            MCELL_PT_release_pattern,
+            MCellReleasePatternProperty,
+            RelStringProperty,
+            MCellReleasePatternPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

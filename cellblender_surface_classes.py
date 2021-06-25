@@ -39,14 +39,6 @@ from . import parameter_system
 from . import data_model
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 
 #########################################################################
@@ -212,18 +204,18 @@ class MCELL_UL_check_surface_class(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            layout.label(text=item.name, icon='CHECKMARK')
 
 
 class MCELL_UL_check_surface_class_props(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            layout.label(text=item.name, icon='CHECKMARK')
 
 
 class MCELL_PT_define_surface_classes(bpy.types.Panel):
@@ -260,13 +252,13 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         ( 'ALL_VOLUME_MOLECULES', "All Volume Molecules", "" ),
         ( 'ALL_SURFACE_MOLECULES', "All Surface Molecules", "" ),
         ( 'SINGLE', "Single Molecule", "" ) ]
-    affected_mols = EnumProperty (
+    affected_mols: EnumProperty (
         items = affected_mols_enum, name="Molecules", default='ALL_MOLECULES',
         description="Molecules (or groups of molecules) affected by this surface class.",
         update=check_surf_class_props )
 
-    name = StringProperty(name="Molecule", default="Molecule")
-    molecule = StringProperty(
+    name: StringProperty(name="Molecule", default="Molecule")
+    molecule: StringProperty(
         name="Molecule Name",
         description="The molecule that is affected by the surface class",
         update=check_surf_class_props)
@@ -274,7 +266,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         ('\'', "Top/Front", ""),
         (',', "Bottom/Back", ""),
         (';', "Ignore", "")]
-    surf_class_orient = EnumProperty(
+    surf_class_orient: EnumProperty(
         items=surf_class_orient_enum, name="Orientation", default=";",
         description="Volume molecules affected at front or back of a surface. "
                     "Surface molecules affected by orientation at border.",
@@ -284,15 +276,15 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         ('TRANSPARENT', "Transparent", ""),
         ('REFLECTIVE', "Reflective", ""),
         ('CLAMP_CONCENTRATION', "Clamp Concentration", "")]
-    surf_class_type = EnumProperty(
+    surf_class_type: EnumProperty(
         items=surf_class_type_enum, name="Type", default="TRANSPARENT",
         description="Molecules are destroyed by absorptive surfaces, pass "
                     "through transparent, and \"bounce\" off of reflective.",
         update=check_surf_class_props)
 
-    clamp_value = PointerProperty ( name="Value", type=parameter_system.Parameter_Reference )
+    clamp_value: PointerProperty ( name="Value", type=parameter_system.Parameter_Reference )
 
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
     def build_data_model_from_properties ( self, context ):
         sc = self
@@ -370,16 +362,16 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     """ Stores the surface class name and a list of its properties. """
 
-    name = StringProperty(
+    name: StringProperty(
         name="Surface Class Name", default="Surface_Class",
         description="This name can be selected in Assign Surface Classes.",
         update=check_surface_class)
-    description = StringProperty(name="Description", default="")
-    surf_class_props_list = CollectionProperty(
+    description: StringProperty(name="Description", default="")
+    surf_class_props_list: CollectionProperty(
         type=MCellSurfaceClassPropertiesProperty, name="Surface Classes List")
-    active_surf_class_props_index = IntProperty(
+    active_surf_class_props_index: IntProperty(
         name="Active Surface Class Index", default=0)
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
     def init_properties ( self, parameter_system ):
         if self.surf_class_props_list:
@@ -460,14 +452,14 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
 
 
 class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
-    surf_class_list = CollectionProperty(
+    surf_class_list: CollectionProperty(
         type=MCellSurfaceClassesProperty, name="Surface Classes List")
-    active_surf_class_index = IntProperty(
+    active_surf_class_index: IntProperty(
         name="Active Surface Class Index", default=0)
-    #surf_class_props_status = StringProperty(name="Status")
+    #surf_class_props_status: StringProperty(name="Status")
 
-    # surf_class_help_title = StringProperty(name="SCT", default="Help on Surface Classes", description="Toggle Showing of Help for Surface Classes." )
-    surf_class_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    # surf_class_help_title: StringProperty(name="SCT", default="Help on Surface Classes", description="Toggle Showing of Help for Surface Classes." )
+    surf_class_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def add_class ( self, context ):
         self.surf_class_list.add()
@@ -668,8 +660,8 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                               self, "surf_class_list", self,
                               "active_surf_class_index", rows=2)
             col = row.column(align=True)
-            col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
-            col.operator("mcell.surface_class_remove", icon='ZOOMOUT', text="")
+            col.operator("mcell.surface_class_add", icon='ADD', text="")
+            col.operator("mcell.surface_class_remove", icon='REMOVE', text="")
             row = layout.row()
 
             # Show the surface class properties template_list if there is at least
@@ -683,7 +675,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                 row = layout.row()
                 row.prop(active_surf_class, "description")
                 row = layout.row()
-                row.label(text="%s Properties:" % active_surf_class.name, icon='FACESEL_HLT')
+                row.label(text="%s Properties:" % active_surf_class.name, icon='LIGHTPROBE_CUBEMAP')
                 row = layout.row()
                 col = row.column()
                 # The template_list for the properties of a surface class.
@@ -694,8 +686,8 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                                   "surf_class_props_list", active_surf_class,
                                   "active_surf_class_props_index", rows=2)
                 col = row.column(align=True)
-                col.operator("mcell.surf_class_props_add", icon='ZOOMIN', text="")
-                col.operator("mcell.surf_class_props_remove", icon='ZOOMOUT',
+                col.operator("mcell.surf_class_props_add", icon='ADD', text="")
+                col.operator("mcell.surf_class_props_remove", icon='REMOVE',
                              text="")
                 # Show the surface class property fields (molecule, orientation,
                 # type) if there is at least a single surface class property.
@@ -717,4 +709,26 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
+
+
+classes = ( 
+            MCELL_OT_surf_class_props_add,
+            MCELL_OT_surf_class_props_remove,
+            MCELL_OT_surface_class_add,
+            MCELL_OT_surface_class_remove,
+            MCELL_UL_check_surface_class,
+            MCELL_UL_check_surface_class_props,
+            MCELL_PT_define_surface_classes,
+            MCellSurfaceClassPropertiesProperty,
+            MCellSurfaceClassesProperty,
+            MCellSurfaceClassesPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

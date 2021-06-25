@@ -81,28 +81,17 @@ from . import cellblender_preferences
 
 from . import cellblender_glyphs
 
+
 class MCELL_MolLabelProps(bpy.types.PropertyGroup):
-    enabled = bpy.props.BoolProperty(default=False)
+    enabled: BoolProperty(default=False)
 
-    loc_x = bpy.props.IntProperty(name='LocX', default=0)
-    loc_y = bpy.props.IntProperty(name='LocY', default=0)
+    loc_x: IntProperty(name='LocX', default=0)
+    loc_y: IntProperty(name='LocY', default=0)
 
-    show_mol_labels = bpy.props.BoolProperty(name="", default=True)
+    show_mol_labels: BoolProperty(name="", default=True)
 
 print ( "Mols imported for Tom commented with " + __name__ )
-# We use per module class registration/unregistration
-"""
-def register():
-    print ( "cellblender_molecules.py.register() called" )
-    bpy.utils.register_module(__name__)
-    bpy.types.WindowManager.display_mol_labels = bpy.props.PointerProperty(type=MCELL_MolLabelProps)
 
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-    MCELL_OT_mol_show_text.handle_remove(bpy.context)
-    del bpy.types.WindowManager.display_mol_labels
-"""
 
 def set_molecule_glyph ( context, glyph_name ):
 
@@ -174,9 +163,9 @@ class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
         ('Sphere_1', "Sphere_1", ""),
         ('Sphere_2', "Sphere_2", ""),
         ('Torus', "Torus", "")]
-    glyph = EnumProperty(items=glyph_enum, name="Molecule Shapes")
-    show_glyph = BoolProperty(name="Show Glyphs",description="Show Glyphs ... can cause slowness!!",default=True)
-    status = StringProperty(name="Status")
+    glyph: EnumProperty(items=glyph_enum, name="Molecule Shapes")
+    show_glyph: BoolProperty(name="Show Glyphs",description="Show Glyphs ... can cause slowness!!",default=True)
+    status: StringProperty(name="Status")
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Glyph Properties... no collections to remove." )
@@ -279,7 +268,7 @@ class MCELL_OT_mol_comp_stick(bpy.types.Operator):
         mats = bpy.data.materials
         objs = bpy.data.objects
         scn = bpy.context.scene
-        scn_objs = scn.objects
+        scn_objs = bpy.context.scene.collection.children[0].objects
 
         stick_name = "mol_comp_stick_mesh"
         shape_name = stick_name + "_shape"
@@ -344,10 +333,10 @@ class MCELL_OT_mol_comp_stick(bpy.types.Operator):
         stick_shape_obj.hide_select = False
 
         # Add the shape to the scene
-        scn.objects.link ( stick_shape_obj )
+        scn_objs.link ( stick_shape_obj )
 
         # Select to highlight it
-        scn.objects[shape_name].select = True
+        scn_objs[shape_name].select_set(True)
 
         self.report({'INFO'}, "Built a Stick Molecule")
         return {'FINISHED'}
@@ -365,7 +354,7 @@ class MCELL_OT_mol_comp_nostick(bpy.types.Operator):
         mats = bpy.data.materials
         objs = bpy.data.objects
         scn = bpy.context.scene
-        scn_objs = scn.objects
+        scn_objs = bpy.context.scene.collection.children[0].objects
 
         stick_name = "mol_comp_stick_mesh"
         shape_name = stick_name + "_shape"
@@ -447,9 +436,9 @@ def glyph_visibility_callback(self, context):
     ms = context.scene.mcell
     show_name = "mol_" + self.name
     show_shape_name = show_name + "_shape"
-    objs = context.scene.objects
-    objs[show_name].hide = not self.glyph_visibility
-    objs[show_shape_name].hide = not self.glyph_visibility
+    objs = context.scene.collection.children[0].objects
+    objs[show_name].hide_viewport = not self.glyph_visibility
+    objs[show_shape_name].hide_viewport = not self.glyph_visibility
     return
 
 def glyph_show_only_callback(self, context):
@@ -465,14 +454,14 @@ def glyph_show_only_callback(self, context):
     # print ( "Only showing " + str(show_only_items) )
     
     # Note the check before set to keep from infinite recursion in properties!!
-    for o in context.scene.objects:
+    for o in context.scene.collection.children[0].objects:
         if o.name.startswith("mol_"):
             if o.name in show_only_items:
-                if o.hide != False:
-                    o.hide = False
+                if o.hide_viewport != False:
+                    o.hide_viewport = False
             else:
-                if o.hide != True:
-                    o.hide = True
+                if o.hide_viewport != True:
+                    o.hide_viewport = True
     for o in ml:
         if o.name == self.name:
             if o.glyph_visibility != True:
@@ -639,7 +628,7 @@ def remove_mol_data_by_name ( mol_name, context ):
     mats = bpy.data.materials
     objs = bpy.data.objects
     scn = bpy.context.scene
-    scn_objs = scn.objects
+    scn_objs = bpy.context.scene.collection.children[0].objects
 
     mol_obj_name        = "mol_" + mol_name
     mol_shape_obj_name  = mol_obj_name + "_shape"
@@ -684,18 +673,18 @@ def remove_mol_data_by_name ( mol_name, context ):
 
 
 class MCellMolComponentProperty(bpy.types.PropertyGroup):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    component_name = StringProperty(default="", description="Component name")
-    states_string = StringProperty(default="", description="States String")
-    is_key = BoolProperty(default=False, description="Indicates that this is a Rotation Key and not a true component")
-    loc_x = PointerProperty ( name="loc_x",  type=parameter_system.Parameter_Reference )
-    loc_y = PointerProperty ( name="loc_y",  type=parameter_system.Parameter_Reference )
-    loc_z = PointerProperty ( name="loc_z",  type=parameter_system.Parameter_Reference )
-    rot_x = PointerProperty ( name="rot_x",  type=parameter_system.Parameter_Reference )
-    rot_y = PointerProperty ( name="rot_y",  type=parameter_system.Parameter_Reference )
-    rot_z = PointerProperty ( name="rot_z",  type=parameter_system.Parameter_Reference )
-    rot_ang = PointerProperty ( name="rot_ang",  type=parameter_system.Parameter_Reference )
-    rot_index = IntProperty ( name="AngleRef", default = 0, description="Index of Component/Key to use as Angle Reference (-1 defines a key)" )
+    contains_cellblender_parameters: BoolProperty(name="Contains CellBlender Parameters", default=True)
+    component_name: StringProperty(default="", description="Component name")
+    states_string: StringProperty(default="", description="States String")
+    is_key: BoolProperty(default=False, description="Indicates that this is a Rotation Key and not a true component")
+    loc_x: PointerProperty ( name="loc_x",  type=parameter_system.Parameter_Reference )
+    loc_y: PointerProperty ( name="loc_y",  type=parameter_system.Parameter_Reference )
+    loc_z: PointerProperty ( name="loc_z",  type=parameter_system.Parameter_Reference )
+    rot_x: PointerProperty ( name="rot_x",  type=parameter_system.Parameter_Reference )
+    rot_y: PointerProperty ( name="rot_y",  type=parameter_system.Parameter_Reference )
+    rot_z: PointerProperty ( name="rot_z",  type=parameter_system.Parameter_Reference )
+    rot_ang: PointerProperty ( name="rot_ang",  type=parameter_system.Parameter_Reference )
+    rot_index: IntProperty ( name="AngleRef", default = 0, description="Index of Component/Key to use as Angle Reference (-1 defines a key)" )
 
     def init_properties ( self, parameter_system ):
 
@@ -846,16 +835,16 @@ def mol_geom_type_changed_callback ( self, context ):
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    name = StringProperty(
+    contains_cellblender_parameters: BoolProperty(name="Contains CellBlender Parameters", default=True)
+    name: StringProperty(
         name="Molecule Name", default="Molecule",
         description="The molecule species name",
         update=name_change_callback)
-    old_name = StringProperty(name="Old Mol Name", default="Molecule")
-    description = StringProperty(name="Description", default="")
+    old_name: StringProperty(name="Old Mol Name", default="Molecule")
+    description: StringProperty(name="Description", default="")
 
-    component_list = CollectionProperty(type=MCellMolComponentProperty, name="Component List")
-    active_component_index = IntProperty(name="Active Component Index", default=0)
+    component_list: CollectionProperty(type=MCellMolComponentProperty, name="Component List")
+    active_component_index: IntProperty(name="Active Component Index", default=0)
 
     geom_type_enum = [
         ('None',   "Coincident", ""),
@@ -866,52 +855,52 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('XYZ',    "---------------", ""),  # label was: "XYZ"
         ('XYZA',   "---------------", "")   # label was: "XYZ,A Specified"
         ]
-    geom_type = EnumProperty(
+    geom_type: EnumProperty(
         items=geom_type_enum, name="Geometry",
         default='None',
         description="Layout method for Complex Molecules." )
         #,
         #update=mol_geom_type_changed_callback)
 
-    component_distance = FloatProperty ( name="R", min=0.0, default=0.01, description="Distance of Components from Molecule" )
+    component_distance: FloatProperty ( name="R", min=0.0, default=0.01, description="Distance of Components from Molecule" )
 
-    shape_name = StringProperty(name="ShapeName", default="")
-    material_name = StringProperty(name="MatName", default="")
+    shape_name: StringProperty(name="ShapeName", default="")
+    material_name: StringProperty(name="MatName", default="")
 
-    glyph_visibility = BoolProperty ( default=True, description='Show this molecule glyph', update=glyph_visibility_callback )
-    glyph_show_only = BoolProperty ( default=False, description='Show only this molecule glyph', update=glyph_show_only_callback )
+    glyph_visibility: BoolProperty ( default=True, description='Show this molecule glyph', update=glyph_visibility_callback )
+    glyph_show_only: BoolProperty ( default=False, description='Show only this molecule glyph', update=glyph_show_only_callback )
 
-    id = IntProperty(name="Molecule ID", default=0)
+    id: IntProperty(name="Molecule ID", default=0)
     type_enum = [
         ('2D', "Surface Molecule", ""),
         ('3D', "Volume Molecule", "")]
-    type = EnumProperty(
+    type: EnumProperty(
         items=type_enum, name="Molecule Type",
         default='3D',
         description="Surface molecules are constrained to surfaces/meshes. "    
                     "Volume molecules exist in space.")
-    diffusion_constant = PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
-    lr_bar_trigger = BoolProperty("lr_bar_trigger", default=False)
-    bnglLabel = StringProperty(
+    diffusion_constant: PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
+    lr_bar_trigger: BoolProperty("lr_bar_trigger", default=False)
+    bnglLabel: StringProperty(
         name="BNGL Label", default="",
         description="The molecule BNGL label",
         update=check_callback)
-    target_only = BoolProperty(
+    target_only: BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
                     "it runs into other molecules. Can speed up simulations.")
 
-    custom_time_step =    PointerProperty ( name="Molecule Custom Time Step",  type=parameter_system.Parameter_Reference )
-    custom_space_step =   PointerProperty ( name="Molecule Custom Space Step", type=parameter_system.Parameter_Reference )
-    maximum_step_length = PointerProperty ( name="Maximum Step Length",        type=parameter_system.Parameter_Reference )
+    custom_time_step: PointerProperty ( name="Molecule Custom Time Step",  type=parameter_system.Parameter_Reference )
+    custom_space_step: PointerProperty ( name="Molecule Custom Space Step", type=parameter_system.Parameter_Reference )
+    maximum_step_length: PointerProperty ( name="Maximum Step Length",        type=parameter_system.Parameter_Reference )
 
-    usecolor = BoolProperty ( name="Use this Color", default=True, description='Use Molecule Color instead of Material Color', update=display_callback )
-    color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
-    alpha = FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
-    emit = FloatProperty ( name="Emit", min=0.0, default=1.0, description="Emits Light (brightness)", update=display_callback )
-    scale = FloatProperty ( name="Scale", min=0.0001, default=1.0, description="Relative size (scale) for this molecule", update=shape_change_callback )
-    previous_scale = FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
-    #cumulative_scale = FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
+    usecolor: BoolProperty ( name="Use this Color", default=True, description='Use Molecule Color instead of Material Color', update=display_callback )
+    color: FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
+    alpha: FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
+    emit: FloatProperty ( name="Emit", min=0.0, default=1.0, description="Emits Light (brightness)", update=display_callback )
+    scale: FloatProperty ( name="Scale", min=0.0001, default=1.0, description="Relative size (scale) for this molecule", update=shape_change_callback )
+    previous_scale: FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
+    #cumulative_scale: FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
 
     glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend", "Mesh", "")
     glyph_enum = [
@@ -927,7 +916,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('Tetrahedron', "Tetrahedron", ""),
         ('Pyramid', "Pyramid", ""),
         ('Letter', "Letter", "")]
-    glyph = EnumProperty ( items=glyph_enum, name="Molecule Shape", update=shape_change_callback )
+    glyph: EnumProperty ( items=glyph_enum, name="Molecule Shape", update=shape_change_callback )
 
     letter_enum = [
         ('A', "A", ""),
@@ -956,19 +945,19 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('X', "X", ""),
         ('Y', "Y", ""),
         ('Z', "Z", "")]
-    letter = EnumProperty ( items=letter_enum, name="Molecule Letter", update=shape_change_callback )
+    letter: EnumProperty ( items=letter_enum, name="Molecule Letter", update=shape_change_callback )
 
-    export_viz = bpy.props.BoolProperty(
+    export_viz: BoolProperty(
         default=False, description="If selected, the molecule will be "
                                    "included in the visualization data.")
-    status = StringProperty(name="Status")
+    status: StringProperty(name="Status")
 
 
-    name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    bngl_label_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    target_only_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    name_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    bngl_label_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    type_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    target_only_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
 
     def init_properties ( self, parameter_system ):
@@ -1034,7 +1023,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mats = bpy.data.materials
         objs = bpy.data.objects
         scn = bpy.context.scene
-        scn_objs = scn.objects
+        scn_objs = bpy.context.scene.collection.children[0].objects
 
         mol_name = "mol_" + self.name
         mol_pos_mesh_name = mol_name + "_pos"
@@ -1060,9 +1049,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             mols_obj.lock_scale[0] = True
             mols_obj.lock_scale[1] = True
             mols_obj.lock_scale[2] = True
-            mols_obj.select = False
+            mols_obj.select_set(False)
             mols_obj.hide_select = True
-            mols_obj.hide = True
+            mols_obj.hide_viewport = True
 
         # Build the new shape vertices and faces
         # print ( "Creating a new glyph for " + self.name )
@@ -1107,7 +1096,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_shape_obj.hide_select = False
 
         # Add the shape to the scene as a glyph for the object
-        scn.objects.link ( mol_shape_obj )
+        scn_objs.link ( mol_shape_obj )
 
         # Look-up material, create if needed.
         # Associate material with mesh shape.
@@ -1143,8 +1132,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             mol_obj = objs.new(mol_name, mol_pos_mesh)
             scn_objs.link(mol_obj)
             mol_shape_obj.parent = mol_obj
-            mol_obj.dupli_type = 'VERTS'
-            mol_obj.use_dupli_vertices_rotation = True
+            mol_obj.instance_type = 'VERTS'
+            mol_obj.use_instance_vertices_rotation = True
             mol_obj.parent = mols_obj
 
         # Be sure the new object is at the origin, and lock it there.
@@ -1166,7 +1155,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_obj.hide_select = False
 
         # Add the shape to the scene as a glyph for the object
-        mol_obj.dupli_type = 'VERTS'
+        mol_obj.instance_type = 'VERTS'
         mol_shape_obj.parent = mol_obj
 
         # print ( "Done creating mol data for " + self.name )
@@ -1240,7 +1229,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         if mat_name in bpy.data.materials:
             color = bpy.data.materials[mat_name].diffuse_color
             disp_dict['color'] = [ color[0], color[1], color[2] ]
-            disp_dict['emit'] = bpy.data.materials[mat_name].emit
+#            disp_dict['emit'] = bpy.data.materials[mat_name].emit
+            disp_dict['emit'] = 0.0
             disp_dict['scale'] = self.scale
         m_dict['display'] = disp_dict
 
@@ -1281,7 +1271,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             if mat_name in bpy.data.materials:
                 color = bpy.data.materials[mat_name].diffuse_color
                 disp_dict['color'] = [ color[0], color[1], color[2] ]
-                disp_dict['emit'] = bpy.data.materials[mat_name].emit
+#                disp_dict['emit'] = bpy.data.materials[mat_name].emit
             # Look for an object that may exist before the upgrade to replace the defaults
             shape_name = "mol_" + dm['mol_name'] + "_shape"
             if shape_name in bpy.data.objects:
@@ -1401,7 +1391,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                     color[2] = dm_color[2]
             if "emit" in disp_dict:
                 mat_name = "mol_" + self.name+"_mat"
-                bpy.data.materials[mat_name].emit = disp_dict['emit']
+#                bpy.data.materials[mat_name].emit = disp_dict['emit']
 
 
     def check_properties_after_building ( self, context ):
@@ -1483,7 +1473,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col = row.column()
                 col.prop(self, "geom_type" )
                 col = row.column() # Provide some space?
-                col.label ( " " )
+                col.label ( text=" " )
                 col = row.column()
                 col.prop(self, "component_distance")
                 col = row.column()
@@ -1497,40 +1487,40 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 if self.geom_type == 'XYZRef':
                   row = box.row()
                   col = row.column()
-                  col.label ( "Index" )
+                  col.label ( text="Index" )
                   col = row.column()
-                  col.label ( "Name" )
+                  col.label ( text="Name" )
                   col = row.column()
-                  col.label ( "States" )
+                  col.label ( text="States" )
                   col = row.column()
-                  col.label ( "Loc: x" )
+                  col.label ( text="Loc: x" )
                   col = row.column()
-                  col.label ( "Loc: y" )
+                  col.label ( text="Loc: y" )
                   col = row.column()
-                  col.label ( "Loc: z" )
+                  col.label ( text="Loc: z" )
                   col = row.column()
-                  col.label ( "Rot Ref" )
+                  col.label ( text="Rot Ref" )
 
                 if self.geom_type == 'XYZVA':
                   row = box.row()
                   col = row.column()
-                  col.label ( "Name" )
+                  col.label ( text="Name" )
                   col = row.column()
-                  col.label ( "States" )
+                  col.label ( text="States" )
                   col = row.column()
-                  col.label ( "Loc: x" )
+                  col.label ( text="Loc: x" )
                   col = row.column()
-                  col.label ( "Loc: y" )
+                  col.label ( text="Loc: y" )
                   col = row.column()
-                  col.label ( "Loc: z" )
+                  col.label ( text="Loc: z" )
                   col = row.column()
-                  col.label ( "Rot: x" )
+                  col.label ( text="Rot: x" )
                   col = row.column()
-                  col.label ( "Rot: y" )
+                  col.label ( text="Rot: y" )
                   col = row.column()
-                  col.label ( "Rot: z" )
+                  col.label ( text="Rot: z" )
                   col = row.column()
-                  col.label ( "Angle" )
+                  col.label ( text="Angle" )
 
                 row = box.row()
                 col = row.column()
@@ -1541,11 +1531,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col = row.column(align=False)
                 # Use subcolumns to group logically related buttons together
                 subcol = col.column(align=True)
-                subcol.operator("mcell.mol_comp_add", icon='ZOOMIN', text="")
-                subcol.operator("mcell.mol_comp_remove", icon='ZOOMOUT', text="")
+                subcol.operator("mcell.mol_comp_add", icon='ADD', text="")
+                subcol.operator("mcell.mol_comp_remove", icon='REMOVE', text="")
                 subcol = col.column(align=True)
-                subcol.operator("mcell.mol_comp_stick", icon='RESTRICT_VIEW_OFF', text="")
-                subcol.operator("mcell.mol_comp_nostick", icon='RESTRICT_VIEW_ON', text="")
+                subcol.operator("mcell.mol_comp_stick", icon='HIDE_OFF', text="")
+                subcol.operator("mcell.mol_comp_nostick", icon='HIDE_ON', text="")
                 if self.geom_type == 'XYZRef':
                   # Only draw the mol_auto_key when appropriate
                   subcol = col.column(align=True)
@@ -1576,12 +1566,16 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 row.prop ( bpy.data.materials[mat_name], "diffuse_color", text="Color" )
                 row = box.row()
                 col = row.column()
-                col.label ( "Brightness" )
+                col.label ( text="Brightness" )
+
+                '''
                 col = row.column()
                 col.prop ( bpy.data.materials[mat_name], "emit", text="Emit" )
+                '''
+
                 row = box.row()
                 col = row.column()
-                col.label ( "Scale" )
+                col.label ( text="Scale" )
                 col = row.column()
                 col.prop ( self, "scale", text="Factor" )
                 row = box.row()
@@ -1596,14 +1590,16 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                     col.operator ('mcell.mol_show_text', text="Show Text")
 
                 # Allow the user to set what layer(s) the molecule appears on
+                '''
                 mol = molecules.molecule_list[molecules.active_mol_index]
                 mol_obj_name = "mol_" + mol.name
                 mol_shape_name = mol_obj_name + "_shape"
-                mol_obj = bpy.context.scene.objects.get(mol_obj_name)
-                mol_shape_obj = bpy.context.scene.objects.get(mol_shape_name)
+                mol_obj = bpy.context.scene.collection.children[0].objects.get(mol_obj_name)
+                mol_shape_obj = bpy.context.scene.collection.children[0].objects.get(mol_shape_name)
                 row = box.row(align=True)
                 row.prop(mol_obj, "layers")
                 mol_shape_obj.layers = mol_obj.layers
+                '''
 
                 if len(bpy.data.materials) and (bpy.context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
                   if 'mcell' in bpy.context.scene.keys():
@@ -1685,14 +1681,16 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         if mol_mat_name in bpy.data.materials.keys():
             if bpy.data.materials[mol_mat_name].diffuse_color != self.color:
                 bpy.data.materials[mol_mat_name].diffuse_color = self.color
+            '''
             if bpy.data.materials[mol_mat_name].emit != self.emit:
                 bpy.data.materials[mol_mat_name].emit = self.emit
+            '''
 
 
         # Refresh the scene
         self.set_mol_glyph ( context )
         cellblender_mol_viz.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class, and doesn't use the "self".
-        context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
+        context.view_layer.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
         return
 
 
@@ -1710,9 +1708,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             mol_shape_name = 'mol_' + self.name + '_shape'
 
             bpy.ops.object.select_all(action='DESELECT')
-            context.scene.objects[mol_shape_name].hide_select = False
-            context.scene.objects[mol_shape_name].select = True
-            context.scene.objects.active = bpy.data.objects[mol_shape_name]
+            context.scene.collection.children[0].objects[mol_shape_name].hide_select = False
+            context.scene.collection.children[0].objects[mol_shape_name].select_set(True)
+            context.view_layer.objects.active = bpy.data.objects[mol_shape_name]
 
 
             # Exact code starts here (allow it to duplicate some previous code for now):
@@ -1752,7 +1750,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_obj = bpy.data.objects['mol_' + self.name]
         mol_shape_name = 'mol_' + self.name + '_shape'
         print ( "Try to select " + mol_shape_name + " from bpy.data.objects["+self.name+"]" )
-        context.scene.objects.active = bpy.data.objects[mol_shape_name]
+        context.view_layer.objects.active = bpy.data.objects[mol_shape_name]
 
         glyph_name = str(self.glyph)
 
@@ -1810,30 +1808,30 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 #class MCell_UL_check_molecule(bpy.types.UIList):
 #    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
 #        if item.status:
-#            layout.label(item.status, icon='ERROR')
+#            layout.label(text=item.status, icon='ERROR')
 #        else:
-#            layout.label(item.name, icon='FILE_TICK')
+#            layout.label(text=item.name, icon='FILE_TICK')
 
 
 class MCell_UL_check_molecule(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # print ("Draw with " + str(data) + " " + str(item) + " " + str(active_data) + " " + str(active_propname) + " " + str(index) )
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
             """
             # Example of using split to subdivide into: [0.2][     0.6     ][0.2]
 
-            split = layout.split(percentage=0.2)
+            split = layout.split(factor=0.2)
             col1 = split.column()
             remainder = split.column()
-            split = remainder.split(percentage=0.6666)
+            split = remainder.split(factor=0.6666)
             col2 = split.column()
             col3 = split.column()
 
-            col1.label ( "11111111111111111" )
-            col2.label ( "22222222222222222" )
-            col3.label ( "33333333333333333" )
+            col1.label ( text="11111111111111111" )
+            col2.label ( text="22222222222222222" )
+            col3.label ( text="33333333333333333" )
             """
 
             mcell = context.scene.mcell
@@ -1841,31 +1839,31 @@ class MCell_UL_check_molecule(bpy.types.UIList):
             show_name = "mol_" + item.name
             show_shape_name = show_name + "_shape"
             mat_name = show_name + "_mat"
-            objs = context.scene.objects
+            objs = context.scene.collection.children[0].objects
 
             col = layout.column()
-            col.label(item.name, icon='FILE_TICK')
+            col.label(text=item.name, icon='CHECKMARK')
 
-            sv_bngcolor_split = layout.split(percentage=0.05)
+            sv_bngcolor_split = layout.split(factor=0.05)
             col = sv_bngcolor_split.column()
             if item.type == '2D':
-                col.label ( "", icon='TEXTURE' )  #  'OUTLINER_OB_SURFACE' 'SNAP_FACE'
+                col.label ( text="", icon='TEXTURE' )  #  'OUTLINER_OB_SURFACE' 'SNAP_FACE'
             else:
-                col.label ( "", icon='PHYSICS' )  #  'VIEW3D' 'OBJECT_DATA'  'SNAP_VOLUME'
+                col.label ( text="", icon='ONIONSKIN_ON' )  #  'VIEW3D' 'OBJECT_DATA'  'SNAP_VOLUME'
 
             col = sv_bngcolor_split.column()
-            bng_color_split = col.split(percentage=0.82)   # Amount of space for BGNL, the rest is color
+            bng_color_split = col.split(factor=0.82)   # Amount of space for BGNL, the rest is color
             col = bng_color_split.column()
             if len(item.bnglLabel) > 0:
-                col.label (item.bnglLabel)
+                col.label (text=item.bnglLabel)
             else:
-                col.label (" ")
+                col.label (text=" ")
 
             col = bng_color_split.column()
             if mat_name in bpy.data.materials:
                 col.prop ( bpy.data.materials[mat_name], "diffuse_color", text="" )
             else:
-                col.label (" ")
+                col.label (text=" ")
 
 
             #col = layout.column()
@@ -1874,21 +1872,21 @@ class MCell_UL_check_molecule(bpy.types.UIList):
             col.prop(item, "glyph_show_only", text="", icon='VIEWZOOM')
             col = layout.column()
             if item.glyph_visibility:
-                col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_OFF')
+                col.prop(item, "glyph_visibility", text="", icon='HIDE_OFF')
             else:
-                col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_ON')
+                col.prop(item, "glyph_visibility", text="", icon='HIDE_ON')
             #col = layout.column()
-            #col.prop(objs[show_name], "hide", text="", icon='RESTRICT_VIEW_OFF')
+            #col.prop(objs[show_name], "hide", text="", icon='HIDE_OFF')
             if ms.show_extra_columns:
                 col = layout.column()
-                if objs[show_name].hide:
+                if objs[show_name].hide_viewport:
                     # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
                     #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
                     col.prop(objs[show_name], "hide", text="", icon='GROUP_BONE')
                 else:
                     col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
                 col = layout.column()
-                if objs[show_shape_name].hide:
+                if objs[show_shape_name].hide_viewport:
                     # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
                     #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
                     col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_CHARGE')
@@ -2019,9 +2017,9 @@ class MCell_UL_check_component(bpy.types.UIList):
             z = loc[2]
 
             col = layout.column()
-            col.label ( "x="+format(x,'.6g') )
+            col.label ( text="x="+format(x,'.6g') )
             col = layout.column()
-            col.label ( "y="+format(y,'.6g') )
+            col.label ( text="y="+format(y,'.6g') )
 
         elif data.geom_type == '3DAuto':
 
@@ -2051,11 +2049,11 @@ class MCell_UL_check_component(bpy.types.UIList):
 
             # Show the point
             col = layout.column()
-            col.label ( "x="+format(x,'.6g') )
+            col.label ( text="x="+format(x,'.6g') )
             col = layout.column()
-            col.label ( "y="+format(y,'.6g') )
+            col.label ( text="y="+format(y,'.6g') )
             col = layout.column()
-            col.label ( "z="+format(z,'.6g') )
+            col.label ( text="z="+format(z,'.6g') )
 
         elif data.geom_type == 'XYZ':
 
@@ -2157,9 +2155,9 @@ class MCell_OT_molecule_show_all(bpy.types.Operator):
                 o.glyph_visibility = True
             if o.glyph_show_only:
                 o.glyph_show_only = False
-        for o in context.scene.objects:
+        for o in context.scene.collection.children[0].objects:
             if o.name.startswith("mol_"):
-                o.hide = False
+                o.hide_viewport = False
         return {'FINISHED'}
 
 
@@ -2177,9 +2175,9 @@ class MCell_OT_molecule_hide_all(bpy.types.Operator):
                 o.glyph_visibility = False
             if o.glyph_show_only:
                 o.glyph_show_only = False
-        for o in context.scene.objects:
+        for o in context.scene.collection.children[0].objects:
             if o.name.startswith("mol_"):
-                o.hide = True
+                o.hide_viewport = True
         return {'FINISHED'}
 
 
@@ -2198,19 +2196,19 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
 
 
 class MCellMoleculesListProperty(bpy.types.PropertyGroup):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    molecule_list = CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
-    active_mol_index = IntProperty(name="Active Molecule Index", default=0)
-    last_id = IntProperty(name="Counter for Unique Molecule IDs", default=0)  # Start ID's at 0 (will be incremented to 1)
-    show_molmaker = bpy.props.BoolProperty(default=False)
-    show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
-    show_components = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
-    show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
-    show_preview = bpy.props.BoolProperty(default=False, name="Material Preview")
-    show_extra_columns = bpy.props.BoolProperty(default=False, description="Show additional visibility control columns")
-    dup_check = bpy.props.BoolProperty(default=False)
+    contains_cellblender_parameters: BoolProperty(name="Contains CellBlender Parameters", default=True)
+    molecule_list: CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
+    active_mol_index: IntProperty(name="Active Molecule Index", default=0)
+    last_id: IntProperty(name="Counter for Unique Molecule IDs", default=0)  # Start ID's at 0 (will be incremented to 1)
+    show_molmaker: BoolProperty(default=False)
+    show_advanced: BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
+    show_components: BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
+    show_display: BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
+    show_preview: BoolProperty(default=False, name="Material Preview")
+    show_extra_columns: BoolProperty(default=False, description="Show additional visibility control columns")
+    dup_check: BoolProperty(default=False)
 
-    next_color = IntProperty (default=0)  # Keeps track of the next molecule color to use
+    next_color: IntProperty (default=0)  # Keeps track of the next molecule color to use
 
 
     def default_name ( self, item_id ):
@@ -2454,14 +2452,14 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             col = row.column(align=False)
             # Use subcolumns to group logically related buttons together
             subcol = col.column(align=True)
-            subcol.operator("mcell.molecule_add", icon='ZOOMIN', text="")
+            subcol.operator("mcell.molecule_add", icon='ADD', text="")
             subcol.operator("mcell.molecule_duplicate", icon='GROUP_BONE', text="")
-            subcol.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
+            subcol.operator("mcell.molecule_remove", icon='REMOVE', text="")
             subcol = col.column(align=True)
-            subcol.operator("mcell.molecule_show_all", icon='RESTRICT_VIEW_OFF', text="")
-            subcol.operator("mcell.molecule_hide_all", icon='RESTRICT_VIEW_ON', text="")
+            subcol.operator("mcell.molecule_show_all", icon='HIDE_OFF', text="")
+            subcol.operator("mcell.molecule_hide_all", icon='HIDE_ON', text="")
             subcol = col.column(align=True)
-            subcol.prop (self, "show_extra_columns", icon='SCRIPTWIN', text="")
+            subcol.prop (self, "show_extra_columns", icon='PREFERENCES', text="")
 
             if self.molecule_list:
                 mol = self.molecule_list[self.active_mol_index]
@@ -2474,7 +2472,40 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         layout = panel.layout
         self.draw_layout ( context, layout )
 
-#
-#if __name__ == "__main__":
-#    register()
+
+
+classes = ( 
+            MCELL_MolLabelProps,
+            MCELL_OT_molecule_add,
+            MCELL_OT_molecule_duplicate,
+            MCELL_OT_molecule_remove,
+            MCELL_OT_mol_comp_add,
+            MCELL_OT_mol_comp_remove,
+            MCELL_OT_set_molecule_glyph,
+            MCELL_OT_mol_comp_stick,
+            MCELL_OT_mol_comp_nostick,
+            MCELL_OT_mol_auto_key,
+            MCELL_OT_mol_shade_flat,
+            MCELL_OT_mol_shade_smooth,
+            MCELL_OT_mol_show_text,
+            MCellMolComponentProperty,
+            MCell_OT_molecule_recalc_comps,
+            MCell_OT_molecule_2D_Circ,
+            MCell_OT_molecule_3D_Sp,
+            MCellMoleculeProperty,
+            MCell_UL_check_molecule,
+            MCell_UL_check_component,
+            MCell_OT_molecule_show_all,
+            MCell_OT_molecule_hide_all,
+            MCELL_PT_define_molecules,
+            MCellMoleculesListProperty,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

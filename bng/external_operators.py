@@ -13,12 +13,6 @@ from collections import defaultdict
 
 # We use per module class registration/unregistration
 filePath = ''
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
 
 def accessFile(filePath,parentOperator):
     if not hasattr(accessFile, 'info'):
@@ -256,3 +250,30 @@ class EXTERNAL_OT_reaction_output_add(bpy.types.Operator):
             #print ( "Adding reaction output " + str(key['name']))
 
         return {'FINISHED'}
+
+
+classes = (
+            EXTERNAL_OT_parameter_add,
+            EXTERNAL_OT_molecule_add,
+            EXTERNAL_OT_reaction_add,
+            EXTERNAL_OT_release_site_add,
+            EXTERNAL_OT_reaction_output_add,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
+
+
+
+def register():
+    bpy.utils.register_module(__name__)
+
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+

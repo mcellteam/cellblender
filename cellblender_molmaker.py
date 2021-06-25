@@ -97,7 +97,7 @@ bl_info = {
 	"name": "Molecule Maker",
 	"author": "Bob Kuczewski",
 	"version": (1,1,0),
-	"blender": (2,5,7),
+	"blender": (2,93,0),
 	"location": "View 3D > Edit Mode > Tool Shelf",
 	"description": "Generate a Molecule",
 	"warning" : "",
@@ -1247,7 +1247,7 @@ def redraw_mol ( self, context ):
     checked_print ( "Redrawing the molecule with:" )
     checked_print ( "  self = " + str(self) )
     checked_print ( "  context = " + str(context) )
-    if 'Mol Object' in context.scene.objects:
+    if 'Mol Object' in context.scene.collection.children[0].objects:
       # The following may not have deleted everything since there was progressive slowing:
 
       #obj = context.scene.objects['Mol Object']
@@ -1256,8 +1256,8 @@ def redraw_mol ( self, context ):
 
       # Try this:
       bpy.ops.object.select_all ( action = 'DESELECT' )
-      obj = context.scene.objects['Mol Object']
-      obj.select = True
+      obj = context.scene.collection.children[0].objects['Mol Object']
+      obj.select_set(True)
       bpy.ops.object.delete()
 
       # Still shows progressive slowing ... maybe add a purge to clear datablocks
@@ -1268,21 +1268,21 @@ def redraw_mol ( self, context ):
 
 
 class MolMakerFileNameProperty(bpy.types.PropertyGroup):
-  name = StringProperty(name="Script")
+  name: StringProperty(name="Script")
 
 class MolMakerMolCompProperty(bpy.types.PropertyGroup):
-  name = StringProperty(name="Script")
-  field_type = StringProperty() # Either m, c, or k (for molecule, component, or key)
-  has_coords = BoolProperty()
-  is_final = BoolProperty()
-  coords = FloatVectorProperty ( size=3 )
-  graph_string = StringProperty(default="")
-  peer_list = StringProperty(default="") # Comma-separated list of indexes
-  key_list = StringProperty(default="")  # Comma-separated list of indexes
-  angle = FloatProperty(name="Bond Angle", step=0.5, precision=3, update=redraw_mol)
-  bond_index = IntProperty(name="Bond Index", default=-1, update=check_bond_index)
-  key_index = IntProperty(default=-1)
-  alert_string = StringProperty(default="")
+  name: StringProperty(name="Script")
+  field_type: StringProperty() # Either m, c, or k (for molecule, component, or key)
+  has_coords: BoolProperty()
+  is_final: BoolProperty()
+  coords: FloatVectorProperty ( size=3 )
+  graph_string: StringProperty(default="")
+  peer_list: StringProperty(default="") # Comma-separated list of indexes
+  key_list: StringProperty(default="")  # Comma-separated list of indexes
+  angle: FloatProperty(name="Bond Angle", step=0.5, precision=3, update=redraw_mol)
+  bond_index: IntProperty(name="Bond Index", default=-1, update=check_bond_index)
+  key_index: IntProperty(default=-1)
+  alert_string: StringProperty(default="")
 
 
 class MolMaker_OT_refresh_mol_def(bpy.types.Operator):
@@ -1493,38 +1493,38 @@ class MolMaker_OT_purge_by_reopen(bpy.types.Operator):
 
 
 class MCellMolMakerPropertyGroup(bpy.types.PropertyGroup):
-  molecule_texts_list = CollectionProperty(type=MolMakerFileNameProperty, name="Molecule Texts List")
-  molecule_text_name = StringProperty ( name = "Text name containing this molecule description (molcomp)" )
-  comp_loc_texts_list = CollectionProperty(type=MolMakerFileNameProperty, name="Component Location Texts List")
-  comp_loc_text_name = StringProperty ( name = "Text name containing optional component locations (rather than from CellBlender)" )
+  molecule_texts_list: CollectionProperty(type=MolMakerFileNameProperty, name="Molecule Texts List")
+  molecule_text_name: StringProperty ( name = "Text name containing this molecule description (molcomp)" )
+  comp_loc_texts_list: CollectionProperty(type=MolMakerFileNameProperty, name="Component Location Texts List")
+  comp_loc_text_name: StringProperty ( name = "Text name containing optional component locations (rather than from CellBlender)" )
 
-  molcomp_items = CollectionProperty(type=MolMakerMolCompProperty, name="MolCompList")
+  molcomp_items: CollectionProperty(type=MolMakerMolCompProperty, name="MolCompList")
 
-  molecule_definition = StringProperty ( name = "MolDef", description="Molecule Definition (such as: A.B.B.C)" )
+  molecule_definition: StringProperty ( name = "MolDef", description="Molecule Definition (such as: A.B.B.C)" )
 
-  make_materials = BoolProperty ( default=True )
-  cellblender_colors = BoolProperty ( default=True )
-  show_key_planes = BoolProperty ( default=True )
-  average_coincident = BoolProperty ( default=False )
-  axial_rotation = BoolProperty ( default=True )
-  bending_rotation = BoolProperty ( default=True )
-  dynamic_rotation = BoolProperty ( default=False )
-  print_debug = BoolProperty ( default=False )
+  make_materials: BoolProperty ( default=True )
+  cellblender_colors: BoolProperty ( default=True )
+  show_key_planes: BoolProperty ( default=True )
+  average_coincident: BoolProperty ( default=False )
+  axial_rotation: BoolProperty ( default=True )
+  bending_rotation: BoolProperty ( default=True )
+  dynamic_rotation: BoolProperty ( default=False )
+  print_debug: BoolProperty ( default=False )
 
-  show_text_interface = BoolProperty ( default=False )
-  show_string_interface = BoolProperty ( default=True )
+  show_text_interface: BoolProperty ( default=False )
+  show_string_interface: BoolProperty ( default=True )
 
 
-  skip_rotation = BoolProperty ( default=False )
-  skip_fixed_comp_index = IntProperty ( default=-1 )
-  skip_var_comp_index = IntProperty ( default=-1 )
+  skip_rotation: BoolProperty ( default=False )
+  skip_fixed_comp_index: IntProperty ( default=-1 )
+  skip_var_comp_index: IntProperty ( default=-1 )
 
   # c:a~NO_STATE!3,c:b~NO_STATE!3,c:c~NO_STATE!3,m:A@CP!0!1!2
   # c:a~NO_STATE!7,c:a~NO_STATE!6!5,c:b~NO_STATE!7,c:b~NO_STATE!6,c:c~NO_STATE!6,c:c~NO_STATE!7!1,m:A@CP!1!3!4,m:A@CP!0!2!5,
   # c:a~NO_STATE!7,c:a~NO_STATE!6!5,c:b~NO_STATE!7,c:b~NO_STATE!6,c:c~NO_STATE!6,c:c~NO_STATE!7!1,m:A@CP!1!3!4,m:A@CP!0!2!5, c:a~NO_STATE!7,c:a~NO_STATE!6!5,c:b~NO_STATE!7,c:b~NO_STATE!6,c:c~NO_STATE!6,c:c~NO_STATE!7!1,m:A@CP!1!3!4,m:A@CP!0!2!5,
-  nauty_string = StringProperty ( name = "NAUTY", default="c:a~x!19,c:a~st~y!16!11,c:a~NO_STATE!15!12,c:a~NO_STATE!17!13,c:a~NO_STATE!18!14,c:b~www!16,c:b~NO_STATE!15,c:b~NO_STATE!17,c:b~NO_STATE!18,c:b~NO_STATE!19,c:c~NO_STATE!16,c:c~NO_STATE!15!1,c:c~NO_STATE!17!2,c:c~NO_STATE!18!3,c:c~yyy!19!4,m:A@CP!2!6!11,m:A@CP!1!5!10,m:A@CP!3!7!12,m:A@CP!4!8!13,m:A@CP!0!9!14,",
+  nauty_string: StringProperty ( name = "NAUTY", default="c:a~x!19,c:a~st~y!16!11,c:a~NO_STATE!15!12,c:a~NO_STATE!17!13,c:a~NO_STATE!18!14,c:b~www!16,c:b~NO_STATE!15,c:b~NO_STATE!17,c:b~NO_STATE!18,c:b~NO_STATE!19,c:c~NO_STATE!16,c:c~NO_STATE!15!1,c:c~NO_STATE!17!2,c:c~NO_STATE!18!3,c:c~yyy!19!4,m:A@CP!2!6!11,m:A@CP!1!5!10,m:A@CP!3!7!12,m:A@CP!4!8!13,m:A@CP!0!9!14,",
                                   description="NAUTY String as defined by MCellR" )
-  bngl_string  = StringProperty ( name = "BNGL", description="BNGL String as defined by BioNetGen" )
+  bngl_string : StringProperty ( name = "BNGL", description="BNGL String as defined by BioNetGen" )
 
   def build_data_model_from_properties ( self ):
     mm_dict = {}
@@ -1784,8 +1784,8 @@ def add_cylinder_from_lpts ( p1, p2, radius=0.1, faces=8, caps=False ):
 
 
 def join_to_working_object ( context, working_obj ):
-  context.scene.objects.active = working_obj
-  working_obj.select = True
+  context.view_layer.objects.active = working_obj
+  working_obj.select_set(True)
   bpy.ops.object.join()
 
 
@@ -1840,9 +1840,10 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
       color[0] = 0.5
       color[1] = 0.0
       color[2] = 0.0
+      color[3] = 0.2
       mol_mat.specular_intensity = 0
-      mol_mat.use_transparency = True
-      mol_mat.alpha = 0.2
+#      mol_mat.use_transparency = True
+#      mol_mat.alpha = 0.2
 
   # Make an empty mesh
   mol_mesh = bpy.data.meshes.new ( "Mol Mesh" )
@@ -1855,10 +1856,10 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
   mol_obj = bpy.data.objects.new("Mol Object", mol_mesh)
 
   # Put the mesh into the scene and make active
-  context.scene.objects.link(mol_obj)
+  context.scene.collection.children[0].objects.link(mol_obj)
   bpy.ops.object.select_all ( action = "DESELECT" )
-  mol_obj.select = True
-  context.scene.objects.active = mol_obj
+  mol_obj.select_set(True)
+  context.view_layer.objects.active = mol_obj
 
   sphere_list = mol_data['SphereList']
   cylinder_list = mol_data['CylList']
@@ -1914,38 +1915,38 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
       NewMesh.materials.append ( mats.get("MolMaker_key_plane") )
       NewObj = bpy.data.objects.new("KeyObj", NewMesh)
       NewObj.show_transparent = True
-      context.scene.objects.link ( NewObj)
-      context.scene.objects.active = NewObj
-      for o in context.scene.objects:
-        o.select = False
-      context.scene.objects.active = NewObj
-      NewObj.select = True
+      context.scene.collection.children[0].objects.link ( NewObj)
+      context.view_layer.objects.active = NewObj
+      for o in context.scene.collection.children[0].objects:
+        o.select_set(False)
+      context.view_layer.objects.active = NewObj
+      NewObj.select_set(True)
       join_to_working_object ( context, mol_obj )
       mol_obj.show_transparent = True
 
 
+classes = ( 
+            MolMaker_OT_update_files,
+            MolMaker_OT_build_as_is,
+            MolMaker_OT_build_2D,
+            MolMaker_OT_build_3D,
+            MolMaker_OT_to_nauty,
+            MolMaker_OT_to_bngl,
+            MolMakerFileNameProperty,
+            MolMakerMolCompProperty,
+            MolMaker_OT_refresh_mol_def,
+            MolMaker_OT_chain_mols,
+            MolMaker_OT_build_struct,
+            MolMaker_OT_purge_by_reopen,
+            MCellMolMakerPropertyGroup,
+          )
 
-# We use per module class registration/unregistration
 def register():
-    bpy.utils.register_module(__name__)
-
+    for cls in classes:
+      bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 
-
-
-"""
-def register():
-  print ("Registering ", __name__)
-  bpy.utils.register_module(__name__)
-  bpy.types.Scene.molmaker = bpy.props.PointerProperty(type=MCellMolMakerPropertyGroup)
-#end register
-
-def unregister():
-  print ("Unregistering ", __name__)
-  del bpy.types.Scene.molmaker
-  bpy.utils.unregister_module(__name__)
-#end unregister
-"""
 

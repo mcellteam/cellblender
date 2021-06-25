@@ -7,6 +7,11 @@ import signal
 import subprocess as sp
 
 
+if not sys.warnoptions:
+  import warnings
+  warnings.simplefilter("ignore")
+
+
 def is_windows ():
 
     if os.name.startswith('posix'):

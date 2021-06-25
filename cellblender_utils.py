@@ -40,13 +40,13 @@ def timeline_view_all ( context ):
     if bpy.context.screen != None:
         for area in bpy.context.screen.areas:
             if area != None:
-                if area.type == 'TIMELINE':
+                if area.ui_type == 'TIMELINE':
                     for region in area.regions:
                         if region.type == 'WINDOW':
                             ctx = bpy.context.copy()
                             ctx['area'] = area
                             ctx['region'] = region
-                            bpy.ops.time.view_all(ctx)
+                            bpy.ops.action.view_all(ctx)
                             break  # It's not clear if this should break or continue ... breaking for now
 
 
@@ -78,20 +78,20 @@ def preserve_selection_use_operator(operator, new_obj):
     reselect the original selection state. This sounds silly but can be quite
     useful. """
 
-    object_list = bpy.context.scene.objects
-    selected_objs = [obj for obj in object_list if obj.select]
+    object_list = bpy.context.scene.collection.children[0].objects
+    selected_objs = [obj for obj in object_list if obj.select_get()]
     # Deselect everything currently selected, so the operator doesn't act on it
     for obj in selected_objs:
-        obj.select = False
+        obj.select_set(False)
     # Select the object we actually want the operator to act on, use it, and
     # deselect.
-    new_obj.select = True
+    new_obj.select_set(True)
     operator()
-    new_obj.select = False
+    new_obj.select_set(False)
     # It's annoying if operators change things they shouldn't, so let's restore
     # the originally select objects.
     for obj in selected_objs:
-        obj.select = True
+        obj.select_set(True)
 
 
 def check_val_str(val_str, min_val, max_val):
