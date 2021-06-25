@@ -447,7 +447,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="Debug Level", default=0, min=0, max=101,
         description="Amount of debug information to print: 0 to 100 (greater at your own risk)")
 
-    mcell4_mode = BoolProperty(
+    mcell4_mode: BoolProperty(
         name="MCell4 Mode", default=True,
         description="Use MCell4 for simulation")
     

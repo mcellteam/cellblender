@@ -782,7 +782,6 @@ classes = (
             MCELL_OT_load_lotka_volterra_diff_limited,
             MCELL_OT_load_fceri_mcell3r,
             MCELL_OT_load_lr_cbngl_mcell3r,
-            MCELL_OT_load_tlbr_mcell3r,
             MCELL_OT_load_schain_mcell3r,
             MCELL_OT_load_scoil_mcell3r,
             MCELL_OT_load_organelle,

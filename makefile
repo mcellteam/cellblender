@@ -85,7 +85,6 @@ cellblender.zip: cellblender $(SOURCES)
 clean:
 	rm -f cellblender.zip
 	(cd io_mesh_mcell_mdl ; make clean)
-	-(cd engine_runner_combos ; make clean)
 	-(cd sim_engines ; make clean)
 	-(cd sim_runners ; make clean)
 	-(cd data_plotters ; make clean)

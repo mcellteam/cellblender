@@ -64,7 +64,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         print ( "\n\nMCellInitializationPropertyGroup.__init__() called\n\n" )
 
     iterations: PointerProperty ( name="iterations", type=parameter_system.Parameter_Reference )
-    time_step =  PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
+    time_step:  PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
 
     status: StringProperty(name="Status")
     advanced: BoolProperty(default=False)

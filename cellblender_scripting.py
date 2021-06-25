@@ -1317,9 +1317,9 @@ classes = (
             MCELL_UL_scripting_item,
             MCELL_UL_mcell4_scripting_item,
             CellBlenderScriptingProperty,
+            CellBlenderMCell4ScriptingProperty,
             CellBlenderScriptProperty,
             CellBlenderScriptingPropertyGroup,
-            CellBlenderMCell4ScriptingProperty,
           )
 
 def register():
