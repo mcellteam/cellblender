@@ -716,7 +716,7 @@ def upgrade_properties_from_data_model ( context ):
     #           object_surface_regions.py
     #
     #del bpy.types.Object.mcell
-    #for obj in context.scene.objects:
+    #for obj in context.scene.collection.children[0].objects:
     #  if obj.get ( 'mcell' ):
     #    del obj['mcell']
     #    if obj.type == 'MESH':
@@ -778,7 +778,7 @@ def upgrade_RC3_properties_from_data_model ( context ):
       #           object_surface_regions.py
       #
       #del bpy.types.Object.mcell
-      #for obj in context.scene.objects:
+      #for obj in context.scene.collection.children[0].objects:
       #  if obj.get ( 'mcell' ):
       #    del obj['mcell']
       #    if obj.type == 'MESH':
@@ -963,15 +963,41 @@ try:
         self.layout.operator("cb.print_data_model", text="Print CellBlender Model (text)")
 
 
+    classes = (
+                TkBrowseDataModelFromProps,
+                RegenerateDataModelFromProps,
+                PrintDataModel,
+                PrintDataModelKeys,
+                ExportDataModel,
+                ExportDataModelAll,
+                ExportDataModelAllJSON,
+                ImportDataModel,
+                ImportDataModelAll,
+                ImportDataModelAllJSON,
+              )
+ 
+    def register():
+        for cls in classes:
+          bpy.utils.register_class(cls)
+        #bpy.types.TOPBAR_MT_file_export.append(menu_func_export_dm)
 
+    def unregister():
+        for cls in reversed(classes):
+          bpy.utils.unregister_class(cls)
+        #bpy.types.TOPBAR_MT_file_import.remove(menu_func_export_dm)
+
+    '''
     # We use per module class registration/unregistration
     def register():
         bpy.utils.register_module(__name__)
-        #bpy.types.INFO_MT_file_export.append(menu_func_export_dm)
-
+        #bpy.types.TOPBAR_MT_file_export.append(menu_func_export_dm)
+ 
     def unregister():
         bpy.utils.unregister_module(__name__)
-        #bpy.types.INFO_MT_file_import.remove(menu_func_export_dm)
+        #bpy.types.TOPBAR_MT_file_import.remove(menu_func_export_dm)
+    '''
+
+
 
 except:
     # Unable to import Blender classses

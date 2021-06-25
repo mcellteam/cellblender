@@ -19,16 +19,7 @@ import cellblender
 import bpy, bmesh
 import os
 import mathutils
-from bpy.props import BoolProperty
 from cellblender import examples
-
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
 
 
 def clear_texts():
@@ -96,7 +87,7 @@ def hide_manipulator ( hide=True ):
     # C.screen.areas[4].spaces[0].show_manipulator = False
     spaces = get_3d_view_spaces()
     for space in spaces:
-        space.show_manipulator = not hide
+        space.show_gizmo_tool = not hide
 
 
 def switch_to_perspective():
@@ -125,7 +116,7 @@ class MCELL_OT_load_lotka_volterra_rxn_limited(bpy.types.Operator):
         dm['mcell'] = examples.lv.lv_rxn_lim_dm
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
-        bpy.ops.view3d.viewnumpad(type='TOP')
+        bpy.ops.view3d.view_axis(type='TOP')
         hide_manipulator ( hide=True )
         return {'FINISHED'}
 
@@ -142,7 +133,7 @@ class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
         dm['mcell'] = examples.lv.lv_diff_lim_dm
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
-        bpy.ops.view3d.viewnumpad(type='TOP')
+        bpy.ops.view3d.view_axis(type='TOP')
         hide_manipulator ( hide=True )
         return {'FINISHED'}
 
@@ -189,7 +180,7 @@ class MCELL_OT_load_schain_mcell3r(bpy.types.Operator):
         dm['mcell'] = examples.simple_chain_mcell3r.simple_chain_mcell3r_dm
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
-        bpy.ops.view3d.viewnumpad(type='TOP')
+        bpy.ops.view3d.view_axis(type='TOP')
         hide_manipulator ( hide=True )
         return {'FINISHED'}
 
@@ -206,7 +197,7 @@ class MCELL_OT_load_scoil_mcell3r(bpy.types.Operator):
         dm['mcell'] = examples.simple_coil_mcell3r.simple_coil_mcell3r_dm
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
-        bpy.ops.view3d.viewnumpad(type='TOP')
+        bpy.ops.view3d.view_axis(type='TOP')
         hide_manipulator ( hide=True )
         return {'FINISHED'}
 
@@ -313,8 +304,8 @@ class MCELL_OT_load_pbc(bpy.types.Operator):
         cellblender.replace_data_model(dm, geometry=True)
         bpy.ops.view3d.snap_cursor_to_center()
         bpy.ops.mesh.primitive_cube_add()
-        bpy.context.scene.objects.active.scale = (0.5, 0.1, 0.1)
-        bpy.context.object.draw_type = 'WIRE'
+        bpy.context.view_layer.objects.active.scale = (0.5, 0.1, 0.1)
+        bpy.context.view_layer.objects.active.display_type = 'WIRE'
         view_all()
         
         # this is set when data model is imported but not for examples
@@ -419,8 +410,8 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
 
         # Select the Cube object (created by the data model)
         obj = bpy.data.objects['Cube']
-        obj.select = True
-        context.scene.objects.active = obj
+        obj.select_set(True)
+        context.view_layer.objects.active = obj
 
         # Remove all previous shape keys (otherwise this can't be run twice!!)
 
@@ -557,7 +548,7 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         area.type = old_type
 
         # Set the view to show the selected object
-        context.scene.update()
+        context.view_layer.update()
         view_all()
         # Return the current frame to 0 (small cube) after viewing large cube
         context.scene.frame_current = 0
@@ -584,17 +575,17 @@ class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
 
         # Default frame_start is 1, set to 0 to match model
         context.scene.frame_start = 0
-        context.scene.update()
+        context.view_layer.update()
 
         # Set the frame to 50 (large cube) so the view all operator will fit at max size (not really needed for scripting)
         context.scene.frame_current = 50
 
         # Set the view to show the selected object
-        context.scene.update()
+        context.view_layer.update()
 
         # Add a cube tepmorarily to use for centering the view
         bpy.ops.mesh.primitive_cube_add()
-        bpy.context.scene.objects.active.location.z = 3
+        bpy.context.view_layer.objects.active.location.z = 3
 
         view_all()
         # This zooming seems to have no effect
@@ -604,8 +595,8 @@ class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
         bpy.ops.object.delete(use_global=False)
 
         # Re-select the original cube
-        bpy.data.objects['Cube'].select = True                       # This selects it (enables manipulator on the object)
-        context.scene.objects.active = bpy.data.objects['Cube']      # This makes it active for material display etc
+        bpy.data.objects['Cube'].select_set(True)
+        context.view_layer.objects.active = bpy.data.objects['Cube']      # This makes it active for material display etc
 
         # Return the current frame to 0 (small cube) after viewing large cube (not really needed for scripting)
         context.scene.frame_current = 0
@@ -632,17 +623,17 @@ class MCELL_OT_load_dyn_geo_cc(bpy.types.Operator):
 
         # Default frame_start is 1, set to 0 to match model
         context.scene.frame_start = 0
-        context.scene.update()
+        context.view_layer.update()
 
         # Set the frame to 50 (large cube) so the view all operator will fit at max size (not really needed for scripting)
         context.scene.frame_current = 50
 
         # Set the view to show the selected object
-        context.scene.update()
+        context.view_layer.update()
 
         # Add a cube tepmorarily to use for centering the view
         bpy.ops.mesh.primitive_cube_add()
-        bpy.context.scene.objects.active.location.z = 3
+        bpy.context.view_layer.objects.active.location.z = 3
 
         view_all()
         # This zooming seems to have no effect
@@ -652,8 +643,8 @@ class MCELL_OT_load_dyn_geo_cc(bpy.types.Operator):
         bpy.ops.object.delete(use_global=False)
 
         # Re-select the original cube
-        bpy.data.objects['Cube'].select = True                       # This selects it (enables manipulator on the object)
-        context.scene.objects.active = bpy.data.objects['Cube']      # This makes it active for material display etc
+        bpy.data.objects['Cube'].select_set(True)
+        context.view_layer.objects.active = bpy.data.objects['Cube']      # This makes it active for material display etc
 
         # Return the current frame to 0 (small cube) after viewing large cube (not really needed for scripting)
         context.scene.frame_current = 0
@@ -693,8 +684,9 @@ class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
         # set it to be dynamic and make transparent
         bpy.context.scene.mcell.model_objects.object_list[0].dynamic = True
         bpy.data.objects["Cube"].show_transparent = True
-        bpy.data.materials["Cube_mat"].use_transparency = True
-        bpy.data.materials["Cube_mat"].alpha = 0.2
+#        bpy.data.materials["Cube_mat"].use_transparency = True
+#        bpy.data.materials["Cube_mat"].alpha = 0.2
+        bpy.data.materials["Cube_mat"].diffuse_color[3] = 0.2
         view_all()
         
         # this is set when data model is imported but not for examples
@@ -783,4 +775,41 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_schain_mcell3r")
             row = layout.row()
             row.operator("mcell.load_scoil_mcell3r")
+
+
+classes = ( 
+            MCELL_OT_load_lotka_volterra_rxn_limited,
+            MCELL_OT_load_lotka_volterra_diff_limited,
+            MCELL_OT_load_fceri_mcell3r,
+            MCELL_OT_load_lr_cbngl_mcell3r,
+            MCELL_OT_load_tlbr_mcell3r,
+            MCELL_OT_load_schain_mcell3r,
+            MCELL_OT_load_scoil_mcell3r,
+            MCELL_OT_load_organelle,
+            MCELL_OT_load_ficks_1D,
+            MCELL_OT_load_ficks_3D,
+            MCELL_OT_load_mind_mine,
+            MCELL_OT_load_rat_nmj,
+            MCELL_OT_load_pbc,
+            MCELL_OT_load_direct_transport,
+            MCELL_OT_load_delayed_transport,
+            MCELL_OT_load_direct_transport_bngl,
+            MCELL_OT_load_lipid_raft,
+            MCELL_OT_load_variable_rate_constant,
+            MCELL_OT_load_shape_key_dyn_geo,
+            MCELL_OT_load_scripted_dyn_geo,
+            MCELL_OT_load_dyn_geo_cc,
+            MCELL_OT_load_dynamic_geometry,
+            MCELL_PT_examples,
+            CellBlenderExamplesPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
+
 

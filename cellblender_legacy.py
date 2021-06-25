@@ -72,14 +72,6 @@ from . import data_model
 # python imports
 import os
 
-# we use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 class MCELL_OT_upgradeRC3(bpy.types.Operator):
     """This is the Upgrade operator called when the user presses the "Upgrade" button"""
@@ -865,7 +857,21 @@ class MCellLegacyGroup(bpy.types.PropertyGroup):
         #self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
 
         # Restore the RNA properties overlaying the ID Property 'mcell'
-        bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_main.MCellPropertyGroup)
+        bpy.types.Scene.mcell: PointerProperty(type=cellblender.cellblender_main.MCellPropertyGroup)
 
         return dm
+
+
+classes = ( 
+            MCELL_OT_upgradeRC3,
+            MCellLegacyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

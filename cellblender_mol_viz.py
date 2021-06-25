@@ -55,15 +55,6 @@ from cellblender.cellblender_utils import timeline_view_all
 from cellblender.cellblender_utils import mcell_files_path
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
-
 # Mol Viz Operators:
 
 
@@ -349,8 +340,8 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
     bl_description = "Read MCell Molecule Files for Visualization"
     bl_options = {'REGISTER'}
 
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
-    directory = bpy.props.StringProperty(subtype='DIR_PATH')
+    filepath: StringProperty(subtype='FILE_PATH', default="")
+    directory: StringProperty(subtype='DIR_PATH')
 
     def __init__(self):
         self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
@@ -488,15 +479,15 @@ def mol_viz_update(self, context):
         filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
 
         # Save current global_undo setting. Turn undo off to save memory
-        global_undo = bpy.context.user_preferences.edit.use_global_undo
-        bpy.context.user_preferences.edit.use_global_undo = False
+        global_undo = bpy.context.preferences.edit.use_global_undo
+        bpy.context.preferences.edit.use_global_undo = False
 
         mol_viz_clear(mcell)
         if mcell.mol_viz.mol_viz_enable:
             mol_viz_file_read(mcell, filepath)
 
         # Reset undo back to its original state
-        bpy.context.user_preferences.edit.use_global_undo = global_undo
+        bpy.context.preferences.edit.use_global_undo = global_undo
     return
 
 
@@ -505,7 +496,7 @@ def mol_viz_clear(mcell_prop, force_clear=False):
 
     mcell = mcell_prop
     scn = bpy.context.scene
-    scn_objs = scn.objects
+    scn_objs = bpy.context.scene.collection.children[0].objects
     meshes = bpy.data.meshes
     objs = bpy.data.objects
 
@@ -518,7 +509,7 @@ def mol_viz_clear(mcell_prop, force_clear=False):
         mol_name = mol_item.name
         mol_obj = scn_objs.get(mol_name)
         if mol_obj:
-            hide = mol_obj.hide
+            hide = mol_obj.hide_viewport
 
             mol_pos_mesh = mol_obj.data
             mol_pos_mesh_name = mol_pos_mesh.name
@@ -538,12 +529,12 @@ def mol_viz_clear(mcell_prop, force_clear=False):
             if mol_shape_obj:
                 mol_shape_obj.parent = mol_obj
 
-            mol_obj.dupli_type = 'VERTS'
-            mol_obj.use_dupli_vertices_rotation = True
+            mol_obj.instance_type = 'VERTS'
+            mol_obj.use_instance_vertices_rotation = True
             mols_obj = objs.get("molecules")
             mol_obj.parent = mols_obj
 
-            mol_obj.hide = hide
+            mol_obj.hide_viewport = hide
 
     # Reset mol_viz_list to empty
     for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
@@ -585,7 +576,7 @@ def old_mol_viz_file_read(mcell_prop, filepath):
                     ni.fromfile(mol_file, 1)
                     ns = array.array("B")
                     ns.fromfile(mol_file, ni[0])
-                    s = ns.tostring().decode()
+                    s = ns.tobytes().decode()
                     mol_name = "mol_%s" % (s)
                     mt = array.array("B")
                     mt.fromfile(mol_file, 1)
@@ -650,7 +641,7 @@ def old_mol_viz_file_read(mcell_prop, filepath):
             mats = bpy.data.materials
             objs = bpy.data.objects
             scn = bpy.context.scene
-            scn_objs = scn.objects
+            scn_objs = bpy.context.scene.collection.children[0].objects
             z_axis = mathutils.Vector((0.0, 0.0, 1.0))
             #ident_mat = mathutils.Matrix.Translation(
             #    mathutils.Vector((0.0, 0.0, 0.0)))
@@ -712,11 +703,11 @@ def old_mol_viz_file_read(mcell_prop, filepath):
                     mol_obj = objs.new(mol_name, mol_pos_mesh)
                     scn_objs.link(mol_obj)
                     mol_shape_obj.parent = mol_obj
-                    mol_obj.dupli_type = 'VERTS'
-                    mol_obj.use_dupli_vertices_rotation = True
+                    mol_obj.instance_type = 'VERTS'
+                    mol_obj.use_instance_vertices_rotation = True
                     mol_obj.parent = mols_obj
 
-#        scn.update()
+#        bpy.context.view_layer.update()
 
 #        utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
 #        print ("     Processed %d molecules in %g seconds\n" % (
@@ -761,7 +752,7 @@ def mol_viz_file_dump(filepath):
                     ni.fromfile(mol_file, 1)       # Read one byte which is the number of characters in the molecule name
                     ns = array.array("B")          # Create another byte array to hold the molecule name
                     ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
-                    s = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
+                    s = ns.tobytes().decode()     # Decode bytes as ASCII into a string (s)
                     mol_name = "mol_%s" % (s)      # Construct name of blender molecule viz object
                     mt = array.array("B")          # Create a byte array for the molecule type
                     mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
@@ -908,7 +899,7 @@ def mol_viz_file_read(mcell, filepath):
                     
                     ns = array.array("B")          # Create another byte array to hold the molecule name
                     ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
-                    mol_name_from_file = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
+                    mol_name_from_file = ns.tobytes().decode()     # Decode bytes as ASCII into a string (s)
                     
                     mt = array.array("B")          # Create a byte array for the molecule type
                     mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
@@ -1011,14 +1002,14 @@ def mol_viz_file_read(mcell, filepath):
             mols_obj = bpy.context.selected_objects[0]  # The newly added object will be selected
             mols_obj.name = "molecules"                 # Name this empty object "molecules"
             mols_obj.hide_select = True
-            mols_obj.hide = True
+            mols_obj.hide_viewport = True
 
         if mol_dict:
             meshes = bpy.data.meshes
             mats = bpy.data.materials
             objs = bpy.data.objects
             scn = bpy.context.scene
-            scn_objs = scn.objects
+            scn_objs = bpy.context.scene.collection.children[0].objects
             z_axis = mathutils.Vector((0.0, 0.0, 1.0))
             #ident_mat = mathutils.Matrix.Translation(
             #    mathutils.Vector((0.0, 0.0, 0.0)))
@@ -1074,9 +1065,11 @@ def mol_viz_file_read(mcell, filepath):
 
                 # Save the current layer(s) that the molecule positions are on.
                 # We'll apply this to the new position and glyph objects later.
+                '''
                 mol_layers = None
                 if not (mol_shape_obj is None):
                     mol_layers = mol_shape_obj.layers[:]
+                '''
 
                 # Look-up material, create if needed.
                 # Associate material with mesh shape.
@@ -1088,7 +1081,7 @@ def mol_viz_file_read(mcell, filepath):
                     if mcell.mol_viz.color_list:
                         mol_mat.diffuse_color = mcell.mol_viz.color_list[mcell.mol_viz.color_index].vec
                     else:
-                        mol_mat.diffuse_color = (1, 0, 0)
+                        mol_mat.diffuse_color = (1, 0, 0, 1)
                         
                     mcell.mol_viz.color_index = mcell.mol_viz.color_index + 1
                     if (mcell.mol_viz.color_index >
@@ -1122,7 +1115,7 @@ def mol_viz_file_read(mcell, filepath):
                 # Save the molecule's visibility state, so it can be restored later
                 mol_obj = objs.get(mol_name)
                 if mol_obj:
-                    hide = mol_obj.hide
+                    hide = mol_obj.hide_viewport
                     scn_objs.unlink(mol_obj)
                     objs.remove(mol_obj)
                 else:
@@ -1132,24 +1125,27 @@ def mol_viz_file_read(mcell, filepath):
                 mol_obj = objs.new(mol_name, mol_pos_mesh)
                 scn_objs.link(mol_obj)
                 mol_shape_obj.parent = mol_obj
-                mol_obj.dupli_type = 'VERTS'
-                mol_obj.use_dupli_vertices_rotation = True
+                mol_obj.instance_type = 'VERTS'
+                mol_obj.use_instance_vertices_rotation = True
                 mol_obj.parent = mols_obj
                 mol_obj.hide_select = True
+
+                '''
                 if (not (mol_obj is None)) and (not (mol_shape_obj is None)):
                     mol_obj.layers = mol_layers[:]
                     mol_shape_obj.layers = mol_layers[:]
+                '''
 
                 # Restore the visibility state
-                mol_obj.hide = hide
+                mol_obj.hide_viewport = hide
 
                 """
                 if mol_obj:
                     if (mol_name == "mol_volume_proxy") or (mol_name == "mol_surface_proxy"):
                         if mcell.cellblender_preferences.bionetgen_mode and not mcell.cellblender_preferences.show_mcellr_proxies:
-                            mol_obj.hide = True
+                            mol_obj.hide_viewport = True
                         else:
-                            mol_obj.hide = False
+                            mol_obj.hide_viewport = False
                 """
 
 
@@ -1204,9 +1200,9 @@ class MCELL_UL_visualization_export_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            layout.label(text=item.name, icon='CHECKMARK')
 
         # Don't bother showing individual export option if the user has already
         # asked to export everything
@@ -1232,7 +1228,7 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
 
 class MolVizStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
-    name = StringProperty(name="Text")
+    name: StringProperty(name="Text")
     def remove_properties ( self, context ):
         #print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
         pass
@@ -1240,7 +1236,7 @@ class MolVizStringProperty(bpy.types.PropertyGroup):
 
 class MCellFloatVectorProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold float vector for a CollectionProperty """
-    vec = bpy.props.FloatVectorProperty(name="Float Vector")
+    vec: FloatVectorProperty(name="Float Vector")
     def remove_properties ( self, context ):
         #print ( "Removing an MCell Float Vector Property... no collections to remove. Is there anything special do to for Vectors?" )
         pass
@@ -1277,7 +1273,7 @@ def select_test_case_callback(self, context):
     bpy.ops.mcell.read_viz_data()
 
 class DynamicChoicePropGroup(bpy.types.PropertyGroup):
-    enum_choice = EnumProperty( name="Parameter Value", description="Dynamic List of Choices.", items=generate_choices_callback, update=select_test_case_callback )
+    enum_choice: EnumProperty( name="Parameter Value", description="Dynamic List of Choices.", items=generate_choices_callback, update=select_test_case_callback )
 
 def update_available_viz_scripts ( mol_viz ):
 
@@ -1316,7 +1312,7 @@ class MCELL_OT_viz_script_refresh(bpy.types.Operator):
 
 
 class VizScriptProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="Script")
+    name: StringProperty(name="Script")
 
 class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
     """ Property group for for molecule visualization.
@@ -1325,58 +1321,58 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
     """
 
-    mol_viz_seed_list = CollectionProperty(
+    mol_viz_seed_list: CollectionProperty(
         type=MolVizStringProperty, name="Visualization Seed List")
-    active_mol_viz_seed_index = IntProperty(
+    active_mol_viz_seed_index: IntProperty(
         name="Current Visualization Seed Index", default=0,
         update=read_viz_data_callback)
-    mol_file_dir = StringProperty(
+    mol_file_dir: StringProperty(
         name="Molecule File Dir", subtype='NONE')
-    mol_file_list = CollectionProperty(
+    mol_file_list: CollectionProperty(
         type=MolVizStringProperty, name="Molecule File Name List")
-    mol_file_num = IntProperty(
+    mol_file_num: IntProperty(
         name="Number of Molecule Files", default=0)
-    mol_file_name = StringProperty(
+    mol_file_name: StringProperty(
         name="Current Molecule File Name", subtype='NONE')
-    mol_file_index = IntProperty(name="Current Molecule File Index", default=0)
-    mol_file_start_index = IntProperty(
+    mol_file_index: IntProperty(name="Current Molecule File Index", default=0)
+    mol_file_start_index: IntProperty(
         name="Molecule File Start Index", default=0)
-    mol_file_stop_index = IntProperty(
+    mol_file_stop_index: IntProperty(
         name="Molecule File Stop Index", default=0)
-    mol_file_step_index = IntProperty(
+    mol_file_step_index: IntProperty(
         name="Molecule File Step Index", default=1)
-    mol_viz_list = CollectionProperty(
+    mol_viz_list: CollectionProperty(
         type=MolVizStringProperty, name="Molecule Viz Name List")
-    render_and_save = BoolProperty(name="Render & Save Images")
-    mol_viz_enable = BoolProperty(
+    render_and_save: BoolProperty(name="Render & Save Images")
+    mol_viz_enable: BoolProperty(
         name="Enable Molecule Vizualization",
         description="Disable for faster animation preview",
         default=True, update=mol_viz_update)
-    molecule_read_in = BoolProperty(name = "Define molecules from Viz Data.",default= False)
-    color_list = CollectionProperty(
+    molecule_read_in: BoolProperty(name = "Define molecules from Viz Data.",default= False)
+    color_list: CollectionProperty(
         type=MCellFloatVectorProperty, name="Molecule Color List")
-    color_index = IntProperty(name="Color Index", default=0)
-    manual_select_viz_dir = BoolProperty(
+    color_index: IntProperty(name="Color Index", default=0)
+    manual_select_viz_dir: BoolProperty(
         name="Manually Select Viz Directory", default=False,
         description="Toggle the option to manually load viz data.",
         update=mol_viz_toggle_manual_select)
 
-    internal_viz_file_name = StringProperty ( name = "Internal Viz Program" )
-    internal_viz_scripts_list = CollectionProperty(type=VizScriptProperty, name="Viz Internal Scripts")
+    internal_viz_file_name: StringProperty ( name = "Internal Viz Program" )
+    internal_viz_scripts_list: CollectionProperty(type=VizScriptProperty, name="Viz Internal Scripts")
 
     viz_code_enum = [
         ('standard',  "Standard Visualization", ""),
         ('custom',    "Custom Visualization", ""),
         ('both',      "Both Standard and Custom",  "")]
-    viz_code = bpy.props.EnumProperty (
+    viz_code: EnumProperty (
         items=viz_code_enum, name="Visualization Code",
         default='standard',
         description="Visualization Processing Code Selection" )
 
-    frame_file_name = StringProperty(description="Place to store the file name")
+    frame_file_name: StringProperty(description="Place to store the file name")
 
-    #mol_viz_sweep_list = CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
-    choices_list = CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
+    #mol_viz_sweep_list: CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
+    choices_list: CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
 
 
     def build_data_model_from_properties ( self, context ):
@@ -1698,15 +1694,15 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
 
 class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
-    active_mol_viz_index = IntProperty(
+    active_mol_viz_index: IntProperty(
         name="Active Molecule Viz Index", default=0)
-    all_iterations = bpy.props.BoolProperty(
+    all_iterations: BoolProperty(
         name="All Iterations",
         description="Include all iterations for visualization.", default=True)
-    start = PointerProperty ( name="Start", type=parameter_system.Parameter_Reference )
-    end = PointerProperty ( name="End", type=parameter_system.Parameter_Reference )
-    step = PointerProperty ( name="Step", type=parameter_system.Parameter_Reference )
-    export_all = BoolProperty(
+    start: PointerProperty ( name="Start", type=parameter_system.Parameter_Reference )
+    end: PointerProperty ( name="End", type=parameter_system.Parameter_Reference )
+    step: PointerProperty ( name="Step", type=parameter_system.Parameter_Reference )
+    export_all: BoolProperty(
         name="Export All",
         description="Visualize all molecules",
         default=True)
@@ -1804,5 +1800,31 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
+
+
+classes = ( 
+            MCELL_OT_update_data_layout,
+            MCELL_OT_read_viz_data,
+            MCELL_OT_select_viz_data,
+            MCELL_OT_mol_viz_set_index,
+            MCELL_PT_viz_results,
+            MCELL_UL_visualization_export_list,
+            MCELL_PT_visualization_output_settings,
+            MolVizStringProperty,
+            MCellFloatVectorProperty,
+            DynamicChoicePropGroup,
+            MCELL_OT_viz_script_refresh,
+            VizScriptProperty,
+            MCellMolVizPropertyGroup,
+            MCellVizOutputPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 
 

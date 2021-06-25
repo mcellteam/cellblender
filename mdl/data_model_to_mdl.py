@@ -1492,8 +1492,9 @@ def write_mdl ( dm, file_name, scene_name='Scene', fail_on_error=False ):
                         import mathutils
 
                         geom_obj = context.scene.objects[obj['name']]
-                        mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
-                        mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
+#                        mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+                         mesh = geom_obj.to_mesh(preserve_all_data_layers=True, depsgraph=context.evaluated_depsgraph_get())
+                        mesh.transform(mathutils.Matrix() @ geom_obj.matrix_world)
                         points = [v.co for v in mesh.vertices]
                         faces = [f.vertices for f in mesh.polygons]
                         regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
@@ -1923,8 +1924,9 @@ def write_static_geometry ( objs, geom, dm, f ):
                   import mathutils
 
                   geom_obj = context.scene.objects[obj['name']]
-                  mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
-                  mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
+#                  mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+                   mesh = geom_obj.to_mesh(preserve_all_data_layers=True, depsgraph=context.evaluated_depsgraph_get())
+                  mesh.transform(mathutils.Matrix() @ geom_obj.matrix_world)
                   points = [v.co for v in mesh.vertices]
                   faces = [f.vertices for f in mesh.polygons]
                   regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)

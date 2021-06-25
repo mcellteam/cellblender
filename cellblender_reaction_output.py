@@ -52,14 +52,6 @@ from . import cellblender_pbc
 from cellblender.cellblender_utils import project_files_path, mcell_files_path, get_python_path
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
 
 # Reaction Output Operators:
 
@@ -487,9 +479,9 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                                 mol_color = mats.get(mol_mat_name).diffuse_color
                                 #print("Molecule color = ", mol_mat.diffuse_color)
 
-                                mol_color_red = int(255 * mol_color.r)
-                                mol_color_green = int(255 * mol_color.g)
-                                mol_color_blue = int(255 * mol_color.b)
+                                mol_color_red = int(255 * mol_color[0])
+                                mol_color_green = int(255 * mol_color[1])
+                                mol_color_blue = int(255 * mol_color[2])
                                 color_string = " color=#%2.2x%2.2x%2.2x " % (
                                     mol_color_red, mol_color_green, mol_color_blue)
 
@@ -641,18 +633,18 @@ def update_name_and_check_rxn_output(self, context):
 class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if item.status:
-            layout.label(item.status, icon='ERROR')
+            layout.label(text=item.status, icon='ERROR')
         else:
             col = layout.column()
             if item.plotting_enabled:
-                col.label(item.name, icon='FILE_TICK')
+                col.label(text=item.name, icon='CHECKMARK')
             else:
                 col.label(item.name, icon='BLANK1')
             col = layout.column()
             if item.plotting_enabled:
-                col.prop(item, "plotting_enabled", text="", icon='RESTRICT_VIEW_OFF')
+                col.prop(item, "plotting_enabled", text="", icon='HIDE_OFF')
             else:
-                col.prop(item, "plotting_enabled", text="", icon='RESTRICT_VIEW_ON')
+                col.prop(item, "plotting_enabled", text="", icon='HIDE_ON')
 
 
 class MCELL_PT_reaction_output_settings(bpy.types.Panel):
@@ -672,36 +664,36 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
 
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):
-    name = StringProperty(
+    name: StringProperty(
         name="Reaction Output", update=check_rxn_output)
-    description = StringProperty(name="Description", default="")
-    molecule_name = StringProperty(
+    description: StringProperty(name="Description", default="")
+    molecule_name: StringProperty(
         name="Molecule",
         description="Count the selected molecule.",
         update=check_rxn_output)
-    reaction_name = StringProperty(
+    reaction_name: StringProperty(
         name="Reaction",
         description="Count the selected reaction.",
         update=check_rxn_output)
     # allows the user to define a literal mdl string to count using complex expressions. E.g. 2*S1 
-    mdl_string = StringProperty(
+    mdl_string: StringProperty(
         name="MDL Definition",
         description="Count using a literal MDL definition.",
         update=update_name_and_check_rxn_output)
-    mdl_file_prefix = StringProperty(
+    mdl_file_prefix: StringProperty(
         name="MDL File Prefix",
         description="Prefix name for this file." )
-    data_file_name = StringProperty ( name = "Data File Name", subtype='FILE_PATH', default="", description="Data File to Plot.", update=check_rxn_output )
+    data_file_name: StringProperty ( name = "Data File Name", subtype='FILE_PATH', default="", description="Data File to Plot.", update=check_rxn_output )
 
-    object_name = StringProperty(
+    object_name: StringProperty(
         name="Object", update=check_rxn_output)
-    region_name = StringProperty(
+    region_name: StringProperty(
         name="Region", update=check_rxn_output)
     count_location_enum = [
         ('World', "World", ""),
         ('Object', "Object", ""),
         ('Region', "Region", "")]
-    count_location = bpy.props.EnumProperty(
+    count_location: EnumProperty(
         items=count_location_enum, name="Count Location",
         description="Count all molecules in the selected location.",
         update=check_rxn_output)
@@ -710,21 +702,21 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         ('Molecule', "Molecule", ""),
         ('MDLString', "MDLString", ""),
         ('File', "File", "")]
-    rxn_or_mol = bpy.props.EnumProperty(
+    rxn_or_mol: EnumProperty(
         items=rxn_or_mol_enum, name="Count Reaction or Molecule",
         default='Molecule',
         description="Select between counting a reaction or molecule.",
         update=update_name_and_check_rxn_output)
 
-    plotting_enabled = BoolProperty ( default=True, description="Enable this item in plotting output" )
+    plotting_enabled: BoolProperty ( default=True, description="Enable this item in plotting output" )
 
-    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
-    mdl_string_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
-    mdl_file_prefix_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
-    data_file_name_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
+    description_show_help: BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    mdl_string_show_help: BoolProperty ( default=False, description="Toggle more information about this item" )
+    mdl_file_prefix_show_help: BoolProperty ( default=False, description="Toggle more information about this item" )
+    data_file_name_show_help: BoolProperty ( default=False, description="Toggle more information about this item" )
 
-    # plot_command = StringProperty(name="Command")  # , update=check_rxn_output)
-    status = StringProperty(name="Status")
+    # plot_command: StringProperty(name="Command")  # , update=check_rxn_output)
+    status: StringProperty(name="Status")
 
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output building Data Model" )
@@ -839,36 +831,36 @@ def get_plotters_as_items(scene, context):
 
 class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
-    rxn_step = PointerProperty ( name="Step",
+    rxn_step: PointerProperty ( name="Step",
         type=parameter_system.Parameter_Reference )
-    output_buf_size = PointerProperty ( name="OutBufSize",
+    output_buf_size: PointerProperty ( name="OutBufSize",
         type=parameter_system.Parameter_Reference )
-    active_rxn_output_index = IntProperty(
+    active_rxn_output_index: IntProperty(
         name="Active Reaction Output Index", default=0)
-    virt_x   = bpy.props.IntProperty(name="X Position", default=0,
+    virt_x  : IntProperty(name="X Position", default=0,
         description="The X coordinate of the Virtual Box")
-    virt_y   = bpy.props.IntProperty(name="Y Position", default=0,
+    virt_y  : IntProperty(name="Y Position", default=0,
         description="The Y coordinate of the Virtual Box")
-    virt_z   = bpy.props.IntProperty(name="Z Position", default=0,
+    virt_z  : IntProperty(name="Z Position", default=0,
         description="The Z coordinate of the Virtual Box")
-    all_enc  = BoolProperty(name="Enable All enclosed", default = False, 
+    all_enc : BoolProperty(name="Enable All enclosed", default = False, 
         description = 'Count all molecules or reactions that occur in the area enclosed by region ')
-    est_conc = BoolProperty(name="Enable Estimate Concentration", default = False, 
+    est_conc: BoolProperty(name="Enable Estimate Concentration", default = False, 
         description = 'Estimate the concentration of the volume molecule at that region, averaged since the beginning of the simulation.')
-    trig  = BoolProperty(name = "Enable Triggers", default = False, description= "Tags molecules with their locations")
-    fr_bk = BoolProperty(name = "Show Hits/Crossings options",default = False)
-    hit_back    = BoolProperty(name = "BACK_HITS",default = False)
-    hit_front   = BoolProperty(name = "FRONT_HITS",default = False)
-    hit_all     = BoolProperty(name = "ALL_HITS",default = False)
-    cross_front = BoolProperty(name = "FRONT_CROSSINGS",default = False)
-    cross_back  = BoolProperty(name = "BACK_CROSSINGS",default = False)
-    cross_all   = BoolProperty(name = "ALL_CROSSINGS",default = False)
-    rxn_output_list = CollectionProperty(type=MCellReactionOutputProperty, name="Reaction Output List")
+    trig : BoolProperty(name = "Enable Triggers", default = False, description= "Tags molecules with their locations")
+    fr_bk: BoolProperty(name = "Show Hits/Crossings options",default = False)
+    hit_back   : BoolProperty(name = "BACK_HITS",default = False)
+    hit_front  : BoolProperty(name = "FRONT_HITS",default = False)
+    hit_all    : BoolProperty(name = "ALL_HITS",default = False)
+    cross_front: BoolProperty(name = "FRONT_CROSSINGS",default = False)
+    cross_back : BoolProperty(name = "BACK_CROSSINGS",default = False)
+    cross_all  : BoolProperty(name = "ALL_CROSSINGS",default = False)
+    rxn_output_list: CollectionProperty(type=MCellReactionOutputProperty, name="Reaction Output List")
     plot_layout_enum = [
         (' page ', "Separate Page for each Plot", ""),
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
-    plot_layout = bpy.props.EnumProperty ( 
+    plot_layout: EnumProperty ( 
         items=plot_layout_enum, name="", 
         description="Select the Page and Plot Layout",
         default=' plot ' )
@@ -885,34 +877,34 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         ('8', "Legend in Lower Center", ""),
         ('9', "Legend in Upper Center", ""),
         ('10', "Legend in Center", "")]
-    plot_legend = bpy.props.EnumProperty ( 
+    plot_legend: EnumProperty ( 
         items=plot_legend_enum, name="", 
         description="Select the Legend Display and Placement",
         default='0' )
-    combine_seeds = BoolProperty(
+    combine_seeds: BoolProperty(
         name="Combine Seeds",
         description="Combine all seeds onto the same plot.",
         default=True)
-    mol_colors = BoolProperty(
+    mol_colors: BoolProperty(
         name="Molecule Colors",
         description="Use Molecule Colors for line colors.",
         default=False)
-    #use_sweep = BoolProperty(
+    #use_sweep: BoolProperty(
     #    name="Use Sweep",
     #    description="Plot from the sweep file.",
     #    default=False)
-    plotter_to_use = EnumProperty(
+    plotter_to_use: EnumProperty(
         name="", # "Plot with:",
         description="Plotter to use.",
         items=get_plotters_as_items )
 
-    always_generate = BoolProperty(
+    always_generate: BoolProperty(
         name="Always Generate All Plot Data",
         description="Generate All Plot Data Regardless of Current View Setting",
         default=True)
 
 
-    ignore_start_time = BoolProperty(
+    ignore_start_time: BoolProperty(
         name="Ignore Start Time",
         description="Ignore the start_time.txt file when plotting.",
         default=False)
@@ -1049,13 +1041,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                 col = row.column(align=False)
                 # Use subcolumns to group logically related buttons together
                 subcol = col.column(align=True)
-                subcol.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
-                subcol.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
+                subcol.operator("mcell.rxn_output_add", icon='ADD', text="")
+                subcol.operator("mcell.rxn_output_remove", icon='REMOVE', text="")
                 subcol = col.column(align=True)
                 subcol.operator("mcell.rxn_out_all_world", icon='PLUS', text="")
                 subcol = col.column(align=True)
-                subcol.operator("mcell.rxn_output_enable_all", icon='RESTRICT_VIEW_OFF', text="")
-                subcol.operator("mcell.rxn_output_disable_all", icon='RESTRICT_VIEW_ON', text="")
+                subcol.operator("mcell.rxn_output_enable_all", icon='HIDE_OFF', text="")
+                subcol.operator("mcell.rxn_output_disable_all", icon='HIDE_ON', text="")
                 subcol = col.column(align=True)
                 if self.always_generate:
                     subcol.prop ( self, "always_generate", icon='EXPORT', text="" )
@@ -1121,7 +1113,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                         rxn_output.object_name].mcell.regions
                                     layout.prop_search(rxn_output, "region_name",
                                                        regions, "region_list",
-                                                       icon='FACESEL_HLT')                                      
+                                                       icon='FACESEL')                                      
                                 except KeyError:
                                     pass                                           
                             if rxn_output.count_location != "World":
@@ -1226,4 +1218,25 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         layout = panel.layout
         self.draw_layout ( context, layout )
 
+
+classes = ( 
+            MCELL_OT_rxn_output_add,
+            MCELL_OT_rxn_output_remove,
+            MCELL_OT_rxn_output_disable_all,
+            MCELL_OT_rxn_output_enable_all,
+            MCELL_OT_add_all_world,
+            MCELL_OT_plot_rxn_output_with_selected,
+            MCELL_UL_check_reaction_output_settings,
+            MCELL_PT_reaction_output_settings,
+            MCellReactionOutputProperty,
+            MCellReactionOutputPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

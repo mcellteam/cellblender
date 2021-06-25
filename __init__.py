@@ -24,15 +24,15 @@ bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol, Dipak Barua, Jacob Czech, Markus Dittrich, "
         "James Faeder, Bob Kuczewski, Devin Sullivan, Jose Juan Tapia",
-    "version": (1, 2, 0),
-    "blender": (2, 72, 0),
-    "api": 55057,
-    "location": "View3D -> ToolShelf -> CellBlender",
+    "version": (2, 0, 0),
+    "blender": (2, 93, 0),
+#    "api": 55057,
+    "location": "View3D -> UI -> CellBlender",
     "description": "CellBlender Modeling System for MCell",
     "warning": "",
     "wiki_url": "http://www.mcell.org",
     "tracker_url": "https://github.com/mcellteam/cellblender/issues",
-    "category": "Cell Modeling"
+    "category": "Cell Modeling",
 }
 
 from cellblender import cellblender_source_info
@@ -51,16 +51,16 @@ if "bpy" in locals():
     print("Reloading CellBlender")
     import imp
     imp.reload(data_model)
-
     imp.reload(cellblender_main)
-
+    imp.reload(cellblender_utils)
+    imp.reload(cellblender_examples)
     imp.reload(parameter_system)
     imp.reload(cellblender_preferences)
     imp.reload(cellblender_project)
     imp.reload(cellblender_initialization)
-
     imp.reload(cellblender_scripting)
     imp.reload(cellblender_objects)
+    imp.reload(cellblender_pbc)
     imp.reload(cellblender_molecules)
     imp.reload(cellblender_molmaker)
     imp.reload(cellblender_reactions)
@@ -91,6 +91,8 @@ else:
     from . import data_model
 
     from . import cellblender_main
+    from . import cellblender_utils
+    from . import cellblender_examples
 
     from . import parameter_system
     from . import cellblender_preferences
@@ -99,6 +101,7 @@ else:
 
     from . import cellblender_scripting
     from . import cellblender_objects
+    from . import cellblender_pbc
     from . import cellblender_molecules
     from . import cellblender_molmaker
     from . import cellblender_reactions
@@ -198,12 +201,40 @@ def remove_handler ( handler_list, handler_function ):
         handler_list.remove ( handler_function )
 
 
+def cb_register():
+    parameter_system.register()
+    cellblender_examples.register()
+    cellblender_preferences.register()
+    cellblender_scripting.register()
+    cellblender_project.register()
+    cellblender_simulation.register()
+    cellblender_initialization.register()
+    cellblender_pbc.register()
+    cellblender_objects.register()
+    cellblender_molecules.register()
+    cellblender_molmaker.register()
+    cellblender_reactions.register()
+    cellblender_release.register()
+    cellblender_surface_classes.register()
+    cellblender_surface_regions.register()
+    cellblender_reaction_output.register()
+    cellblender_partitions.register()
+    cellblender_mol_viz.register()
+    cellblender_meshalyzer.register()
+    cellblender_legacy.register()
+    object_surface_regions.register()
+    io_mesh_mcell_mdl.register()
+    mdl.register()
+    bng.register()
+    cellblender_main.register()
+    data_model.register()
 
 
 # We use per module class registration/unregistration
 def register():
     print ( "Registering CellBlender with Blender version = " + str(bpy.app.version) )
-    bpy.utils.register_module(__name__, verbose=False)
+    #bpy.utils.register_module(__name__, verbose=False)
+    cb_register()
 
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
@@ -246,43 +277,43 @@ def register():
 #    bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_visualization_output_settings)
 
     # Remove all menu items first to avoid duplicates
-    bpy.types.INFO_MT_file_import.remove(io_mesh_mcell_mdl.menu_func_import)
-    bpy.types.INFO_MT_file_export.remove(io_mesh_mcell_mdl.menu_func_export)
-    bpy.types.INFO_MT_file_import.remove(mdl.menu_func_import)
-    bpy.types.INFO_MT_file_import.remove(bng.menu_func_bng_import)
-    bpy.types.INFO_MT_file_import.remove(bng.menu_func_cbng_import)
-    bpy.types.INFO_MT_file_import.remove(data_model.menu_func_import)
-    bpy.types.INFO_MT_file_export.remove(data_model.menu_func_export)
-    bpy.types.INFO_MT_file_import.remove(data_model.menu_func_import_all)
-    bpy.types.INFO_MT_file_export.remove(data_model.menu_func_export_all)
-    bpy.types.INFO_MT_file_import.remove(data_model.menu_func_import_all_json)
-    bpy.types.INFO_MT_file_export.remove(data_model.menu_func_export_all_json)
-    bpy.types.INFO_MT_file_export.remove(data_model.menu_func_print)
+    bpy.types.TOPBAR_MT_file_import.remove(io_mesh_mcell_mdl.menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.remove(io_mesh_mcell_mdl.menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.remove(mdl.menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.remove(bng.menu_func_bng_import)
+    bpy.types.TOPBAR_MT_file_import.remove(bng.menu_func_cbng_import)
+    bpy.types.TOPBAR_MT_file_import.remove(data_model.menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.remove(data_model.menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.remove(data_model.menu_func_import_all)
+    bpy.types.TOPBAR_MT_file_export.remove(data_model.menu_func_export_all)
+    bpy.types.TOPBAR_MT_file_import.remove(data_model.menu_func_import_all_json)
+    bpy.types.TOPBAR_MT_file_export.remove(data_model.menu_func_export_all_json)
+    bpy.types.TOPBAR_MT_file_export.remove(data_model.menu_func_print)
 
 
     # Now reinstall all menu items
-    bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
-    bpy.types.INFO_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
 
 
     # BK: Added for MDL import
-    bpy.types.INFO_MT_file_import.append(mdl.menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.append(mdl.menu_func_import)
 
     # DB: Added for BioNetGen import
-    bpy.types.INFO_MT_file_import.append(bng.menu_func_bng_import)
-    bpy.types.INFO_MT_file_import.append(bng.menu_func_cbng_import)
+    bpy.types.TOPBAR_MT_file_import.append(bng.menu_func_bng_import)
+    bpy.types.TOPBAR_MT_file_import.append(bng.menu_func_cbng_import)
 
     #JJT: And SBML import
-    #bpy.types.INFO_MT_file_import.append(sbml.menu_func_import)
+    #bpy.types.TOPBAR_MT_file_import.append(sbml.menu_func_import)
 
     # BK: Added for Data Model import and export
-    bpy.types.INFO_MT_file_import.append(data_model.menu_func_import)
-    bpy.types.INFO_MT_file_export.append(data_model.menu_func_export)
-    bpy.types.INFO_MT_file_import.append(data_model.menu_func_import_all)
-    bpy.types.INFO_MT_file_export.append(data_model.menu_func_export_all)
-    bpy.types.INFO_MT_file_import.append(data_model.menu_func_import_all_json)
-    bpy.types.INFO_MT_file_export.append(data_model.menu_func_export_all_json)
-    bpy.types.INFO_MT_file_export.append(data_model.menu_func_print)
+    bpy.types.TOPBAR_MT_file_import.append(data_model.menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.append(data_model.menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.append(data_model.menu_func_import_all)
+    bpy.types.TOPBAR_MT_file_export.append(data_model.menu_func_export_all)
+    bpy.types.TOPBAR_MT_file_import.append(data_model.menu_func_import_all_json)
+    bpy.types.TOPBAR_MT_file_export.append(data_model.menu_func_export_all_json)
+    bpy.types.TOPBAR_MT_file_export.append(data_model.menu_func_print)
 
 
 
@@ -358,7 +389,7 @@ def register():
     add_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
 
     # Add the scene update pre handler
-    add_handler ( bpy.app.handlers.scene_update_pre, cellblender_main.scene_loaded )
+    add_handler ( bpy.app.handlers.depsgraph_update_pre, cellblender_main.scene_loaded )
 
     # Add the save_pre handlers
     add_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
@@ -395,7 +426,7 @@ def unregister():
     remove_handler ( bpy.app.handlers.load_post, cellblender_main.scene_loaded )
     remove_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
     remove_handler ( bpy.app.handlers.save_post, cellblender_mol_viz.viz_data_save_post )
-    remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_main.scene_loaded )
+    remove_handler ( bpy.app.handlers.depsgraph_update_pre, cellblender_main.scene_loaded )
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     remove_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
     remove_handler ( bpy.app.handlers.load_post, cellblender_simulation.disable_python )

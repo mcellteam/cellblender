@@ -76,15 +76,6 @@ from . import cellblender_legacy
 # python imports
 import os
 
-# we use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
-
 
 
 # Two callbacks that had been in the cellblender operators file:
@@ -122,9 +113,11 @@ def init_properties(context):
 
 #Custom Properties
 
+'''
+# Uneeded?
 class MCellStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
-    name = StringProperty(name="Text")
+    name: StringProperty(name="Text")
     def remove_properties ( self, context ):
         #print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
         pass
@@ -132,10 +125,11 @@ class MCellStringProperty(bpy.types.PropertyGroup):
 
 class MCellFloatVectorProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold float vector for a CollectionProperty """
-    vec = bpy.props.FloatVectorProperty(name="Float Vector")
+    vec: FloatVectorProperty(name="Float Vector")
     def remove_properties ( self, context ):
         #print ( "Removing an MCell Float Vector Property... no collections to remove. Is there anything special do to for Vectors?" )
         pass
+'''
 
 
 
@@ -158,7 +152,7 @@ import cellblender
 
 
 class MCellObjectSelectorPropertyGroup(bpy.types.PropertyGroup):
-    filter = StringProperty(
+    filter: StringProperty(
         name="Object Name Filter",
         description="Enter a regular expression for object names.")
 
@@ -187,10 +181,10 @@ class PP_OT_init_mcell(bpy.types.Operator):
 
 # My panel class (which happens to augment 'Scene' properties)
 class MCELL_PT_main_panel(bpy.types.Panel):
-    # bl_idname = "SCENE_PT_CB_MU_APP"
+    bl_idname = "VIEW3D_PT_CellBlender"
     bl_label = "  CellBlender"
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     bl_category = "CellBlender"
 
     @classmethod
@@ -241,15 +235,15 @@ def scene_loaded(dummy):
         if icon is None:
             img = bpy.data.images.load(os.path.join(dirname, fname))
             img.name = icon_name
-            img.use_alpha = True
+#            img.use_alpha = True
             img.user_clear() # Won't get saved into .blend files
         # remove scene_update handler
         elif "icon" not in icon.keys():
             icon["icon"] = True
-            for f in bpy.app.handlers.scene_update_pre:
+            for f in bpy.app.handlers.depsgraph_update_pre:
                 if f.__name__ == "scene_loaded":
                     print("Removing scene_loaded handler now that icons are loaded")
-                    bpy.app.handlers.scene_update_pre.remove(f)
+                    bpy.app.handlers.depsgraph_update_pre.remove(f)
 
 
 
@@ -366,34 +360,34 @@ def select_callback ( self, context ):
 
 class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
-    examples_select = BoolProperty ( name="example_sel", description="Examples", default=False, subtype='NONE', update=select_callback)
-    preferences_select = BoolProperty ( name="pref_sel", description="Settings & Preferences", default=False, subtype='NONE', update=select_callback)
-    #settings_select = BoolProperty ( name="set_sel", description="Project Settings", default=False, subtype='NONE', update=select_callback)
-    scripting_select = BoolProperty ( name="set_mdl", description="Scripting", default=False, subtype='NONE', update=select_callback)
-    parameters_select = BoolProperty ( name="par_sel", description="Model Parameters", default=False, subtype='NONE', update=select_callback)
-    reaction_select = BoolProperty ( name="react_sel", description="Reactions", default=False, subtype='NONE', update=select_callback)
-    molecule_select = BoolProperty ( name="mol_sel", description="Molecules", default=False, subtype='NONE', update=select_callback)
-    placement_select = BoolProperty ( name="place_sel", description="Molecule Placement", default=False, subtype='NONE', update=select_callback)
-    objects_select = BoolProperty ( name="obj_sel", description="Model Objects", default=False, subtype='NONE', update=select_callback)
-    surf_classes_select = BoolProperty ( name="surfc_sel", description="Surface Classes", default=False, subtype='NONE', update=select_callback)
-    surf_regions_select = BoolProperty ( name="surfr_sel", description="Assign Surface Classes", default=False, subtype='NONE', update=select_callback)
-    rel_patterns_select = BoolProperty ( name="relpat_sel", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
-    partitions_select = BoolProperty ( name="part_sel", description="Partitions", default=False, subtype='NONE', update=select_callback)
-    pbc_select = BoolProperty ( name="pbc_sel", description="Periodic Boundary Conditions", default=False, subtype='NONE', update=select_callback)
-    init_select = BoolProperty ( name="init_sel", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
-    # run_select = BoolProperty ( name="run_sel", description="Old Run Simulation", default=False, subtype='NONE', update=select_callback)
-    graph_select = BoolProperty ( name="graph_sel", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
-    mol_viz_select = BoolProperty ( name="mviz_sel", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
-    viz_select = BoolProperty ( name="viz_sel", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
-    reload_viz = BoolProperty ( name="reload", description="Reload Simulation Data", default=False, subtype='NONE', update=select_callback)
+    examples_select: BoolProperty ( name="example_sel", description="Examples", default=False, subtype='NONE', update=select_callback)
+    preferences_select: BoolProperty ( name="pref_sel", description="Settings & Preferences", default=False, subtype='NONE', update=select_callback)
+    #settings_select: BoolProperty ( name="set_sel", description="Project Settings", default=False, subtype='NONE', update=select_callback)
+    scripting_select: BoolProperty ( name="set_mdl", description="Scripting", default=False, subtype='NONE', update=select_callback)
+    parameters_select: BoolProperty ( name="par_sel", description="Model Parameters", default=False, subtype='NONE', update=select_callback)
+    reaction_select: BoolProperty ( name="react_sel", description="Reactions", default=False, subtype='NONE', update=select_callback)
+    molecule_select: BoolProperty ( name="mol_sel", description="Molecules", default=False, subtype='NONE', update=select_callback)
+    placement_select: BoolProperty ( name="place_sel", description="Molecule Placement", default=False, subtype='NONE', update=select_callback)
+    objects_select: BoolProperty ( name="obj_sel", description="Model Objects", default=False, subtype='NONE', update=select_callback)
+    surf_classes_select: BoolProperty ( name="surfc_sel", description="Surface Classes", default=False, subtype='NONE', update=select_callback)
+    surf_regions_select: BoolProperty ( name="surfr_sel", description="Assign Surface Classes", default=False, subtype='NONE', update=select_callback)
+    rel_patterns_select: BoolProperty ( name="relpat_sel", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
+    partitions_select: BoolProperty ( name="part_sel", description="Partitions", default=False, subtype='NONE', update=select_callback)
+    pbc_select: BoolProperty ( name="pbc_sel", description="Periodic Boundary Conditions", default=False, subtype='NONE', update=select_callback)
+    init_select: BoolProperty ( name="init_sel", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
+    # run_select: BoolProperty ( name="run_sel", description="Old Run Simulation", default=False, subtype='NONE', update=select_callback)
+    graph_select: BoolProperty ( name="graph_sel", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
+    mol_viz_select: BoolProperty ( name="mviz_sel", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
+    viz_select: BoolProperty ( name="viz_sel", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
+    reload_viz: BoolProperty ( name="reload", description="Reload Simulation Data", default=False, subtype='NONE', update=select_callback)
 
-    select_multiple = BoolProperty ( name="multiple", description="Show Multiple Panels", default=False, subtype='NONE', update=select_callback)
+    select_multiple: BoolProperty ( name="multiple", description="Show Multiple Panels", default=False, subtype='NONE', update=select_callback)
 
-    last_state = BoolVectorProperty ( size=22 ) # Keeps track of previous button state to detect transitions
+    last_state: BoolVectorProperty ( size=22 ) # Keeps track of previous button state to detect transitions
 
-    dummy_bool = BoolProperty( name="DummyBool", default=True )
-    dummy_string = StringProperty( name="DummyString", default=" " )
-    dummy_float = FloatProperty ( name="DummyFloat", default=12.34 )
+    dummy_bool: BoolProperty( name="DummyBool", default=True )
+    dummy_string: StringProperty( name="DummyString", default=" " )
+    dummy_float: FloatProperty ( name="DummyFloat", default=12.34 )
 
     def remove_properties ( self, context ):
         print ( "Removing all CellBlender Main Panel Properties... no collections to remove." )
@@ -518,18 +512,18 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             else:
                 # This is a CellBlender RC3 or RC4 file so draw the RC3/4 upgrade button
                 row = layout.row()
-                row.label ( "Blend File version (RC3/4) doesn't match CellBlender version", icon='ERROR' )
+                row.label ( text="Blend File version (RC3/4) doesn't match CellBlender version", icon='ERROR' )
                 row = layout.row()
-                row.operator ( "mcell.upgraderc3", text="Upgrade RC3/4 Blend File to Current Version", icon='RADIO' )
+                row.operator ( "mcell.upgraderc3", text="Upgrade RC3/4 Blend File to Current Version", icon='GHOST_ENABLED' )
         else:
             CB_ID = mcell['saved_by_source_id']
             source_id = cellblender.cellblender_info['cellblender_source_sha1']
             if CB_ID != source_id:
                 # This is a CellBlender file >= 1.0, so draw the normal upgrade button
                 row = layout.row()
-                row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
+                row.label ( text="Blend File version doesn't match CellBlender version", icon='ERROR' )
                 row = layout.row()
-                row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+                row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='GHOST_ENABLED' )
                 if 'data_model' in mcell.keys():
                     # There is a data model present, so show the option to save it directly
                     row = layout.row()
@@ -586,7 +580,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     # Draw all the selection buttons in a single row (Short format)
 
                     real_row = layout.row()
-                    split = real_row.split(0.9)
+                    split = real_row.split(factor=0.9)
                     col = split.column()
 
                     #row = layout.row(align=True)
@@ -636,10 +630,10 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "placement_select", icon='GROUP_VERTEX', text="" )
                     if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "rel_patterns_select", icon='TIME', text="" )
-                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="" )
-                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "surf_classes_select", icon='LIGHTPROBE_CUBE_MAP', text="" )
+                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "surf_regions_select", icon='UV_DATA', text="" )
                     if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "partitions_select", icon='GRID', text="" )
-                    if mcell.cellblender_preferences.show_button_num[14]: row.prop ( self, "graph_select", icon='IPO', text="" )
+                    if mcell.cellblender_preferences.show_button_num[14]: row.prop ( self, "graph_select", icon='GRAPH', text="" )
                     if mcell.cellblender_preferences.show_button_num[15]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
                     if mcell.cellblender_preferences.show_button_num[16]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
 
@@ -742,9 +736,9 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     brow = layout.row()  ##############################################################
 
                     bcol = brow.column()
-                    bcol.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="Surface Classes" )
+                    bcol.prop ( self, "surf_classes_select", icon='LIGHTPROBE_CUBEMAP', text="Surface Classes" )
                     bcol = brow.column()
-                    bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
+                    bcol.prop ( self, "surf_regions_select", icon='UV_DATA', text="Assign Surface Classes" )
 
 
                     brow = layout.row()  ##############################################################
@@ -752,7 +746,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "partitions_select", icon='GRID', text="Partitions" )
                     bcol = brow.column()
-                    bcol.prop ( self, "graph_select", icon='IPO', text="Plot Output Settings" )
+                    bcol.prop ( self, "graph_select", icon='GRAPH', text="Plot Output Settings" )
 
 
                     brow = layout.row()  ##############################################################
@@ -760,7 +754,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
                     bcol = brow.column()
-                    bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
+                    bcol.prop ( self, "init_select", icon='ARMATURE_DATA', text="Run Simulation" )
 
 
                     brow = layout.row()  ##############################################################
@@ -779,28 +773,28 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if eval(mcell.parameter_system.last_parameter_update_time) > eval(mcell.run_simulation.last_simulation_run_time):
                     row = layout.row()
-                    row.label ( "Warning: Possible model change since last run", icon="INFO" )  # Information might be better than "ERROR" since this is not really an error
+                    row.label ( text="Warning: Possible model change since last run", icon="INFO" )  # Information might be better than "ERROR" since this is not really an error
 
 
                 # Draw each panel only if it is selected
 
                 if self.preferences_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Project Settings", icon='SETTINGS' )
+                    layout.label ( text="Project Settings", icon='SETTINGS' )
                     context.scene.mcell.project_settings.draw_layout ( context, layout )
 
                     layout.box() # Use as a separator
-                    layout.label ( "Preferences", icon='PREFERENCES' )
+                    layout.label ( text="Preferences", icon='PREFERENCES' )
                     context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
 
                 if self.scripting_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Scripting", icon='SCRIPT' )
+                    layout.label ( text="Scripting", icon='SCRIPT' )
                     context.scene.mcell.scripting.draw_layout ( context, layout )
 
                 if self.parameters_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
+                    layout.label ( text="Model Parameters", icon='SEQ_SEQUENCER' )
                     context.scene.mcell.parameter_system.draw_layout ( context, layout )
 
                 if self.molecule_select:
@@ -812,26 +806,26 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.box() # Use as a separator
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
-                        layout.label ( "Defined Reactions", icon='ARROW_LEFTRIGHT' )
+                        layout.label ( text="Defined Reactions", icon='ARROW_LEFTRIGHT' )
                     else:
                         react_img_sel = bpy.data.images.get('reaction_s')
                         reaction_s = layout.icon(react_img_sel)
-                        layout.label ( "Defined Reactions", icon_value=reaction_s )
+                        layout.label ( text="Defined Reactions", icon_value=reaction_s )
                     context.scene.mcell.reactions.draw_layout ( context, layout )
 
                 if self.placement_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Molecule Release/Placement", icon='GROUP_VERTEX' )
+                    layout.label ( text="Molecule Release/Placement", icon='GROUP_VERTEX' )
                     context.scene.mcell.release_sites.draw_layout ( context, layout )
 
                 if self.rel_patterns_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Release Patterns", icon='TIME' )
+                    layout.label ( text="Release Patterns", icon='TIME' )
                     context.scene.mcell.release_patterns.draw_layout ( context, layout )
 
                 if self.objects_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+                    layout.label ( text="Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
                     context.scene.mcell.model_objects.draw_layout ( context, layout )
                     # layout.box() # Use as a separator
                     if context.object != None:
@@ -839,44 +833,44 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.surf_classes_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Defined Surface Classes", icon='FACESEL_HLT' )
+                    layout.label ( text="Defined Surface Classes", icon='LIGHTPROBE_CUBEMAP' )
                     context.scene.mcell.surface_classes.draw_layout ( context, layout )
 
                 if self.surf_regions_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Assigned Surface Classes", icon='SNAP_FACE' )
+                    layout.label ( text="Assigned Surface Classes", icon='UV_DATA' )
                     context.scene.mcell.mod_surf_regions.draw_layout ( context, layout )
 
                 if self.partitions_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Partitions", icon='GRID' )
+                    layout.label ( text="Partitions", icon='GRID' )
                     context.scene.mcell.partitions.draw_layout ( context, layout )
 
                 if self.pbc_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Periodic Boundary Conditions", icon='GRID' )
+                    layout.label ( text="Periodic Boundary Conditions", icon='GRID' )
                     context.scene.mcell.pbc.draw_layout ( context, layout )
 
                 if self.graph_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Reaction Data Output", icon='IPO' )
+                    layout.label ( text="Reaction Data Output", icon='GRAPH' )
                     context.scene.mcell.rxn_output.draw_layout ( context, layout )
 
                 if self.viz_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Visualization", icon='SEQUENCE' )
+                    layout.label ( text="Visualization", icon='SEQUENCE' )
                     context.scene.mcell.viz_output.draw_layout ( context, layout )
                     layout.box() # Use as a separator
                     context.scene.mcell.mol_viz.draw_layout ( context, layout )
 
                 if self.init_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Run Simulation", icon='COLOR_RED' )
+                    layout.label ( text="Run Simulation", icon='ARMATURE_DATA' )
                     context.scene.mcell.initialization.draw_layout ( context, layout )
 
                 if self.examples_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Examples", icon='MOD_BUILD' )
+                    layout.label ( text="Examples", icon='MOD_BUILD' )
                     context.scene.mcell.cellblender_examples.draw_layout ( context, layout )
 
         # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
@@ -904,58 +898,58 @@ def refresh_source_id_callback ( self, context ):
 
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
-    initialized = BoolProperty(name="Initialized", default=False)
-    # versions_match = BoolProperty ( default=True )
+    initialized: BoolProperty(name="Initialized", default=False)
+    # versions_match: BoolProperty ( default=True )
 
-    cellblender_version = StringProperty(name="CellBlender Version", default="0")
-    cellblender_addon_id = StringProperty(name="CellBlender Addon ID", default="0")
-    cellblender_data_model_version = StringProperty(name="CellBlender Data Model Version", default="0")
-    refresh_source_id = BoolProperty ( default=False, description="Recompute the Source ID from actual files", update=refresh_source_id_callback )
-    #cellblender_source_hash = StringProperty(
+    cellblender_version: StringProperty(name="CellBlender Version", default="0")
+    cellblender_addon_id: StringProperty(name="CellBlender Addon ID", default="0")
+    cellblender_data_model_version: StringProperty(name="CellBlender Data Model Version", default="0")
+    refresh_source_id: BoolProperty ( default=False, description="Recompute the Source ID from actual files", update=refresh_source_id_callback )
+    #cellblender_source_hash: StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
 
     # This provides a means to convert Python double values to Blender's FloatProperty precision
-    blender_float_prop = FloatProperty()
+    blender_float_prop: FloatProperty()
     def blender_float ( self, python_float ):
         self.blender_float_prop = python_float
         return ( self.blender_float_prop )
 
 
-    cellblender_main_panel = PointerProperty ( type=CellBlenderMainPanelPropertyGroup, name="CellBlender Main Panel" )
+    cellblender_main_panel: PointerProperty ( type=CellBlenderMainPanelPropertyGroup, name="CellBlender Main Panel" )
 
 
-    cellblender_examples = PointerProperty ( type=cellblender_examples.CellBlenderExamplesPropertyGroup, name="CellBlender Examples" )
-    cellblender_preferences = PointerProperty ( type=cellblender_preferences.CellBlenderPreferencesPropertyGroup, name="CellBlender Preferences" )
-    scripting = PointerProperty ( type=cellblender_scripting.CellBlenderScriptingPropertyGroup, name="CellBlender Scripting" )
-    project_settings = PointerProperty ( type=cellblender_project.MCellProjectPropertyGroup, name="CellBlender Project Settings" )
-    export_project = PointerProperty ( type=cellblender_project.MCellExportProjectPropertyGroup, name="Export Simulation" )
-    run_simulation = PointerProperty ( type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation" )
-    sim_engines = PointerProperty ( type=cellblender_simulation.Pluggable, name="Simulation Engines" )
-    sim_runners = PointerProperty ( type=cellblender_simulation.Pluggable, name="Simulation Runners" )
-    mol_viz = PointerProperty ( type=cellblender_mol_viz.MCellMolVizPropertyGroup, name="Mol Viz Settings" )
-    initialization = PointerProperty ( type=cellblender_initialization.MCellInitializationPropertyGroup, name="Model Initialization" )
-    partitions = bpy.props.PointerProperty ( type=cellblender_partitions.MCellPartitionsPropertyGroup, name="Partitions" )
-    pbc = bpy.props.PointerProperty ( type=cellblender_pbc.MCellPBCPropertyGroup, name="Periodic Boundary Conditions" )
+    cellblender_examples: PointerProperty ( type=cellblender_examples.CellBlenderExamplesPropertyGroup, name="CellBlender Examples" )
+    cellblender_preferences: PointerProperty ( type=cellblender_preferences.CellBlenderPreferencesPropertyGroup, name="CellBlender Preferences" )
+    scripting: PointerProperty ( type=cellblender_scripting.CellBlenderScriptingPropertyGroup, name="CellBlender Scripting" )
+    project_settings: PointerProperty ( type=cellblender_project.MCellProjectPropertyGroup, name="CellBlender Project Settings" )
+    export_project: PointerProperty ( type=cellblender_project.MCellExportProjectPropertyGroup, name="Export Simulation" )
+    run_simulation: PointerProperty ( type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation" )
+    sim_engines: PointerProperty ( type=cellblender_simulation.Pluggable, name="Simulation Engines" )
+    sim_runners: PointerProperty ( type=cellblender_simulation.Pluggable, name="Simulation Runners" )
+    mol_viz: PointerProperty ( type=cellblender_mol_viz.MCellMolVizPropertyGroup, name="Mol Viz Settings" )
+    initialization: PointerProperty ( type=cellblender_initialization.MCellInitializationPropertyGroup, name="Model Initialization" )
+    partitions: PointerProperty ( type=cellblender_partitions.MCellPartitionsPropertyGroup, name="Partitions" )
+    pbc: PointerProperty ( type=cellblender_pbc.MCellPBCPropertyGroup, name="Periodic Boundary Conditions" )
     ############# DB: added for parameter import from BNG, SBML models####
-    #parameters = PointerProperty ( type=MCellParametersPropertyGroup, name="Defined Parameters" )
-    parameter_system = PointerProperty ( type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System" )
-    molecules = PointerProperty ( type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules" )
-    molmaker = PointerProperty ( type=cellblender_molmaker.MCellMolMakerPropertyGroup, name="Molecule Maker" )
-    reactions = PointerProperty ( type=cellblender_reactions.MCellReactionsListProperty, name="Defined Reactions" )
-    surface_classes = PointerProperty ( type=cellblender_surface_classes.MCellSurfaceClassesPropertyGroup, name="Defined Surface Classes" )
-    mod_surf_regions = PointerProperty ( type=cellblender_surface_regions.MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes" )
-    release_patterns = PointerProperty ( type=cellblender_release.MCellReleasePatternPropertyGroup, name="Defined Release Patterns" )
-    release_sites = PointerProperty (  type=cellblender_release.MCellMoleculeReleasePropertyGroup, name="Defined Release Sites" )
-    model_objects = PointerProperty (  type=cellblender_objects.MCellModelObjectsPropertyGroup, name="Instantiated Objects" )
-    viz_output = PointerProperty ( type=cellblender_mol_viz.MCellVizOutputPropertyGroup, name="Viz Output" )
-    rxn_output = PointerProperty ( type=cellblender_reaction_output.MCellReactionOutputPropertyGroup, name="Reaction Output" )
-    meshalyzer = PointerProperty ( type=cellblender_meshalyzer.MCellMeshalyzerPropertyGroup, name="CellBlender Meshalyzer" )
-    object_selector = PointerProperty ( type=MCellObjectSelectorPropertyGroup, name="CellBlender Project Settings" )
-    #molecule_glyphs = PointerProperty ( type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes" )
+    #parameters: PointerProperty ( type=MCellParametersPropertyGroup, name="Defined Parameters" )
+    parameter_system: PointerProperty ( type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System" )
+    molecules: PointerProperty ( type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules" )
+    molmaker: PointerProperty ( type=cellblender_molmaker.MCellMolMakerPropertyGroup, name="Molecule Maker" )
+    reactions: PointerProperty ( type=cellblender_reactions.MCellReactionsListProperty, name="Defined Reactions" )
+    surface_classes: PointerProperty ( type=cellblender_surface_classes.MCellSurfaceClassesPropertyGroup, name="Defined Surface Classes" )
+    mod_surf_regions: PointerProperty ( type=cellblender_surface_regions.MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes" )
+    release_patterns: PointerProperty ( type=cellblender_release.MCellReleasePatternPropertyGroup, name="Defined Release Patterns" )
+    release_sites: PointerProperty (  type=cellblender_release.MCellMoleculeReleasePropertyGroup, name="Defined Release Sites" )
+    model_objects: PointerProperty (  type=cellblender_objects.MCellModelObjectsPropertyGroup, name="Instantiated Objects" )
+    viz_output: PointerProperty ( type=cellblender_mol_viz.MCellVizOutputPropertyGroup, name="Viz Output" )
+    rxn_output: PointerProperty ( type=cellblender_reaction_output.MCellReactionOutputPropertyGroup, name="Reaction Output" )
+    meshalyzer: PointerProperty ( type=cellblender_meshalyzer.MCellMeshalyzerPropertyGroup, name="CellBlender Meshalyzer" )
+    object_selector: PointerProperty ( type=MCellObjectSelectorPropertyGroup, name="CellBlender Project Settings" )
+    #molecule_glyphs: PointerProperty ( type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes" )
 
-    legacy = PointerProperty ( type=cellblender_legacy.MCellLegacyGroup, name="Lecacy Support" )
+    legacy: PointerProperty ( type=cellblender_legacy.MCellLegacyGroup, name="Lecacy Support" )
 
-    #scratch_settings = PointerProperty ( type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings" )
+    #scratch_settings: PointerProperty ( type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings" )
 
     def init_properties ( self, context=None ):
         print ("MCellPropertyGroup.init_properties called")
@@ -1053,7 +1047,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellPropertyGroup Data Model" )
-        #cellblender.data_model.dump_data_model ( "Dump of dm passed to MCellPropertyGroup.upgrade_data_model", dm )
+        # cellblender.data_model.dump_data_model ( "Dump of dm passed to MCellPropertyGroup.upgrade_data_model", dm )
 
         # Set the model_language field which should be "mcell4" for any upgraded models
         dm['model_language'] = 'mcell4'
@@ -1347,4 +1341,32 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         depth = depth - 1
         return
 
+classes = (
+            MCellObjectSelectorPropertyGroup,
+            PP_OT_init_mcell,
+            MCELL_PT_main_panel,
+            MCELL_OT_upgrade,
+            MCELL_OT_export_dm,
+            MCELL_OT_export_dm_json,
+            MCELL_OT_delete,
+            CBM_OT_refresh_operator,
+            CellBlenderMainPanelPropertyGroup,
+            MCellPropertyGroup,
+           )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
+
+
+# we use per module class registration/unregistration
+#def register():
+#    bpy.utils.register_module(__name__)
+#
+#def unregister():
+#    bpy.utils.unregister_module(__name__)
 

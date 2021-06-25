@@ -46,16 +46,6 @@ from . import parameter_system
 from . import cellblender_utils
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
-
-
 
 
 ###############################
@@ -64,16 +54,16 @@ def unregister():
 
 
 class DataBrowserStringProperty(bpy.types.PropertyGroup):
-    v = StringProperty(name="DBString")
+    v: StringProperty(name="DBString")
 
 class DataBrowserIntProperty(bpy.types.PropertyGroup):
-    v = IntProperty(name="DBInt")
+    v: IntProperty(name="DBInt")
 
 class DataBrowserFloatProperty(bpy.types.PropertyGroup):
-    v = FloatProperty(name="DBFloat")
+    v: FloatProperty(name="DBFloat")
 
 class DataBrowserBoolProperty(bpy.types.PropertyGroup):
-    v = BoolProperty(name="DBBool")
+    v: BoolProperty(name="DBBool")
 
 class leaf_item:
     def __init__ ( value, index ):
@@ -84,14 +74,14 @@ dm = None
 dmi = None
 
 class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
-    show_list   = CollectionProperty(type=DataBrowserBoolProperty,   name="Show List")
+    show_list  : CollectionProperty(type=DataBrowserBoolProperty,   name="Show List")
 
-    string_list = CollectionProperty(type=DataBrowserStringProperty, name="String List")
-    int_list    = CollectionProperty(type=DataBrowserIntProperty,    name="Int List")
-    float_list  = CollectionProperty(type=DataBrowserFloatProperty,  name="Float List")
-    bool_list   = CollectionProperty(type=DataBrowserBoolProperty,   name="Bool List")
+    string_list: CollectionProperty(type=DataBrowserStringProperty, name="String List")
+    int_list   : CollectionProperty(type=DataBrowserIntProperty,    name="Int List")
+    float_list : CollectionProperty(type=DataBrowserFloatProperty,  name="Float List")
+    bool_list  : CollectionProperty(type=DataBrowserBoolProperty,   name="Bool List")
 
-    internal_file_name = StringProperty ( name = "Internal Text Name" )
+    internal_file_name: StringProperty ( name = "Internal Text Name" )
 
 
     def draw_layout ( self, context, layout ):
@@ -371,8 +361,8 @@ class Data_Browser_Panel(bpy.types.Panel):
 # Scripting Operators:
 
 def update_available_scripts ( scripting ):
-    #mdl_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MDL Scripts")
-    #python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python Scripts")
+    #mdl_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="MDL Scripts")
+    #python_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="Python Scripts")
     
     # Delete current scripts list
     while scripting.internal_mdl_scripts_list:
@@ -549,29 +539,29 @@ class MCELL_UL_scripting_item(bpy.types.UIList):
         if item.include_where == "dont_include":
             layout.label ( icon='ERROR', text=desc )
         else:
-            layout.label ( icon='FILE_TICK', text=desc )
+            layout.label ( icon='CHECKMARK', text=desc )
 
 
 class MCELL_UL_mcell4_scripting_item(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         desc = item.get_description()
-        layout.label ( icon='FILE_TICK', text=desc )
+        layout.label ( icon='CHECKMARK', text=desc )
             
 # Scripting Property Groups
 
 
 class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="Scripting", update=check_scripting)
-    status = StringProperty(name="Status")
+    name: StringProperty(name="Scripting", update=check_scripting)
+    status: StringProperty(name="Status")
     
-    internal_file_name = StringProperty ( name = "Internal File Name" )
-    external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+    internal_file_name: StringProperty ( name = "Internal File Name" )
+    external_file_name: StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
 
     include_where_enum = [
         ('before', "Include Before", ""),
         ('after',  "Include After",  ""),
         ("dont_include",  "Don't Include",  "")]
-    include_where = bpy.props.EnumProperty(
+    include_where: EnumProperty(
         items=include_where_enum, name="Include Where",
         default='before',
         description="Choose relative location to include this script.",
@@ -593,7 +583,7 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
         ("seed",             "Seed",  ""),
         ("viz_output",       "Visualization Output",  ""),
         ("rxn_output",       "Reaction Output",  "")]
-    include_section = bpy.props.EnumProperty(
+    include_section: EnumProperty(
         items=include_section_enum, name="Include Section",
         default='initialization',
         description="Choose MDL section to include this script.",
@@ -602,7 +592,7 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
     internal_external_enum = [
         ('internal', "Internal", ""),
         ("external", "External",  "")]
-    internal_external = bpy.props.EnumProperty(
+    internal_external: EnumProperty(
         items=internal_external_enum, name="Internal/External",
         default='internal',
         description="Choose location of file (internal text or external file).",
@@ -611,7 +601,7 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
     mdl_python_enum = [
         ('mdl',    "MDL", ""),
         ("python", "Python",  "")]
-    mdl_python = bpy.props.EnumProperty(
+    mdl_python: EnumProperty(
         items=mdl_python_enum, name="MDL/Python",
         default='mdl',
         description="Choose type of scripting (MDL or Python).",
@@ -749,16 +739,16 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
 
 
 class CellBlenderMCell4ScriptingProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="Scripting", update=check_scripting)
-    status = StringProperty(name="Status")
+    name: StringProperty(name="Scripting", update=check_scripting)
+    status: StringProperty(name="Status")
     
-    internal_file_name = StringProperty ( name = "Internal File Name" )
-    external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+    internal_file_name: StringProperty ( name = "Internal File Name" )
+    external_file_name: StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
 
     internal_external_enum = [
         ('internal', "Internal", ""),
         ("external", "External",  "")]
-    internal_external = bpy.props.EnumProperty(
+    internal_external: EnumProperty(
         items=internal_external_enum, name="Internal/External",
         default='internal',
         description="Choose location of file (internal text or external file).",
@@ -839,41 +829,41 @@ class CellBlenderMCell4ScriptingProperty(bpy.types.PropertyGroup):
 
 
 class CellBlenderScriptProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="Script")
+    name: StringProperty(name="Script")
 
 
 class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
-    active_scripting_index = IntProperty(name="Active Scripting Index", default=0)
-    scripting_list = CollectionProperty(type=CellBlenderScriptingProperty, name="Scripting List")
-    ignore_cellblender_data = BoolProperty(name="Ignore CellBlender Data", default=False)
+    active_scripting_index: IntProperty(name="Active Scripting Index", default=0)
+    scripting_list: CollectionProperty(type=CellBlenderScriptingProperty, name="Scripting List")
+    ignore_cellblender_data: BoolProperty(name="Ignore CellBlender Data", default=False)
 
-    internal_mdl_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MDL Internal Scripts")
-    external_mdl_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MDL External Scripts")
-    internal_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python Internal Scripts")
-    external_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python External Scripts")
+    internal_mdl_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="MDL Internal Scripts")
+    external_mdl_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="MDL External Scripts")
+    internal_python_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="Python Internal Scripts")
+    external_python_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="Python External Scripts")
 
-    active_mcell4_scripting_index = IntProperty(name="Active MCell4 Scripting Index", default=0)
-    mcell4_scripting_list = CollectionProperty(type=CellBlenderMCell4ScriptingProperty, name="MCell4 Scripting List")
-    internal_mcell4_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MCell4 Internal Scripts")
+    active_mcell4_scripting_index: IntProperty(name="Active MCell4 Scripting Index", default=0)
+    mcell4_scripting_list: CollectionProperty(type=CellBlenderMCell4ScriptingProperty, name="MCell4 Scripting List")
+    internal_mcell4_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="MCell4 Internal Scripts")
 
 
-    show_mcell4_scripting = BoolProperty(name="MCell4 Scripting", default=False)
-    show_simulation_scripting = BoolProperty(name="Export Scripting", default=False)
-    show_data_model_scripting = BoolProperty(name="Data Model Scripting", default=False)
-    show_data_model_script_make = BoolProperty(name="Make Script", default=False)
-    show_data_model_script_run = BoolProperty(name="Run Script", default=False)
-    show_data_model_browser = BoolProperty(name="Data Model Browser", default=False)
+    show_mcell4_scripting: BoolProperty(name="MCell4 Scripting", default=False)
+    show_simulation_scripting: BoolProperty(name="Export Scripting", default=False)
+    show_data_model_scripting: BoolProperty(name="Data Model Scripting", default=False)
+    show_data_model_script_make: BoolProperty(name="Make Script", default=False)
+    show_data_model_script_run: BoolProperty(name="Run Script", default=False)
+    show_data_model_browser: BoolProperty(name="Data Model Browser", default=False)
 
-    dm_internal_file_name = StringProperty ( name = "Internal File Name" )
-    dm_external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
-    force_property_update = BoolProperty(name="Update CellBlender from Data Model", default=True)
-    # upgrade_data_model_for_script = BoolProperty(name="Upgrade Script", default=False)
+    dm_internal_file_name: StringProperty ( name = "Internal File Name" )
+    dm_external_file_name: StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+    force_property_update: BoolProperty(name="Update CellBlender from Data Model", default=True)
+    # upgrade_data_model_for_script: BoolProperty(name="Upgrade Script", default=False)
 
     # The following properties are associated with Data Model Scripting
-    include_geometry_in_dm = bpy.props.BoolProperty ( name = "Include Geometry", description = "Include Geometry in the Data Model", default = False )
-    include_scripts_in_dm = bpy.props.BoolProperty ( name = "Include Scripts", description = "Include Scripts in the Data Model", default = False )
-    include_dyn_geom_in_dm = bpy.props.BoolProperty ( name = "Dynamic Geometry", description = "Include Dynamic Geometry in the Data Model", default = False )
+    include_geometry_in_dm: BoolProperty ( name = "Include Geometry", description = "Include Geometry in the Data Model", default = False )
+    include_scripts_in_dm: BoolProperty ( name = "Include Scripts", description = "Include Scripts in the Data Model", default = False )
+    include_dyn_geom_in_dm: BoolProperty ( name = "Dynamic Geometry", description = "Include Dynamic Geometry in the Data Model", default = False )
 
     dm_section_enum = [
         ('ALL',                     "All", ""),
@@ -892,7 +882,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         ('release_sites',           "Release Sites",  ""),
         ('simulation_control',      "Simulation Control",  ""),
         ('viz_output',              "Visualization Data",  "")]
-    dm_section = bpy.props.EnumProperty(
+    dm_section: EnumProperty(
         items=dm_section_enum, name="Data Model Section",
         default='define_molecules',
         description="Data Model Section to copy to the Clipboard" )
@@ -900,14 +890,14 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     dm_internal_external_enum = [
         ('internal', "Internal", ""),
         ("external", "External",  "")]
-    dm_internal_external = bpy.props.EnumProperty(
+    dm_internal_external: EnumProperty(
         items=dm_internal_external_enum, name="Internal/External",
         default='internal',
         description="Choose location of file (internal text or external file).",
         update=check_scripting)
 
 
-    data_browser = PointerProperty(type=DataBrowserPropertyGroup)
+    data_browser: PointerProperty(type=DataBrowserPropertyGroup)
 
 
     def init_properties ( self, parameter_system ):
@@ -1094,8 +1084,8 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                                       self, "mcell4_scripting_list",
                                       self, "active_mcell4_scripting_index", rows=2)
                     col = row.column(align=True)
-                    col.operator("mcell.mcell4_scripting_add", icon='ZOOMIN', text="")
-                    col.operator("mcell.mcell4_scripting_remove", icon='ZOOMOUT', text="")
+                    col.operator("mcell.mcell4_scripting_add", icon='ADD', text="")
+                    col.operator("mcell.mcell4_scripting_remove", icon='REMOVE', text="")
     
                     if self.mcell4_scripting_list:
                         if len(self.mcell4_scripting_list) > 0:
@@ -1117,9 +1107,9 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                                       self, "scripting_list",
                                       self, "active_scripting_index", rows=2)
                     col = row.column(align=True)
-                    col.operator("mcell.scripting_add", icon='ZOOMIN', text="")
+                    col.operator("mcell.scripting_add", icon='ADD', text="")
                     # col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
-                    col.operator("mcell.scripting_remove", icon='ZOOMOUT', text="")
+                    col.operator("mcell.scripting_remove", icon='REMOVE', text="")
     
                     if self.scripting_list:
                         if len(self.scripting_list) > 0:
@@ -1305,4 +1295,38 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         # mdl_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
 
 
+classes = ( 
+            DataBrowserStringProperty,
+            DataBrowserIntProperty,
+            DataBrowserFloatProperty,
+            DataBrowserBoolProperty,
+            DataBrowserPropertyGroup,
+            FromDMOperator,
+            ClearBrowserOperator,
+            BrowserOpenAllOperator,
+            BrowserCloseAllOperator,
+            FromFileOperator,
+            ToFileOperator,
+            MCELL_OT_scripting_add,
+            MCELL_OT_scripting_remove,
+            MCELL_OT_scripting_refresh,
+            MCELL_OT_scripting_execute,
+            MCELL_OT_mcell4_scripting_add,
+            MCELL_OT_mcell4_scripting_remove,
+            CopyDataModelFromSelectedProps,
+            MCELL_UL_scripting_item,
+            MCELL_UL_mcell4_scripting_item,
+            CellBlenderScriptingProperty,
+            CellBlenderScriptProperty,
+            CellBlenderScriptingPropertyGroup,
+            CellBlenderMCell4ScriptingProperty,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
 

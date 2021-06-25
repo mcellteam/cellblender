@@ -41,39 +41,39 @@ import cellblender
 #Property class for the PBC
 class MCellPBCPropertyGroup(bpy.types.PropertyGroup):
     #Include PBC boolean
-    include = BoolProperty(name="Include PBC", default=False ,
+    include: BoolProperty(name="Include PBC", default=False ,
     	description="PBC is used to define an area that you wish to use" "properly.")
     #Periodic Traditional variable
-    peri_trad = BoolProperty(name="Periodic Traditional", default=True)
+    peri_trad: BoolProperty(name="Periodic Traditional", default=True)
     #Periodic X variable
-    peri_x = BoolProperty(name="Periodic X", default=True)
+    peri_x: BoolProperty(name="Periodic X", default=True)
     #Periodic Y variable
-    peri_y = BoolProperty(name="Periodic Y", default=True)
+    peri_y: BoolProperty(name="Periodic Y", default=True)
     #Periodic Z variable
-    peri_z = BoolProperty(name="Periodic Z", default=True)
+    peri_z: BoolProperty(name="Periodic Z", default=True)
     #Start variable for the X coordinate
-    x_start = bpy.props.FloatProperty(name="X Start", default=0, precision=3,
+    x_start: FloatProperty(name="X Start", default=0, precision=3,
         description="The start of the Periodic boundary on the x-axis")
     #Start variable for the Y coordinate
-    y_start = bpy.props.FloatProperty(name="Y Start", default=0, precision=3,
+    y_start: FloatProperty(name="Y Start", default=0, precision=3,
         description="The start of the Periodic boundary on the y-axis")
     #Start variable for the Z coordinate
-    z_start = bpy.props.FloatProperty(name="Z Start", default=0, precision=3,
+    z_start: FloatProperty(name="Z Start", default=0, precision=3,
         description="The start of the Periodic boundary on the z-axis")
     #End variable for the X coordinate
-    x_end = bpy.props.FloatProperty(name="X End", default=0, precision=3,
+    x_end: FloatProperty(name="X End", default=0, precision=3,
         description="The end of the Periodic boundary on the x-axis")
     #End variable for the Y coordinate
-    y_end = bpy.props.FloatProperty(name="Y End", default=0, precision=3,
+    y_end: FloatProperty(name="Y End", default=0, precision=3,
         description="The end of the Periodic boundary on the y-axis")
     #End variable for the Z coordinate
-    z_end = bpy.props.FloatProperty(name="Z End", default=0, precision=3,
+    z_end: FloatProperty(name="Z End", default=0, precision=3,
         description="The end of the Periodic boundary on the z-axis")
     #Function to draw the panel
     def draw_layout(self, context, layout):
         mcell4_mode = context.scene.mcell.cellblender_preferences.mcell4_mode
         if mcell4_mode:
-            layout.label("Periodic Boundary Conditions are not supported in MCell4.")
+            layout.label(text="Periodic Boundary Conditions are not supported in MCell4.")
         else:
             #Making the include option
             layout.prop(self, "include")
@@ -92,7 +92,7 @@ class MCellPBCPropertyGroup(bpy.types.PropertyGroup):
             row.prop(self, "z_end")
             #Boolean variables
             row = layout.row(align=True)
-            layout.label("Defaulted to True, uncheck the boxes to set them to false.")
+            layout.label(text="Defaulted to True, uncheck the boxes to set them to false.")
 
             row = layout.row(align=True)
             #Periodic Traditional variable
@@ -164,3 +164,18 @@ class MCellPBCPropertyGroup(bpy.types.PropertyGroup):
             # Create a layout from the panel and draw into it
             layout = panel.layout
             self.draw_layout ( context, layout )
+
+
+classes = ( 
+            MCellPBCPropertyGroup,
+          )
+
+def register():
+    for cls in classes:
+      bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in reversed(classes):
+      bpy.utils.unregister_class(cls)
+
+
