@@ -1218,10 +1218,10 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     
                         row = box.row()
                         col = row.column()
-                        col.operator("mcell.scripting_execute", text="Run Script", icon='SCRIPTWIN')
+                        col.operator("mcell.scripting_execute", text="Run Script", icon='SETTINGS')
                         # TODO: The following operator is not enabled (probably in the wrong context in the 3D view rather than text editor)
                         #col = row.column()
-                        #col.operator("text.run_script", text="Run Script", icon='SCRIPTWIN')
+                        #col.operator("text.run_script", text="Run Script", icon='SETTINGS')
                         col = row.column()
                         col.operator("mcell.delete", text="Clear Project", icon='RADIO')   # or use 'X'
     
