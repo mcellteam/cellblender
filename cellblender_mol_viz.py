@@ -1183,7 +1183,6 @@ def mol_viz_file_read(mcell, filepath):
 # Mol Viz Panel Classes
 
 
-
 class MCELL_PT_viz_results(bpy.types.Panel):
     bl_label = "CellBlender - Visualize Simulation Results"
     bl_space_type = "PROPERTIES"
@@ -1193,7 +1192,6 @@ class MCELL_PT_viz_results(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.mol_viz.draw_panel ( context, self )
-
 
 
 class MCELL_UL_visualization_export_list(bpy.types.UIList):
@@ -1219,7 +1217,6 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.viz_output.draw_panel ( context, self )
-
 
 
 
@@ -1807,13 +1804,13 @@ classes = (
             MCELL_OT_read_viz_data,
             MCELL_OT_select_viz_data,
             MCELL_OT_mol_viz_set_index,
-            MCELL_PT_viz_results,
+            MCELL_OT_viz_script_refresh,
             MCELL_UL_visualization_export_list,
             MCELL_PT_visualization_output_settings,
+            MCELL_PT_viz_results,
             MolVizStringProperty,
             MCellFloatVectorProperty,
             DynamicChoicePropGroup,
-            MCELL_OT_viz_script_refresh,
             VizScriptProperty,
             MCellMolVizPropertyGroup,
             MCellVizOutputPropertyGroup,

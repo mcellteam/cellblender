@@ -141,8 +141,8 @@ def get_python_path(required_modules=None, mcell=None):
         print("Using user specified Python: " + python_path)
     # Try to use the built-in version. This will require the bundled miniconda
     # version for the matplotlib plotters.
-    elif (try_to_import(bpy.app.binary_path_python, required_modules)):
-        python_path = bpy.app.binary_path_python
+    elif (try_to_import(sys.executable, required_modules)):
+        python_path = sys.executable
         print("Using Blender's Python: " + python_path)
     # Try python in the user's PATH. This will probably fail on Windows.
     elif (try_to_import(shutil.which("python", mode=os.X_OK), required_modules)):

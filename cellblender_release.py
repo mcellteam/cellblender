@@ -355,7 +355,7 @@ class MCell_Point_List_OT_point_remove_all(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCell_PointList_UL(bpy.types.UIList):
+class MCELL_UL_PointList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         row = layout.row()
         col = row.column()
@@ -843,7 +843,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                         row = layout.row()
                         col = row.column()
 
-                        col.template_list("MCell_PointList_UL", "", rel, "points_list", rel, "active_point_index", rows=5, maxrows=20)
+                        col.template_list("MCELL_UL_PointList", "", rel, "points_list", rel, "active_point_index", rows=5, maxrows=20)
 
                         col = row.column(align=True)
                         col.operator("mcellptlist.point_add", icon='ADD', text="")
@@ -1306,7 +1306,7 @@ classes = (
             MCell_Point_List_OT_point_add_obj_sel,
             MCell_Point_List_OT_point_remove,
             MCell_Point_List_OT_point_remove_all,
-            MCell_PointList_UL,
+            MCELL_UL_PointList,
             MCellMoleculeReleaseProperty,
             MCellMoleculeReleasePropertyGroup,
             MCELL_OT_release_pattern_add,

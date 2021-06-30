@@ -498,9 +498,9 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
 classes = (
             MCELL_PT_project_settings,
+            MCELL_OT_export_project,
             MCellProjectPropertyGroup,
             MCellExportProjectPropertyGroup,
-            MCELL_OT_export_project,
           )
 
 def register():

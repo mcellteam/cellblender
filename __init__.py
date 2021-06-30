@@ -230,12 +230,42 @@ def cb_register():
     data_model.register()
 
 
+def cb_unregister():
+    data_model.unregister()
+    cellblender_main.unregister()
+    bng.unregister()
+    mdl.unregister()
+    io_mesh_mcell_mdl.unregister()
+    object_surface_regions.unregister()
+    cellblender_legacy.unregister()
+    cellblender_meshalyzer.unregister()
+    cellblender_mol_viz.unregister()
+    cellblender_partitions.unregister()
+    cellblender_reaction_output.unregister()
+    cellblender_surface_regions.unregister()
+    cellblender_surface_classes.unregister()
+    cellblender_release.unregister()
+    cellblender_reactions.unregister()
+    cellblender_molmaker.unregister()
+    cellblender_molecules.unregister()
+    cellblender_objects.unregister()
+    cellblender_pbc.unregister()
+    cellblender_initialization.unregister()
+    cellblender_simulation.unregister()
+    cellblender_project.unregister()
+    cellblender_scripting.unregister()
+    cellblender_preferences.unregister()
+    cellblender_examples.unregister()
+    parameter_system.unregister()
+
+
 # We use per module class registration/unregistration
 def register():
     print ( "Registering CellBlender with Blender version = " + str(bpy.app.version) )
     #bpy.utils.register_module(__name__, verbose=False)
     cb_register()
 
+    '''
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
     bpy.utils.unregister_class(cellblender_project.MCELL_PT_project_settings)
@@ -254,6 +284,7 @@ def register():
     bpy.utils.unregister_class(cellblender_release.MCELL_PT_molecule_release)
     bpy.utils.unregister_class(cellblender_reaction_output.MCELL_PT_reaction_output_settings)
     bpy.utils.unregister_class(cellblender_mol_viz.MCELL_PT_visualization_output_settings)
+    '''
 
 
     # Don't normally re-register individual panels here with new panel system, but do it for now to test slowdown problem
@@ -433,7 +464,7 @@ def unregister():
 
     atexit.unregister(simulation_queue.shutdown)
 
-    bpy.utils.unregister_module(__name__)
+    cb_unregister()
 
     print("CellBlender unregistered")
 

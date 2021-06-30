@@ -319,9 +319,6 @@ class MCELL_OT_reset_preferences(bpy.types.Operator):
         return {'FINISHED'}
 
 
-
-
-
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
     bl_idname = "mcell.set_mcell_binary"
     bl_label = "Set MCell Binary"
@@ -388,6 +385,7 @@ class MCELL_OT_reset_theme(bpy.types.Operator):
         bpy.ops.ui.reset_default_theme()
         return {'FINISHED'}
 
+
 class MCELL_OT_black_theme(bpy.types.Operator):
     bl_idname = "mcell.black_3d_theme"
     bl_label = "Black Background"
@@ -397,6 +395,7 @@ class MCELL_OT_black_theme(bpy.types.Operator):
     def execute(self, context):
         context.user_preferences.themes[0].view_3d.space.gradients.high_gradient = (0,0,0)
         return {'FINISHED'}
+
 
 class MCELL_OT_white_theme(bpy.types.Operator):
     bl_idname = "mcell.white_3d_theme"
@@ -417,6 +416,7 @@ def show_proxy_callback(self, context):
     for name in proxy_names:
       if name in objs:
         objs[name].hide = not mcell_prefs.show_mcellr_proxies
+
 
 class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
@@ -738,6 +738,7 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
 
 
 classes = (
+            MCELL_PT_cellblender_preferences,
             MCELL_OT_save_preferences,
             MCELL_OT_reset_preferences,
             MCELL_OT_set_mcell_binary,
@@ -747,7 +748,6 @@ classes = (
             MCELL_OT_black_theme,
             MCELL_OT_white_theme,
             CellBlenderPreferencesPropertyGroup,
-            MCELL_PT_cellblender_preferences,
           )
 
 def register():

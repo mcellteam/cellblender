@@ -1524,7 +1524,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
                 row = box.row()
                 col = row.column()
-                col.template_list("MCell_UL_check_component", "define_molecules",
+                col.template_list("MCELL_UL_check_component", "define_molecules",
                                   self, "component_list",
                                   self, "active_component_index",
                                   rows=4)
@@ -1805,7 +1805,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
 
 
-#class MCell_UL_check_molecule(bpy.types.UIList):
+#class MCELL_UL_check_molecule(bpy.types.UIList):
 #    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
 #        if item.status:
 #            layout.label(text=item.status, icon='ERROR')
@@ -1813,7 +1813,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 #            layout.label(text=item.name, icon='FILE_TICK')
 
 
-class MCell_UL_check_molecule(bpy.types.UIList):
+class MCELL_UL_check_molecule(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # print ("Draw with " + str(data) + " " + str(item) + " " + str(active_data) + " " + str(active_propname) + " " + str(index) )
         if item.status:
@@ -1977,7 +1977,7 @@ def get_3D_auto_point ( num_components, component_radius, component_index ):
 
 
 
-class MCell_UL_check_component(bpy.types.UIList):
+class MCELL_UL_check_component(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # print ("Draw with " + str(data) + " " + str(item) + " " + str(active_data) + " " + str(active_propname) + " " + str(index) )
         # print ("  Type = " + data.geom_type )
@@ -2445,7 +2445,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         else:
             row = layout.row()
             col = row.column()
-            col.template_list("MCell_UL_check_molecule", "define_molecules",
+            col.template_list("MCELL_UL_check_molecule", "define_molecules",
                               self, "molecule_list",
                               self, "active_mol_index",
                               rows=4)
@@ -2493,8 +2493,8 @@ classes = (
             MCell_OT_molecule_2D_Circ,
             MCell_OT_molecule_3D_Sp,
             MCellMoleculeProperty,
-            MCell_UL_check_molecule,
-            MCell_UL_check_component,
+            MCELL_UL_check_molecule,
+            MCELL_UL_check_component,
             MCell_OT_molecule_show_all,
             MCell_OT_molecule_hide_all,
             MCELL_PT_define_molecules,

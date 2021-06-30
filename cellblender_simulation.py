@@ -2288,7 +2288,7 @@ class MCellComputerProperty(bpy.types.PropertyGroup):
     comp_props: StringProperty ( default="", description="Computer properties" )
     selected: BoolProperty ( default=False, description="Select for running" )
 
-class MCell_UL_computer_item ( bpy.types.UIList ):
+class MCELL_UL_computer_item ( bpy.types.UIList ):
     def draw_item (self, context, layout, data, item, icon, active_data, active_propname, index):
       col = layout.column()
       col.label ( text=item.comp_name + "  " + str(int(item.comp_mem)) + "G " + str(item.cores_in_use) + "/" + str(item.cores_total) )
@@ -2950,7 +2950,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                                 col = row.column()
                                 col.operator( "mcell.refresh_sge_list", icon='FILE_REFRESH' )
                                 row = subbox.row()
-                                row.template_list("MCell_UL_computer_item", "computer_item",
+                                row.template_list("MCELL_UL_computer_item", "computer_item",
                                                   self, "computer_list", self, "active_comp_index", rows=4 )
                                 row = subbox.row()
                                 col = row.column()
@@ -3587,7 +3587,7 @@ classes = (
             MCellRunSimulationProcessesProperty,
             MCellSimStringProperty,
             MCellComputerProperty,
-            MCell_UL_computer_item, 
+            MCELL_UL_computer_item, 
             MCellRunSimulationPropertyGroup,
             PLUGGABLE_OT_Reload,
             PLUGGABLE_OT_Print,
