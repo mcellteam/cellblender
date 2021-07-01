@@ -44,20 +44,6 @@ from . import cellblender_utils
 
 
 
-# Initialization Panel Classes
-
-class MCELL_PT_initialization(bpy.types.Panel):
-    bl_label = "CellBlender - Model Initialization"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.initialization.draw_panel ( context, self )
-
-
-
 class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
     def __init__(self):
@@ -746,7 +732,6 @@ surfaces or only for those in the volume. OFF is the default."""
 
 
 classes = (
-            MCELL_PT_initialization,
             MCellInitializationPropertyGroup,
           )
 

@@ -567,17 +567,6 @@ class MCELL_UL_model_objects(bpy.types.UIList):
               col.prop(model_obj, 'hide_viewport', text="", icon='HIDE_OFF')
 
 
-class MCELL_PT_model_objects(bpy.types.Panel):
-    bl_label = "CellBlender - Model Objects"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.model_objects.draw_panel ( context, self )
-
-
 
 # Model Objects Property Groups
 
@@ -1556,7 +1545,6 @@ classes = (
             MCell_OT_object_show_all,
             MCell_OT_object_hide_all,
             MCELL_UL_model_objects,
-            MCELL_PT_model_objects,
             MCellModelObjectsProperty,
             MCellModelObjectsPropertyGroup,
           )

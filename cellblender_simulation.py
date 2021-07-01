@@ -2183,17 +2183,6 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
             layout.label(text=item.name, icon='ERROR')
 
 
-class MCELL_PT_run_simulation(bpy.types.Panel):
-    bl_label = "CellBlender - Run Simulation"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.run_simulation.draw_panel ( context, self )
-
-
 class MCELL_UL_run_simulation_queue(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -2220,17 +2209,6 @@ class MCELL_UL_run_simulation_queue(bpy.types.UIList):
         else:
             # Indexing error may be caused by stale data in the simulation_popen_list?? Maybe??
             layout.label(text=item.name, icon='ERROR')
-
-
-class MCELL_PT_run_simulation_queue(bpy.types.Panel):
-    bl_label = "CellBlender - Run Simulation"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.run_simulation.draw_panel ( context, self )
 
 
 # Simulation Property Groups
@@ -3581,9 +3559,7 @@ classes = (
             MCELL_OT_initialize_scripting ,
             MCELL_UL_error_list,
             MCELL_UL_run_simulation,
-            MCELL_PT_run_simulation,
             MCELL_UL_run_simulation_queue,
-            MCELL_PT_run_simulation_queue,
             MCellRunSimulationProcessesProperty,
             MCellSimStringProperty,
             MCellComputerProperty,

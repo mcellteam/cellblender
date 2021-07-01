@@ -2182,19 +2182,6 @@ class MCell_OT_molecule_hide_all(bpy.types.Operator):
 
 
 
-
-class MCELL_PT_define_molecules(bpy.types.Panel):
-    bl_label = "CellBlender - Define Molecules"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw ( self, context ):
-        # Call the draw function for the instance being drawn in this panel
-        context.scene.mcell.molecules.draw_panel ( context, self )
-
-
 class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters: BoolProperty(name="Contains CellBlender Parameters", default=True)
     molecule_list: CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
@@ -2497,7 +2484,6 @@ classes = (
             MCELL_UL_check_component,
             MCell_OT_molecule_show_all,
             MCell_OT_molecule_hide_all,
-            MCELL_PT_define_molecules,
             MCellMoleculesListProperty,
           )
 

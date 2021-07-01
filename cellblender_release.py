@@ -245,18 +245,6 @@ class MCELL_UL_check_molecule_release(bpy.types.UIList):
             layout.label(text=item.name, icon='CHECKMARK')
 
 
-class MCELL_PT_molecule_release(bpy.types.Panel):
-    bl_label = "CellBlender - Molecule Release/Placement"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.release_sites.draw_panel ( context, self )
-
-
-
 class MCellPointItemPropertyGroup(bpy.types.PropertyGroup):
     x: FloatProperty ( name="X", default=0.0, precision=7 )
     y: FloatProperty ( name="Y", default=0.0, precision=7 )
@@ -1011,19 +999,6 @@ class MCELL_UL_check_release_pattern(bpy.types.UIList):
             layout.label(text=item.name, icon='CHECKMARK')
 
 
-class MCELL_PT_release_pattern(bpy.types.Panel):
-    bl_label = "CellBlender - Release Pattern"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.release_patterns.draw_panel ( context, self )
-
-
-
-
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     name: StringProperty(
@@ -1299,7 +1274,6 @@ classes = (
             MCELL_OT_release_site_add,
             MCELL_OT_release_site_remove,
             MCELL_UL_check_molecule_release,
-            MCELL_PT_molecule_release,
             MCellPointItemPropertyGroup,
             MCell_Point_List_OT_point_add,
             MCell_Point_List_OT_point_add_cursor,
@@ -1312,7 +1286,6 @@ classes = (
             MCELL_OT_release_pattern_add,
             MCELL_OT_release_pattern_remove,
             MCELL_UL_check_release_pattern,
-            MCELL_PT_release_pattern,
             MCellReleasePatternProperty,
             RelStringProperty,
             MCellReleasePatternPropertyGroup,

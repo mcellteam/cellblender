@@ -52,19 +52,6 @@ from cellblender.cellblender_utils import mcell_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
 
-class MCELL_PT_project_settings(bpy.types.Panel):
-    bl_label = "CellBlender - Project Settings"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw ( self, context ):
-        # Call the draw function of the object itself
-        context.scene.mcell.project_settings.draw_panel ( context, self )
-
-
-
 
 class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
     base_name: StringProperty(
@@ -497,7 +484,6 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
 
 classes = (
-            MCELL_PT_project_settings,
             MCELL_OT_export_project,
             MCellProjectPropertyGroup,
             MCellExportProjectPropertyGroup,

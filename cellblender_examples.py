@@ -697,17 +697,6 @@ class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_PT_examples(bpy.types.Panel):
-    bl_label = "CellBlender - Examples"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.cellblender_examples.draw_panel ( context, self )
-
-
 
 class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
 
@@ -799,7 +788,6 @@ classes = (
             MCELL_OT_load_scripted_dyn_geo,
             MCELL_OT_load_dyn_geo_cc,
             MCELL_OT_load_dynamic_geometry,
-            MCELL_PT_examples,
             CellBlenderExamplesPropertyGroup,
           )
 

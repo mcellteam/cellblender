@@ -647,20 +647,8 @@ class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
                 col.prop(item, "plotting_enabled", text="", icon='HIDE_ON')
 
 
-class MCELL_PT_reaction_output_settings(bpy.types.Panel):
-    bl_label = "CellBlender - Reaction Output Settings"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.rxn_output.draw_panel ( context, self )
-
-
 
 # Reaction Output Property Groups
-
 
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):
@@ -1227,7 +1215,6 @@ classes = (
             MCELL_OT_add_all_world,
             MCELL_OT_plot_rxn_output_with_selected,
             MCELL_UL_check_reaction_output_settings,
-            MCELL_PT_reaction_output_settings,
             MCellReactionOutputProperty,
             MCellReactionOutputPropertyGroup,
           )

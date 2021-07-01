@@ -218,17 +218,6 @@ class MCELL_UL_check_surface_class_props(bpy.types.UIList):
             layout.label(text=item.name, icon='CHECKMARK')
 
 
-class MCELL_PT_define_surface_classes(bpy.types.Panel):
-    bl_label = "CellBlender - Define Surface Classes"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.surface_classes.draw_panel ( context, self )
-
-
 
 #########################################################################
 # Surface Classes Property Groups
@@ -718,7 +707,6 @@ classes = (
             MCELL_OT_surface_class_remove,
             MCELL_UL_check_surface_class,
             MCELL_UL_check_surface_class_props,
-            MCELL_PT_define_surface_classes,
             MCellSurfaceClassPropertiesProperty,
             MCellSurfaceClassesProperty,
             MCellSurfaceClassesPropertyGroup,

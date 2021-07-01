@@ -296,18 +296,6 @@ class MCELL_UL_check_reaction(bpy.types.UIList):
             layout.label(text=item.name, icon='CHECKMARK')
 
 
-class MCELL_PT_define_reactions(bpy.types.Panel):
-    bl_label = "CellBlender - Define Reactions"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.reactions.draw_panel ( context, self )
-
-
-
 
 # Reaction Property Groups
 
@@ -761,7 +749,6 @@ classes = (
             MCELL_OT_reaction_remove,
             MCELL_OT_add_variable_rate_constant,
             MCELL_UL_check_reaction,
-            MCELL_PT_define_reactions,
             MCellReactionProperty,
             RxnStringProperty,
             MCellReactionsListProperty,

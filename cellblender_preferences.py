@@ -724,21 +724,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-#CellBlendereGUI Panels:
-class MCELL_PT_cellblender_preferences(bpy.types.Panel):
-    bl_label = "CellBlender - Preferences"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw ( self, context ):
-        # Call the draw function of the object itself
-        context.scene.mcell.cellblender_preferences.draw_panel ( context, self )
-
-
 classes = (
-            MCELL_PT_cellblender_preferences,
             MCELL_OT_save_preferences,
             MCELL_OT_reset_preferences,
             MCELL_OT_set_mcell_binary,

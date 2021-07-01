@@ -233,17 +233,6 @@ class MCELL_UL_check_mod_surface_regions(bpy.types.UIList):
             layout.label(text=item.name, icon='CHECKMARK')
 
 
-class MCELL_PT_mod_surface_regions(bpy.types.Panel):
-    bl_label = "CellBlender - Assign Surface Classes"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.mod_surf_regions.draw_panel ( context, self )
-
-
 
 # Surface Regions Property Groups
 
@@ -495,7 +484,6 @@ classes = (
             MCELL_OT_mod_surf_regions_remove,
             MCELL_PT_object_selector,
             MCELL_UL_check_mod_surface_regions,
-            MCELL_PT_mod_surface_regions,
             MCellModSurfRegionsProperty,
             MCellModSurfRegionsPropertyGroup,
           )

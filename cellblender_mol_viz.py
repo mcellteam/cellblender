@@ -1183,17 +1183,6 @@ def mol_viz_file_read(mcell, filepath):
 # Mol Viz Panel Classes
 
 
-class MCELL_PT_viz_results(bpy.types.Panel):
-    bl_label = "CellBlender - Visualize Simulation Results"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.mol_viz.draw_panel ( context, self )
-
-
 class MCELL_UL_visualization_export_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -1207,16 +1196,6 @@ class MCELL_UL_visualization_export_list(bpy.types.UIList):
         if not context.scene.mcell.viz_output.export_all:
             layout.prop(item, "export_viz", text="Export")
 
-
-class MCELL_PT_visualization_output_settings(bpy.types.Panel):
-    bl_label = "CellBlender - Visualization Output Settings"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.viz_output.draw_panel ( context, self )
 
 
 
@@ -1806,8 +1785,6 @@ classes = (
             MCELL_OT_mol_viz_set_index,
             MCELL_OT_viz_script_refresh,
             MCELL_UL_visualization_export_list,
-            MCELL_PT_visualization_output_settings,
-            MCELL_PT_viz_results,
             MolVizStringProperty,
             MCellFloatVectorProperty,
             DynamicChoicePropGroup,

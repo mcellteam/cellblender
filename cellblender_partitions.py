@@ -181,19 +181,6 @@ class MCELL_OT_auto_generate_boundaries(bpy.types.Operator):
 
 
 
-class MCELL_PT_partitions(bpy.types.Panel):
-    bl_label = "CellBlender - Define and Visualize Partitions"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.partitions.draw_panel ( context, self )
-
-
-
-
 def transform_x_partition_boundary(self, context):
     """ Transform the partition object along the x-axis. """
 
@@ -571,7 +558,6 @@ classes = (
             MCELL_OT_create_partitions_object,
             MCELL_OT_remove_partitions_object,
             MCELL_OT_auto_generate_boundaries,
-            MCELL_PT_partitions,
             MCellPartitionsPropertyGroup,
           )
 
