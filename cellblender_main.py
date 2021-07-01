@@ -954,7 +954,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def init_properties ( self, context=None ):
         print ("MCellPropertyGroup.init_properties called")
-        self.cellblender_version = "0.1.54"
+        self.cellblender_version = str(cellblender.bl_info['version'])
         self.cellblender_addon_id = "0"
         self.cellblender_data_model_version = "0"
         self.parameter_system.init_properties()
@@ -971,6 +971,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         #    self.sim_runners.plugs_changed_callback ( context )
         # Don't forget to update the "saved_by_source_id" to match the current version of the addon
         self['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
+        cellblender.cellblender_info['versions_match'] = True
         self.initialized = True
 
 
