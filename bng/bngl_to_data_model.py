@@ -769,6 +769,7 @@ def read_data_model_from_bngl_text ( bngl_model_text ):
         assign_nested_dimensions ( topology )
         assign_nested_coordinates ( topology, 0, 0, 0 )
 
+      print ( "Appending Objects to Data Model" )
       dm.append_objects ( topology, None, None )  
 
       print ( "Max depth = " + str(get_max_depth(topology)) )
@@ -1205,14 +1206,15 @@ def read_data_model_from_bngsim( model ):
     assign_nested_dimensions ( topology )
     assign_nested_coordinates ( topology, 0, 0, 0 )
 
-    dm.append_objects (topology, None, None)
+  print ( "Appending Objects to Data Model" )
+  dm.append_objects (topology, None, None)
 
-    print ( "Max depth = " + str(get_max_depth(topology)) )
+  print ( "Max depth = " + str(get_max_depth(topology)) )
 
-    # Print the compartments:
-    print ( "Topology = " + str(topology) )
+  # Print the compartments:
+  print ( "Topology = " + str(topology) )
 
-    dump_data_model ( "Topology", topology )
+  dump_data_model ( "Topology", topology )
 
   for k in compartment_type_dict.keys():
     print ( "  Compartment " + str(k) + " is type " + str(compartment_type_dict[k]) )
