@@ -46,14 +46,14 @@ def mol_viz_update_from_file(mcell, filename):
     filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
 
     # Save current global_undo setting. Turn undo off to save memory
-    global_undo = bpy.context.user_preferences.edit.use_global_undo
-    bpy.context.user_preferences.edit.use_global_undo = False
+    global_undo = bpy.context.preferences.edit.use_global_undo
+    bpy.context.preferences.edit.use_global_undo = False
 
     cb_mv.mol_viz_clear(mcell)
     cb_mv.mol_viz_file_read(mcell, filepath)
 
     # Reset undo back to its original state
-    bpy.context.user_preferences.edit.use_global_undo = global_undo    
+    bpy.context.preferences.edit.use_global_undo = global_undo    
 
 
 def update_frame_data(scene):
