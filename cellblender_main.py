@@ -1013,6 +1013,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
           dm['model_language'] = 'mcell3r'
         else:
           dm['model_language'] = 'mcell3'
+        dm['use_bng_units'] = self.cellblender_preferences.bionetgen_units_mode
         dm['blender_version'] = [v for v in bpy.app.version]
         dm['cellblender_version'] = self.cellblender_version
         #dm['cellblender_source_hash'] = self.cellblender_source_hash
@@ -1199,8 +1200,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             # default
             self.cellblender_preferences.mcell4_mode = True
             self.cellblender_preferences.bionetgen_mode = True
-            
-
+        
         # Then add each section
 
         if "parameter_system" in dm:

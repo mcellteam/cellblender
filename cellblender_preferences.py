@@ -453,7 +453,13 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
     
     bionetgen_mode: BoolProperty(
         name="BioNetGen Language Mode", default=True,
-        description="Export CellBlender model into a BNGL file where possible, show BioNetGen Options and disable some checking")
+        description="Export CellBlender model into a BNGL file where possible, show BioNetGen Options and disable some checking, "
+                    "has no impact on units used")
+
+    bionetgen_units_mode: BoolProperty(
+        name="BioNetGen Units Mode", default=False,
+        description="When unchecked, standard MCell units are used for bimolecular reactions (M^-1*s^-1 and um^2*N^-1*s^-1); "
+                    "when checked, BioNetGen ODE/SSA/PLA units are used for bimolecular reactions (um^3*N^-1*s^-1)")
 
     show_mcellr_proxies: BoolProperty(
         name="Show MCellR Proxies", default=False,
@@ -577,6 +583,9 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "bionetgen_mode")
+
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "bionetgen_units_mode")
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "show_mcellr_proxies")
