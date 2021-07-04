@@ -1870,7 +1870,7 @@ def new_blender_mol_from_SphereCyl_data ( context, mol_data, show_key_planes=Fal
     if show_key_planes or (mol['ftype'] != 'k'):
       p = mol['loc']
       # bpy.ops.mesh.primitive_uv_sphere_add(size=mol['r'],location=p)
-      bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, size=mol['r'],location=p)
+      bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=mol['r'],location=p)
       color_set = False
       if molmaker.cellblender_colors:
         # Try to find a molecule color material matching this molecule

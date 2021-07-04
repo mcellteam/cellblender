@@ -663,7 +663,7 @@ def old_mol_viz_file_read(mcell_prop, filepath):
                 mol_shape_mesh = meshes.get(mol_shape_mesh_name)
                 if not mol_shape_mesh:
                     bpy.ops.mesh.primitive_ico_sphere_add(
-                        subdivisions=0, size=0.005, location=[0, 0, 0])
+                        subdivisions=0, radius=0.005, location=[0, 0, 0])
                     mol_shape_obj = bpy.context.active_object
                     mol_shape_obj.name = mol_shape_obj_name
                     mol_shape_obj.track_axis = "POS_Z"
@@ -1052,7 +1052,7 @@ def mol_viz_file_read(mcell, filepath):
                     # Make the glyph right here
                     # print ( "Making a " + str(mol.glyph) + " molecule glyph" )
                     bpy.ops.mesh.primitive_ico_sphere_add(
-                        subdivisions=0, size=0.005, location=[0, 0, 0])
+                        subdivisions=0, radius=0.005, location=[0, 0, 0])
                     mol_shape_obj = bpy.context.active_object
                     mol_shape_obj.name = mol_shape_obj_name
                     mol_shape_obj.track_axis = "POS_Z"
