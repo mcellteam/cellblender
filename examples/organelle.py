@@ -804,9 +804,9 @@ organelle_dm = {
      "display": {
       "scale": 2.0,
       "color": [
-       1.0,
-       1.0,
-       1.0
+       0.6,
+       0.6,
+       0.6
       ],
       "emit": 0.5,
       "glyph": "Cube"
