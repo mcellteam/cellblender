@@ -702,8 +702,8 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
                     helptext = "Reaction Description - \nUser-specified text describing this reaction"
                     ps.draw_prop_with_help ( layout, "Description", rxn, "description", "description_show_help", rxn.description_show_help, helptext )
 
-                    reactants = rxn.reactants.split(" + ")
-                    products = rxn.products.split(" + ")
+                    reactants = [s.strip() for s in rxn.reactants.split("+") ]
+                    products = [s.strip() for s in rxn.products.split("+") ]
                     mol_list = mcell.molecules.molecule_list
                     bnglreactant = []
                     bnglproduct = []
@@ -725,8 +725,8 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
                             tmpStr = mol_list[productStr].bnglLabel if mol_list[productStr].bnglLabel != '' else mol_list[productStr].name
                             bnglproduct.append(tmpStr)
 
-                    reactant_string = ' + '.join(bnglreactant) + ' -> '
-                    product_string = ' + '.join(bnglproduct)
+                    reactant_string = '+'.join(bnglreactant) + ' -> '
+                    product_string = '+'.join(bnglproduct)
 
                     if len(product_string) > 0:
                         row = layout.row()
@@ -742,7 +742,6 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
-
 
 classes = ( 
             MCELL_OT_reaction_add,
