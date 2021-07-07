@@ -539,13 +539,13 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
     
             if mcell.model_objects.object_list:
                 layout.operator("mcell.auto_generate_boundaries",
-                                icon='OUTLINER_OB_LATTICE')
+                                icon='MOD_LATTICE')
             if not "partitions" in bpy.data.objects:
                 layout.operator("mcell.create_partitions_object",
-                                icon='OUTLINER_OB_LATTICE')
+                                icon='MOD_LATTICE')
             else:
                 layout.operator("mcell.remove_partitions_object",
-                                icon='OUTLINER_OB_LATTICE')
+                                icon='MOD_LATTICE')
 
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
