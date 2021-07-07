@@ -633,7 +633,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "rel_patterns_select", icon='TIME', text="" )
                     if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "surf_classes_select", icon='LIGHTPROBE_CUBE_MAP', text="" )
                     if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "surf_regions_select", icon='UV_DATA', text="" )
-                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "partitions_select", icon='GRID', text="" )
+                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "partitions_select", icon='MESH_GRID', text="" )
                     if mcell.cellblender_preferences.show_button_num[14]: row.prop ( self, "graph_select", icon='GRAPH', text="" )
                     if mcell.cellblender_preferences.show_button_num[15]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
                     if mcell.cellblender_preferences.show_button_num[16]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
@@ -745,7 +745,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     brow = layout.row()  ##############################################################
 
                     bcol = brow.column()
-                    bcol.prop ( self, "partitions_select", icon='GRID', text="Partitions" )
+                    bcol.prop ( self, "partitions_select", icon='MESH_GRID', text="Partitions" )
                     bcol = brow.column()
                     bcol.prop ( self, "graph_select", icon='GRAPH', text="Plot Output Settings" )
 
@@ -844,7 +844,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.partitions_select:
                     layout.box() # Use as a separator
-                    layout.label ( text="Partitions", icon='GRID' )
+                    layout.label ( text="Partitions", icon='MESH_GRID' )
                     context.scene.mcell.partitions.draw_layout ( context, layout )
 
                 if self.pbc_select:

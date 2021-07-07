@@ -42,7 +42,7 @@ import cellblender
 class MCellPBCPropertyGroup(bpy.types.PropertyGroup):
     #Include PBC boolean
     include: BoolProperty(name="Include PBC", default=False ,
-    	description="PBC is used to define an area that you wish to use" "properly.")
+    	description="Enable to define a domain having Periodic Boundaries")
     #Periodic Traditional variable
     peri_trad: BoolProperty(name="Periodic Traditional", default=True)
     #Periodic X variable
