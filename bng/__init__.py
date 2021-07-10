@@ -234,12 +234,14 @@ classes = (
           )
 
 def register():
+    external_operators.register()
     for cls in classes:
       bpy.utils.register_class(cls)
 
 def unregister():
     for cls in reversed(classes):
       bpy.utils.unregister_class(cls)
+    external_operators.unregister()
 
 
 #def register():
