@@ -1395,6 +1395,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         print ( "Name = " + self.name )
 
     def draw_props ( self, layout, molecules, parameter_system ):
+        mcell4_mode = bpy.context.scene.mcell.cellblender_preferences.mcell4_mode
 
         helptext = "Molecule Name - \nThis is the name used in Reactions and Display"
         parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, helptext )
@@ -1435,46 +1436,37 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
             comp_label = "BNGL: " + self.name
             if len(self.component_list) > 0:
-              comp_list = []
-              for comp in self.component_list:
-                cname = comp.component_name
-                # state_list = comp.states_string.replace(',',' ').split() # Allows commas as separators
-                state_list = comp.states_string.split()
-                if len(state_list) > 0:
-                  cname += "~"+"~".join(state_list)
-                comp_list.append(cname)
-              comp_label += " ( " + ", ".join(comp_list) + " )"
+                comp_list = []
+                for comp in self.component_list:
+                    cname = comp.component_name
+                    # state_list = comp.states_string.replace(',',' ').split() # Allows commas as separators
+                    state_list = comp.states_string.split()
+                    if len(state_list) > 0:
+                        cname += "~"+"~".join(state_list)
+                    comp_list.append(cname)
+                comp_label += " ( " + ", ".join(comp_list) + " )"
 
             if not molecules.show_components:
                 row.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
-                """
-                col = row.column()
-                col.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
-                col = row.column()
-                col.prop(self, "geom_type" );
-                if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
-                  col = row.column()
-                  col.prop(self, "component_distance")
-                  col = row.column()
-                  col.operator("mcell.molecule_recalc_comps", icon='FILE_REFRESH', text="")
-                """
             else:
                 #row.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
                 col = row.column()
                 col.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
-                col = row.column()
-                col.prop(self, "geom_type" )
-                col = row.column() # Provide some space?
-                col.label ( text=" " )
-                col = row.column()
-                col.prop(self, "component_distance")
-                col = row.column()
-                col.operator ( "mcell.dist_two_d_circle", icon='FILE_REFRESH', text='2D' )
-                col = row.column()
-                col.operator ( "mcell.dist_three_d_sphere", icon='FILE_REFRESH', text='3D' )
-                if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
-                  col = row.column()
-                  col.operator("mcell.molecule_recalc_comps", icon='FILE_REFRESH', text="")
+                if not mcell4_mode:
+                    # can use only coincident mode for now in MCell4
+                    col = row.column()
+                    col.prop(self, "geom_type" )
+                    col = row.column() # Provide some space?
+                    col.label ( text=" " )
+                    col = row.column()
+                    col.prop(self, "component_distance")
+                    col = row.column()
+                    col.operator ( "mcell.dist_two_d_circle", icon='FILE_REFRESH', text='2D' )
+                    col = row.column()
+                    col.operator ( "mcell.dist_three_d_sphere", icon='FILE_REFRESH', text='3D' )
+                    if (self.geom_type=="2DAuto") or (self.geom_type=="3DAuto"):
+                      col = row.column()
+                      col.operator("mcell.molecule_recalc_comps", icon='FILE_REFRESH', text="")
 
                 if self.geom_type == 'XYZRef':
                   row = box.row()
@@ -1615,17 +1607,18 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 print ( "Material " + mat_name + " not found, not showing materials" )
 
 
-        box = layout.box()
-        row = box.row(align=True)
-        row.alignment = 'LEFT'
-        if not molecules.show_molmaker:
-            row.prop(molecules, "show_molmaker", icon='TRIA_RIGHT',
-                     text="Molecule Structure Tool", emboss=False)
-        else:
-            row.prop(molecules, "show_molmaker", icon='TRIA_DOWN',
-                     text="Molecule Structure Tool", emboss=False)
-            molmaker = bpy.context.scene.mcell.molmaker
-            molmaker.draw_layout ( bpy.context, box )
+        if not mcell4_mode:
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if not molecules.show_molmaker:
+                row.prop(molecules, "show_molmaker", icon='TRIA_RIGHT',
+                         text="Molecule Structure Tool", emboss=False)
+            else:
+                row.prop(molecules, "show_molmaker", icon='TRIA_DOWN',
+                         text="Molecule Structure Tool", emboss=False)
+                molmaker = bpy.context.scene.mcell.molmaker
+                molmaker.draw_layout ( bpy.context, box )
 
         box = layout.box()
         row = box.row(align=True)
@@ -1647,7 +1640,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 "does not affect unimolecular reactions." )
             self.custom_time_step.draw(box,parameter_system)
             self.custom_space_step.draw(box,parameter_system)
-            self.maximum_step_length.draw(box,parameter_system)
+            if not mcell4_mode:
+                self.maximum_step_length.draw(box,parameter_system)
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""
