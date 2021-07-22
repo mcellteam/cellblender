@@ -999,7 +999,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       else:
                           # mcell4
                           # (0:mcell, 1:wd, 2:base_name, 3:error, 4:log, 5:seed)
-                          if run_cmd[2] != 'Untitled':
+                          if run_cmd[2] != 'Untitled' and run_cmd[2] != 'Scene':
                               py_filename = '%s_model.py' % (run_cmd[2])
                           else:
                               py_filename = 'model.py'
