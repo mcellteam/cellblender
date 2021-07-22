@@ -1058,7 +1058,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         data_object.hide_viewport = False
 
         context.view_layer.objects.active = data_object
-        bpy.ops.object.mode_set(mode='OBJECT')
+        if context.view_layer.objects.active != data_object:
+            print("Not active!!")
+            
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            # even if we set data_object.hide_viewport = False, the object may stay hidden 
+            # and the use must unhide it
+            raise RuntimeError("Cannot export model when one of the objects is hidden, error for " + 
+                               data_object.name + ". Please unhide the object and the run Export & Run again.") 
 
         g_obj['name'] = data_object.name
 
