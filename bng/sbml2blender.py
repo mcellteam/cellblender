@@ -4,6 +4,7 @@ Rohan Arepally
 Jose Juan Tapia
 Devin Sullivan
 Taraz Buck
+Tom Bartol
 '''
 from collections import defaultdict
 from cellblender.cellblender_utils import preserve_selection_use_operator
@@ -161,13 +162,14 @@ def readSBMLFileParametricObject(filepath):
     for parametricGeometry in root.iter(spatial_prefix + 'parametricGeometry'):
         spatialPoints = list(parametricGeometry.iterfind(spatial_prefix + 'spatialPoints'))[0]
         listOfParametricObjects = list(parametricGeometry.iterfind(spatial_prefix + 'listOfParametricObjects'))[0]
-        vertices = parseSBMLSpatialArrayData(spatialPoints.text, [None, 3])
+        vertices = parseSBMLSpatialArrayData(spatialPoints.text, shape=[None, 3])
         for parametricObject in listOfParametricObjects.iter(spatial_prefix + 'parametricObject'):
             id = parametricObject.get(spatial_prefix + 'id')
             polygonType = parametricObject.get(spatial_prefix + 'polygonType')
             print("spid: " + id)
             
-            faces = parseSBMLSpatialArrayData(parametricObject.text, (None, 4 if polygonType == 'quadrilateral' else 3), dtype=int)
+            print('faces text: %s' % (parametricObject.text))
+            faces = parseSBMLSpatialArrayData(parametricObject.text, shape=(None, 4 if polygonType == 'quadrilateral' else 3), dtype=int)
         
             objects += [[id, faces, vertices]]
     
@@ -178,7 +180,7 @@ def resetScene():
     obj_list = [item.name for item in bpy.data.objects if item.type == "MESH"]
     
     for obj in obj_list:
-    	bpy.data.objects[obj].select = True
+    	bpy.data.objects[obj].select_set(True)
     
     bpy.ops.object.delete()
 
@@ -226,7 +228,7 @@ def generateCube(name, size, loc):
     bpy.ops.mesh.primitive_cube_add(location=(float(loc[0]),float(loc[1]),float(loc[2])))
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
-    obj.select = True
+    obj.select_set(True)
     print(name)
     obj.name = name
     #obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
@@ -235,7 +237,7 @@ def generateCube(name, size, loc):
     bpy.ops.mesh.select_all(action='SELECT')
     #bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
-    obj.select = False
+    obj.select_set(False)
     return obj
 
 # Approximation of the surface area of a sphere (Knud Thomsen's formula)
@@ -267,19 +269,26 @@ def generateMesh(objectData):
     verts = objectData[2]
     faces = objectData[1]
     id    = objectData[0]
+
+    print('sbml2blender: generating mesh for object %s' % (id))
+    print('              verts: %d   faces: %d' % (len(verts), len(faces)))
     
     mesh_data = bpy.data.meshes.new(id)
     mesh_data.from_pydata(verts, [], faces)
     mesh_data.update(calc_edges=True)
     
     obj = bpy.data.objects.new(id, mesh_data)
+
+    print('generateMesh: ' + obj.name)
     
     scene = bpy.context.scene
-    scene.objects.link(obj)
-    obj.select = True
-    obj.rotation_euler = (0,0,0)
+    scene.collection.children[0].objects.link ( obj )
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    #obj.rotation_euler = (0,0,0)
     #obj.scale = (0.05, 0.05, 0.04)
-    obj.scale = (1, 1, 1)
+    #obj.scale = (1, 1, 1)
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.quads_convert_to_tris()
