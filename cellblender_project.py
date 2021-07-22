@@ -106,7 +106,7 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
             layout.prop(context.scene, "name", text="Project Base Name")
             row = layout.row()
             row.label(
-                text="Used as a prefix for generated model files, names 'Scene' and 'Untitled' are not used.")
+                text="Prefix for generated model files, names 'Scene' and 'Untitled' are defaults and are not used.")
 
     def remove_properties ( self, context ):
         print ( "Removing all Preferences Properties... no collections to remove." )
