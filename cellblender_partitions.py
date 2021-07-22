@@ -63,8 +63,9 @@ class MCELL_OT_create_partitions_object(bpy.types.Operator):
             for obj in selected_objs:
                 obj.select_set(False)
             active_object = bpy.context.active_object
-            active_object_mode = active_object.mode
-            bpy.ops.object.mode_set(mode='OBJECT')
+            if active_object:
+                active_object_mode = active_object.mode
+                bpy.ops.object.mode_set(mode='OBJECT')
             # Add a box that represents the partitions' boundaries
             bpy.ops.mesh.primitive_cube_add()
             partition_object = bpy.context.active_object
@@ -72,7 +73,8 @@ class MCELL_OT_create_partitions_object(bpy.types.Operator):
             context.view_layer.objects.active = active_object
             for obj in selected_objs:
                 obj.select_set(True)
-            bpy.ops.object.mode_set(mode=active_object_mode)
+            if active_object:
+                bpy.ops.object.mode_set(mode=active_object_mode)
             partition_object.select_set(False)
             # Prevent user from manipulating the box, because I don't yet have
             # a good way of updating the partitions when the box object is
