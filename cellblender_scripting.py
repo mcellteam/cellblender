@@ -372,15 +372,10 @@ def update_available_scripts ( scripting ):
 
     # Find the current internal scripts
     for txt in bpy.data.texts:
-       # print ( "\n" + txt.name + "\n" + txt.as_string() + "\n" )
-       if txt.name[-4:] == ".mdl":
-          scripting.internal_mdl_scripts_list.add()
-          index = len(scripting.internal_mdl_scripts_list)-1
-          scripting.internal_mdl_scripts_list[index].name = txt.name
-       if txt.name[-3:] == ".py":
-          scripting.internal_python_scripts_list.add()
-          index = len(scripting.internal_python_scripts_list)-1
-          scripting.internal_python_scripts_list[index].name = txt.name
+        # print ( "\n" + txt.name + "\n" + txt.as_string() + "\n" )
+        scripting.internal_python_scripts_list.add()
+        index = len(scripting.internal_python_scripts_list)-1
+        scripting.internal_python_scripts_list[index].name = txt.name
 
 
 class MCELL_OT_scripting_add(bpy.types.Operator):
@@ -928,8 +923,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
         texts = {}
         if scripts:
-          for txt in bpy.data.texts:
-             if (txt.name[-4:] == ".mdl") or (txt.name[-3:] == ".py"):
+            for txt in bpy.data.texts:
                 texts[txt.name] = txt.as_string()
         dm['script_texts'] = texts
 
