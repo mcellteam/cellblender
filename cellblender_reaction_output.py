@@ -639,7 +639,7 @@ class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
             if item.plotting_enabled:
                 col.label(text=item.name, icon='CHECKMARK')
             else:
-                col.label(item.name, icon='BLANK1')
+                col.label(text=item.name, icon='BLANK1')
             col = layout.column()
             if item.plotting_enabled:
                 col.prop(item, "plotting_enabled", text="", icon='HIDE_OFF')
