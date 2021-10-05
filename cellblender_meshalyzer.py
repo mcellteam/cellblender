@@ -111,6 +111,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         objs = context.selected_objects
 
         mcell.meshalyzer.object_name = ""
+        mcell.meshalyzer.selection_status = ""
         mcell.meshalyzer.vertices = 0
         mcell.meshalyzer.edges = 0
         mcell.meshalyzer.faces = 0
@@ -124,7 +125,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         mcell.meshalyzer.sav_ratio = 0
 
         if (len(objs) != 1):
-            mcell.meshalyzer.status = "Please Select One Mesh Object"
+            mcell.meshalyzer.status = "Error: Please Select One Mesh Object"
             return {'FINISHED'}
 
         obj = objs[0]
@@ -132,66 +133,99 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         mcell.meshalyzer.object_name = obj.name
 
         if not (obj.type == 'MESH'):
-            mcell.meshalyzer.status = "Selected Object Not a Mesh"
+            mcell.meshalyzer.status = "Error: Selected Object Not a Mesh"
             return {'FINISHED'}
 
         t_mat = obj.matrix_world
         mesh = obj.data
 
-        mcell.meshalyzer.vertices = len(mesh.vertices)
-        mcell.meshalyzer.edges = len(mesh.edges)
-        mcell.meshalyzer.faces = len(mesh.polygons)
+        # Save current mesh select mode setting
+        msm = context.scene.tool_settings.mesh_select_mode[0:3]
+        # Switch to face select mode
+        context.scene.tool_settings.mesh_select_mode = (False, False, True)
+
+        # Count selected vertices, edges and faces:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        sel_verts = [ v.index for v in mesh.vertices if v.select ]
+        sel_polys = [ p.index for p in mesh.polygons if p.select ]
+        sel_edges = [ e.index for e in mesh.edges if e.select ]
+
+        n_sel_verts = len(sel_verts)
+        n_sel_polys = len(sel_polys)
+        n_sel_edges = len(sel_edges)
+
+        n_tot_verts = len(mesh.vertices)
+        n_tot_polys = len(mesh.polygons)
+        n_tot_edges = len(mesh.edges)
+
+        mcell.meshalyzer.vertices = n_sel_verts
+        mcell.meshalyzer.edges = n_sel_edges
+        mcell.meshalyzer.faces = n_sel_polys
+
+        # Restore mesh select mode to original setting
+        context.scene.tool_settings.mesh_select_mode = msm
         
-        
-        mcell.meshalyzer.components = self.count_components(context)
-        mcell.meshalyzer.genus = mcell.meshalyzer.components - ( (mcell.meshalyzer.vertices + mcell.meshalyzer.faces - mcell.meshalyzer.edges) / 2 )
-        mcell.meshalyzer.genus_string = "Genus = %d" % (mcell.meshalyzer.genus)
+        if n_sel_verts == n_tot_verts:
+            mcell.meshalyzer.selection_status = "Entire Object"
+        else:
+            mcell.meshalyzer.selection_status = "Partial Object"
+
+        if n_sel_verts == n_tot_verts:
+          mcell.meshalyzer.components = self.count_components(context)
+          mcell.meshalyzer.genus = mcell.meshalyzer.components - ( (mcell.meshalyzer.vertices + mcell.meshalyzer.faces - mcell.meshalyzer.edges) / 2 )
+          mcell.meshalyzer.genus_string = "Genus = %d" % (mcell.meshalyzer.genus)
+        else:
+          mcell.meshalyzer.genus_string = "Genus = NA"
 
 
         area = 0
         for f in mesh.polygons:
-            if not (len(f.vertices) == 3):
-                mcell.meshalyzer.status = "***** Mesh Not Triangulated *****"
-                mcell.meshalyzer.watertight = "Mesh Not Triangulated"
-                return {'FINISHED'}
+            if f.select:
+                if not (len(f.vertices) == 3):
+                    mcell.meshalyzer.status = "***** Error: Mesh Not Triangulated *****"
+                    mcell.meshalyzer.watertight = "Mesh Not Triangulated"
+                    return {'FINISHED'}
 
-            tv0 = mesh.vertices[f.vertices[0]].co * t_mat
-            tv1 = mesh.vertices[f.vertices[1]].co * t_mat
-            tv2 = mesh.vertices[f.vertices[2]].co * t_mat
-            area = area + mathutils.geometry.area_tri(tv0, tv1, tv2)
+
+                tv0 = mesh.vertices[f.vertices[0]].co * t_mat
+                tv1 = mesh.vertices[f.vertices[1]].co * t_mat
+                tv2 = mesh.vertices[f.vertices[2]].co * t_mat
+                area = area + mathutils.geometry.area_tri(tv0, tv1, tv2)
 
         mcell.meshalyzer.area = area
 
-        (edge_faces, edge_face_count) = make_efdict(mesh)
-
-        is_closed = check_closed(edge_face_count)
-        is_manifold = check_manifold(edge_face_count)
-        is_orientable = check_orientable(mesh, edge_faces, edge_face_count)
-
-        if is_orientable:
-            mcell.meshalyzer.normal_status = "Consistent Normals"
-        else:
-            mcell.meshalyzer.normal_status = "Inconsistent Normals"
-
-        if is_closed:
-            mcell.meshalyzer.watertight = "Watertight Mesh"
-        else:
-            mcell.meshalyzer.watertight = "Non-watertight Mesh"
-
-        if is_manifold:
-            mcell.meshalyzer.manifold = "Manifold Mesh"
-        else:
-            mcell.meshalyzer.manifold = "Non-manifold Mesh"
-
         volume = 0
-        if is_orientable and is_manifold and is_closed:
-            volume = mesh_vol(mesh, t_mat)
-            if volume >= 0:
-                mcell.meshalyzer.normal_status = "Outward Facing Normals"
-            else:
-                mcell.meshalyzer.normal_status = "Inward Facing Normals"
+        if n_sel_verts == n_tot_verts:
+            (edge_faces, edge_face_count) = make_efdict(mesh)
 
-        mcell.meshalyzer.volume = volume
+            is_closed = check_closed(edge_face_count)
+            is_manifold = check_manifold(edge_face_count)
+            is_orientable = check_orientable(mesh, edge_faces, edge_face_count)
+
+            if is_orientable:
+                mcell.meshalyzer.normal_status = "Consistent Normals"
+            else:
+                mcell.meshalyzer.normal_status = "Inconsistent Normals"
+
+            if is_closed:
+                mcell.meshalyzer.watertight = "Watertight Mesh"
+            else:
+                mcell.meshalyzer.watertight = "Non-watertight Mesh"
+    
+            if is_manifold:
+                mcell.meshalyzer.manifold = "Manifold Mesh"
+            else:
+                mcell.meshalyzer.manifold = "Non-manifold Mesh"
+
+            if is_orientable and is_manifold and is_closed:
+                volume = mesh_vol(mesh, t_mat)
+                if volume >= 0:
+                    mcell.meshalyzer.normal_status = "Outward Facing Normals"
+                else:
+                    mcell.meshalyzer.normal_status = "Inward Facing Normals"
+
+            mcell.meshalyzer.volume = volume
+
         if (not volume == 0.0):
             mcell.meshalyzer.sav_ratio = area/volume
 
@@ -211,6 +245,7 @@ class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
         objs = context.selected_objects
 
         mcell.meshalyzer.object_name = ''
+        mcell.meshalyzer.selection_status = ''
         mcell.meshalyzer.vertices = 0
         mcell.meshalyzer.edges = 0
         mcell.meshalyzer.faces = 0
@@ -222,7 +257,7 @@ class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
         mcell.meshalyzer.sav_ratio = 0
 
         if (len(objs) == 0):
-            mcell.meshalyzer.status = 'Please Select One or More Mesh Objects'
+            mcell.meshalyzer.status = 'Error: Please Select One or More Mesh Objects'
             return {'FINISHED'}
 
         bpy.ops.text.new()
@@ -235,7 +270,7 @@ class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
             mcell.meshalyzer.object_name = obj.name
 
             if not (obj.type == 'MESH'):
-                mcell.meshalyzer.status = 'Selected Object Not a Mesh'
+                mcell.meshalyzer.status = 'Error: Selected Object Not a Mesh'
                 return {'FINISHED'}
 
             t_mat = obj.matrix_world
@@ -248,7 +283,7 @@ class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
             area = 0
             for f in mesh.polygons:
                 if not (len(f.vertices) == 3):
-                    mcell.meshalyzer.status = '***** Mesh Not Triangulated *****'
+                    mcell.meshalyzer.status = '***** Error: Mesh Not Triangulated *****'
                     mcell.meshalyzer.watertight = 'Mesh Not Triangulated'
                     return {'FINISHED'}
 
@@ -421,6 +456,8 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
             row = layout.row()
             row.label(text="Object Name: %s" % (mcell.meshalyzer.object_name))
             row = layout.row()
+            row.label(text="Selection: %s" % (mcell.meshalyzer.selection_status))
+            row = layout.row()
             row.label(text="Vertices: %d" % (mcell.meshalyzer.vertices))
             row = layout.row()
             row.label(text="Edges: %d" % (mcell.meshalyzer.edges))
@@ -436,18 +473,19 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
             row = layout.row()
             row.label(text="SA/V Ratio: %.5g" % (mcell.meshalyzer.sav_ratio))
 
-            row = layout.row()
-            row.label(text="Mesh Topology:")
-            row = layout.row()
-            row.label(text="      %s" % (mcell.meshalyzer.watertight))
-            row = layout.row()
-            row.label(text="      %s" % (mcell.meshalyzer.manifold))
-            row = layout.row()
-            row.label(text="      %s" % (mcell.meshalyzer.normal_status))
-            row = layout.row()
-            row.label(text="      Components = %d" % (mcell.meshalyzer.components))
-            row = layout.row()
-            row.label(text="      %s" % (mcell.meshalyzer.genus_string))
+            if (mcell.meshalyzer.selection_status == 'Entire Object'):
+              row = layout.row()
+              row.label(text="Mesh Topology:")
+              row = layout.row()
+              row.label(text="      %s" % (mcell.meshalyzer.watertight))
+              row = layout.row()
+              row.label(text="      %s" % (mcell.meshalyzer.manifold))
+              row = layout.row()
+              row.label(text="      %s" % (mcell.meshalyzer.normal_status))
+              row = layout.row()
+              row.label(text="      Components = %d" % (mcell.meshalyzer.components))
+              row = layout.row()
+              row.label(text="      %s" % (mcell.meshalyzer.genus_string))
 
 
 
@@ -455,6 +493,7 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
 
 class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
     object_name = StringProperty(name="Object Name")
+    selection_status = StringProperty(name="Selelction Status")
     vertices = IntProperty(name="Vertices", default=0)
     edges = IntProperty(name="Edges", default=0)
     faces = IntProperty(name="Faces", default=0)
