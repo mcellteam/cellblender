@@ -260,9 +260,13 @@ class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
             mcell.meshalyzer.status = 'Error: Please Select One or More Mesh Objects'
             return {'FINISHED'}
 
-        bpy.ops.text.new()
-        report = bpy.data.texts['Text']
-        report.name = 'mesh_analysis.txt'
+        if mcell.meshalyzer.save_external == False:
+          bpy.ops.text.new()
+          report = bpy.data.texts['Text']
+          report.name = 'mesh_analysis.txt'
+        else: 
+          report = open(mcell.meshalyzer.report_name,'w')
+
         report.write("# Object  Surface Area  Volume\n")
 
         for obj in objs:
@@ -330,6 +334,10 @@ class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
             report.write("%s %.9g %.9g\n" % (obj.name, mcell.meshalyzer.area, mcell.meshalyzer.volume))
 
         mcell.meshalyzer.status = ''
+
+        if mcell.meshalyzer.save_external == True:
+          report.close()
+
         return {'FINISHED'}
 
 
@@ -493,6 +501,8 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
 
 class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
     object_name = StringProperty(name="Object Name")
+    report_name = StringProperty(name="Report File Name", default='mesh_analysis.txt')
+    save_external = BoolProperty(name="Report File Name", default=False)
     selection_status = StringProperty(name="Selelction Status")
     vertices = IntProperty(name="Vertices", default=0)
     edges = IntProperty(name="Edges", default=0)
