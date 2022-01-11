@@ -622,7 +622,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                     "-np", mcell_processes_str],
                     stdout=None,
                     stderr=None)
-                self.report({'INFO'}, "Simulation Running")
+                self.report({'INFO'}, "Simulation Starting...")
 
                 # This is a hackish workaround since we can't return arbitrary
                 # objects from operators or store arbitrary objects in collection
@@ -1008,7 +1008,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           my_env['MCELL_PATH'] = os.path.dirname(mcell_binary)
                           proc = cellblender.simulation_queue.add_task(python_path, mcell_args, run_cmd[1], make_texts, env=my_env)
 
-                      self.report({'INFO'}, "Simulation Running")
+                      self.report({'INFO'}, "Simulation Starting...")
 
                       if not simulation_process.name:
                           simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, run_cmd[5]))
@@ -1155,7 +1155,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                     cmd_list.append (run_sim.sge_email_addr)
 
                 sp = subprocess.Popen(cmd_list, stdout=None, stderr=None)
-                self.report({'INFO'}, "Simulation Running")
+                self.report({'INFO'}, "Simulation Starting...")
 
                 # This is a hackish workaround since we can't return arbitrary
                 # objects from operators or store arbitrary objects in collection
@@ -1266,7 +1266,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                     str(end + 1), os.path.join(project_dir,"output_data"), base_name, error_file_option,
                     log_file_option, mcell_processes_str], stdout=None,
                     stderr=None)
-                self.report({'INFO'}, "Simulation Running")
+                self.report({'INFO'}, "Simulation Starting...")
 
                 # This is a hackish workaround since we can't return arbitrary
                 # objects from operators or store arbitrary objects in collection
@@ -1396,7 +1396,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                   make_texts = run_sim.save_text_logs
                   proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts, env=my_env)
 
-                  self.report({'INFO'}, "Simulation Running")
+                  self.report({'INFO'}, "Simulation Starting...")
 
                   if not simulation_process.name:
                       simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))

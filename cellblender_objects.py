@@ -56,7 +56,7 @@ def get_object_status(context):
     objstat = {}
     for o in objs:
         ostat = {}
-        ostat['vis'] = ( o.hide_viewport == False )
+        ostat['vis'] = o.visible_get()
         ostat['sel'] = ( o.select_get() == True )
         ostat['act'] = ( o == context.active_object )
 #        ostat['layers'] = o.layers[:]
@@ -71,6 +71,7 @@ def restore_object_status(context, objstat):
             ostat = objstat[oname]
             o = bpy.data.objects[oname]
             o.hide_viewport = ( ostat['vis'] == False )
+            o.hide_set( ostat['vis'] == False )
             o.select_set( ostat['sel'] == True )
 #            o.layers = ostat['layers'][:]
             if ostat['act']:
@@ -321,6 +322,7 @@ class MCELL_OT_toggle_visibility_filtered(bpy.types.Operator):
         if m != None:
           if m.end() == len(obj.name):
             obj.hide_viewport = not obj.hide_viewport
+            obj.hide_set(not obj.hide_viewport)
 
     return {'FINISHED'}
 
@@ -349,6 +351,38 @@ class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
     return {'FINISHED'}
 
 
+class MCell_OT_object_show(bpy.types.Operator):
+    bl_idname = "mcell.object_show"
+    bl_label = "Show Object"
+    bl_description = "Show a model object"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for o in context.scene.collection.children[0].objects:
+            if 'mcell' in o:
+                if o.mcell.include:
+                    # This is a model object, so show it
+                    o.hide_viewport = False
+                    o.hide_set(False)
+        return {'FINISHED'}
+
+
+class MCELL_OT_toggle_visibility(bpy.types.Operator):
+    bl_idname = "mcell.toggle_visibility"
+    bl_label = "Toggle visibility of model object"
+    bl_description = ("Toggle visibility of model object")
+
+    def execute(self, context):
+        model_objects = context.scene.mcell.model_objects
+        obj_name = str(model_objects.object_list[model_objects.active_obj_index].name)
+        obj = bpy.data.objects[obj_name]
+        if obj.visible_get():
+          obj.hide_set(True)
+          obj.hide_viewport = True
+        else:
+          obj.hide_set(False)
+          obj.hide_viewport = False
+        return{'FINISHED'}
 
 
 class MCell_OT_object_show_all(bpy.types.Operator):
@@ -363,6 +397,7 @@ class MCell_OT_object_show_all(bpy.types.Operator):
                 if o.mcell.include:
                     # This is a model object, so show it
                     o.hide_viewport = False
+                    o.hide_set(False)
         return {'FINISHED'}
 
 class MCell_OT_object_hide_all(bpy.types.Operator):
@@ -377,6 +412,7 @@ class MCell_OT_object_hide_all(bpy.types.Operator):
                 if o.mcell.include:
                     # This is a model object, so hide it
                     o.hide_viewport = True
+                    o.hide_set(True)
         return {'FINISHED'}
 
 
@@ -561,11 +597,19 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             col.prop(item, 'object_show_only', text="", icon='VIEWZOOM')
 
             col = layout.column()
+            if model_obj.visible_get():
+              col.prop(item, "toggle_visibility", text="", icon='HIDE_OFF')
+              # col.operator("mcell.toggle_visibility", text="", icon='HIDE_OFF')
+            else:
+              col.prop(item, "toggle_visibility", text="", icon='HIDE_ON')
+              # col.operator("mcell.toggle_visibility", text="", icon='HIDE_ON')
+
+            '''
             if model_obj.hide_viewport:
               col.prop(model_obj, 'hide_viewport', text="", icon='HIDE_OFF')
             else:
               col.prop(model_obj, 'hide_viewport', text="", icon='HIDE_OFF')
-
+            '''
 
 
 # Model Objects Property Groups
@@ -575,8 +619,8 @@ def object_show_only_callback(self, context):
 
     #print ( "Object show only callback for object " + self.name )
     # Note the check before set to keep from infinite recursion in properties!!
-    if self.object_show_only != False:
-        self.object_show_only = False
+#    if self.object_show_only != False:
+#        self.object_show_only = False
 
     for o in context.scene.collection.children[0].objects:
         if 'mcell' in o:
@@ -584,21 +628,41 @@ def object_show_only_callback(self, context):
                 # This is a model object, so check the name
                 if o.name == self.name:
                     # Unhide, Select, and Make Active
-                    if o.hide_viewport:
+                    if not o.visible_get():
                         o.hide_viewport = False
+                        o.hide_set(False)
                     if not o.select_get():
                         o.select_set(True)
                     context.view_layer.objects.active = o
                 else:
-                    # Unhide and DeSelect
-                    if not o.hide_viewport:
+                    # Hide and DeSelect
+                    if o.visible_get():
                         o.hide_viewport = True
+                        o.hide_set(True)
                     if o.select_get():
                         o.select_set(False)
 
     if self.name in mcell.model_objects.object_list:
         # Select this item in the list as well
         mcell.model_objects.active_obj_index = mcell.model_objects.object_list.find ( self.name )
+    return
+
+
+def toggle_visibility_callback(self, context):
+    mcell = context.scene.mcell
+
+    obj_name = self.name
+    obj = bpy.data.objects[obj_name]
+    if obj.visible_get():
+      obj.hide_set(True)
+      obj.hide_viewport = True
+    else:
+      obj.hide_set(False)
+      obj.hide_viewport = False
+
+    if self.name in mcell.model_objects.object_list:
+      # Select this item in the list as well
+      mcell.model_objects.active_obj_index = mcell.model_objects.object_list.find ( self.name )
     return
 
 
@@ -654,6 +718,10 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
     # This is for selecting just one object and hiding all others
     object_show_only: BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
+
+    # Note that the "toggle_visibility" property should always be False except during the short time that it's callback is being called.
+    # This is for selecting just one object and hiding all others
+    toggle_visibility: BoolProperty ( default=False, description='Toggle visibility of object', update=toggle_visibility_callback )
 
     status: StringProperty(name="Status")
 
@@ -1054,8 +1122,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
         g_obj = {}
 
-        saved_hide_status = data_object.hide_viewport
+        saved_hide_status = not data_object.visible_get()
+        saved_select_status = data_object.select_get()
         data_object.hide_viewport = False
+        data_object.hide_set(False)
 
         context.view_layer.objects.active = data_object
         if context.view_layer.objects.active != data_object:
@@ -1117,6 +1187,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
         # restore proper object visibility state
         data_object.hide_viewport = saved_hide_status
+        data_object.hide_set(saved_hide_status)
+        data_object.select_set(saved_select_status)
         return g_obj
 
 
@@ -1127,6 +1199,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         g_list = []
 
         obj_list = [ obj for obj in context.scene.collection.children[0].objects if obj.mcell.include ]
+
+        # save status of active object
+        saved_active_object = context.view_layer.objects.active
+
         for data_object in obj_list:
           g_list.append ( self.build_data_model_object_from_mesh( context, data_object) )
         g_dm['object_list'] = g_list
@@ -1164,6 +1240,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
             # Restore the current frame
             context.scene.frame_set(fc)
+
+        # restore saved active object
+        context.view_layer.objects.active = saved_active_object
 
         return g_dm
 
@@ -1551,6 +1630,7 @@ classes = (
             MCELL_OT_deselect_filtered,
             MCELL_OT_toggle_visibility_filtered,
             MCELL_OT_toggle_renderability_filtered,
+            MCELL_OT_toggle_visibility,
             MCell_OT_object_show_all,
             MCell_OT_object_hide_all,
             MCELL_UL_model_objects,
