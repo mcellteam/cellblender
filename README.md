@@ -26,7 +26,7 @@ Installing CellBlender Addon:
 Note that you will not be getting the full value out of CellBlender with
 Blender and this repo alone, since CellBlender also depends on many other
 tools. As such, we've begun to produce what we call a *CellBlender bundle*,
-which includes Blender itself, the CellBlender addon, a custom verion of Python
+which includes Blender itself, the CellBlender addon, a custom version of Python
 and necessary libraries, MCell, GAMer, and many other useful tools. To build a
 bundle, please see the
 [bundle_cellblender](https://github.com/mcellteam/bundle_cellblender) repo. If
