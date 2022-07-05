@@ -490,7 +490,10 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                             if combine_seeds:
                                 title_string = " title=" + base_name
                             else:
-                                title_string = " title=" + f
+                              p = f.split(os.path.sep)
+                              if len(p)>1:
+                                base_name = os.path.join(p[-2],p[-1])
+                              title_string = " title=" + base_name
 
                             if plot_sep == ' ':
                                 # No title when all are on the same plot since only

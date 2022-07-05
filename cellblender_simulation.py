@@ -2279,7 +2279,7 @@ class MCELL_UL_computer_item ( bpy.types.UIList ):
 
 
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
-    enable_python_scripting: BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
+    enable_python_scripting: BoolProperty ( name='Enable Python Scripts', default=False )  # Intentionally not in the data model
     sge_host_name: StringProperty ( default="", description="Name of Grid Engine Scheduler" )
     sge_email_addr: StringProperty ( default="", description="Email address for notifications" )
     computer_list: CollectionProperty(type=MCellComputerProperty, name="Computer List")
@@ -2643,15 +2643,15 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             #
             #if global_scripting_enabled_once:
             #
-            #    helptext = "Allow Running of Python Code in Scripting Panel\n" + \
+            #    helptext = "Allow Running of Python Code in Model Scripts Panel\n" + \
             #               " \n" + \
-            #               "The Scripting Interface can run Python code contained\n" + \
+            #               "The Model Scripts Interface can run Python code contained\n" + \
             #               "in text files (text blocks) within Blender.\n" + \
             #               "\n" + \
             #               "Running scripts from unknown sources is a security risk.\n" + \
             #               "Only enable this option if you are confident that all of\n" + \
             #               "the scripts contained in this .blend file are safe to run."
-            #    ps.draw_prop_with_help ( layout, "Enable Python Scripting", self,
+            #    ps.draw_prop_with_help ( layout, "Enable Python Scripts", self,
             #               "enable_python_scripting", "python_scripting_show_help",
             #               self.python_scripting_show_help, helptext )
 
@@ -2659,7 +2659,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
             #    row = layout.row()
             #    col = row.column()
-            #    col.label ( "Enable Scripting" )
+            #    col.label ( "Enable Model Scripts" )
             #    col = row.column()
             #    col.operator ( "mcell.initialize_scripting" )
 
@@ -2859,11 +2859,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
                     #row = box.row()
                     #col = row.column()
-                    #col.label ( text="Enable Scripting" )
+                    #col.label ( text="Enable Model Scripts" )
                     #col = row.column()
                     #col.operator ( "mcell.initialize_scripting", icon="ARMATURE_DATA" )
 
-                    helptext = "Initialize Python Code Scripting for this Session\n" + \
+                    helptext = "Initialize Python Code Scripts for this Session\n" + \
                                "This must be done each time CellBlender is restarted."
                     ps.draw_operator_with_help ( box, "Enable Python Scripting", self,
                                "mcell.initialize_scripting", "python_initialize_show_help",
