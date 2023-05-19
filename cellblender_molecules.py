@@ -440,9 +440,11 @@ def glyph_visibility_callback(self, context):
 
     objs[show_name].hide_set(not self.glyph_visibility)
     objs[show_name].hide_viewport = not self.glyph_visibility
+    objs[show_name].hide_render = not self.glyph_visibility
 
     objs[show_shape_name].hide_set(True)
     objs[show_shape_name].hide_viewport = not self.glyph_visibility
+    objs[show_shape_name].hide_render = not self.glyph_visibility
 
     return
 
@@ -465,12 +467,14 @@ def glyph_show_only_callback(self, context):
         if o.name.startswith("mol_"):
             if o.name in show_only_items:
                 if not o.visible_get():
+                    o.hide_render = False
                     o.hide_viewport = False
                     o.hide_set(False)
                 #if o.hide_viewport != False:
                 #    o.hide_viewport = False
             else:
                 if o.visible_get():
+                    o.hide_render = True
                     o.hide_viewport = True
                     o.hide_set(True)
                 #if o.hide_viewport != True:
@@ -1058,6 +1062,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             mols_obj.lock_scale[2] = True
             mols_obj.select_set(False)
             mols_obj.hide_select = True
+            mols_obj.hide_render = True
             mols_obj.hide_viewport = True
             mols_obj.hide_set(True)
 
@@ -2161,9 +2166,11 @@ class MCell_OT_molecule_show_all(bpy.types.Operator):
             if o.name.startswith("mol_"):
                 o.hide_set(False)
                 o.hide_viewport = False
+                o.hide_render = False
                 if o.name.endswith("_shape"):
                   o.hide_set(True)
                   o.hide_viewport = False
+                  o.hide_render = False
         return {'FINISHED'}
 
 
@@ -2185,9 +2192,11 @@ class MCell_OT_molecule_hide_all(bpy.types.Operator):
             if o.name.startswith("mol_"):
                 o.hide_set(True)
                 o.hide_viewport = True
+                o.hide_render = True
                 if o.name.endswith("_shape"):
                   o.hide_set(True)
                   o.hide_viewport = False
+                  o.hide_render = False
         return {'FINISHED'}
 
 

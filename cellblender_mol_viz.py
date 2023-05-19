@@ -536,6 +536,7 @@ def mol_viz_clear(mcell_prop, force_clear=False):
 
             mol_obj.hide_set(hide)
             mol_obj.hide_viewport = hide
+            mol_obj.hide_render = hide
 
     # Reset mol_viz_list to empty
     for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
@@ -1004,6 +1005,7 @@ def mol_viz_file_read(mcell, filepath):
             mols_obj.name = "molecules"                 # Name this empty object "molecules"
             mols_obj.hide_select = True
             mols_obj.hide_viewport = True
+            mols_obj.hide_render = True
             mols_obj.hide_set(True)
 
         if mol_dict:
@@ -1060,6 +1062,7 @@ def mol_viz_file_read(mcell, filepath):
                     mol_shape_obj.track_axis = "POS_Z"
                     mol_shape_obj.hide_select = True
                     mol_shape_obj.hide_viewport = False
+                    mol_shape_obj.hide_render = False
                     mol_shape_obj.hide_set(True)
                     mol_shape_mesh = mol_shape_obj.data
                     mol_shape_mesh.name = mol_shape_mesh_name
@@ -1142,6 +1145,7 @@ def mol_viz_file_read(mcell, filepath):
 
                 # Restore the visibility state
                 mol_obj.hide_viewport = hide
+                mol_obj.hide_render = hide
                 mol_obj.hide_set(hide)
 
                 """
