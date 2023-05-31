@@ -393,10 +393,10 @@ class SBML2JSON:
             else:
                 rateL, nl = self.removeFactorFromMath(math, rReactant,
                                                       rProduct)
-                rateL = "if({0} >= 0 ,{0},0)".format(rateL)
+                # rateL = "if({0} >= 0 ,{0},0)".format(rateL)
                 rateR, nr = self.removeFactorFromMath(math, rReactant,
                                                       rProduct)
-                rateR = "if({0} < 0 ,-({0}),0)".format(rateR)
+                # rateR = "if({0} < 0 ,-({0}),0)".format(rateR)
                 nl, nr = 1,1
         else:
             rateL, nl = (self.removeFactorFromMath(math.deepCopy(),
@@ -426,8 +426,8 @@ class SBML2JSON:
         #remainderPatterns = [x[0] for x in reactants]
         math = self.getPrunnedTree(math,remainderPatterns)
         rateR = libsbml.formulaToString(math) 
-        for element in remainderPatterns:
-            rateR = 'if({0} >0,({1})/{0} ,0)'.format(element,rateR)
+        # for element in remainderPatterns:
+            # rateR = 'if({0} >0,({1})/{0} ,0)'.format(element,rateR)
         if highStoichoiMetryFactor != 1:
             rateR = '{0}*{1}'.format(rateR, int(highStoichoiMetryFactor))
 
@@ -494,7 +494,7 @@ class SBML2JSON:
             math = kineticLaw.getMath()
             reversible = reaction.getReversible()
                 
-            rateL, rateR = self.getInstanceRate(math,compartmentList.keys(),reversible,rReactant,rProduct)
+            rateL, rateR = self.getInstanceRate(math,list(compartmentList.keys()),reversible,rReactant,rProduct)
             #finalReactant = [x[0]]    
             #testing whether we have volume-surface interactions
             rcList = []
@@ -620,7 +620,7 @@ class SBML2JSON:
                 tmpR['reactants'] = ' + '.join(prdList)
                 if flagR:
                     virtualReaction= {}
-                    virtualReaction['rxn_name'] =  tmpL['rxn_name']
+                    virtualReaction['rxn_name'] =  tmpR['rxn_name']
                     tmpR.pop('rxn_name')
                     tmpR['products'] = '{0}_{1}_{2}'.format(product[0][0],reactant[0][2],reactant[0][0])
                     virtualReaction['reactants'] = tmpR['products']
