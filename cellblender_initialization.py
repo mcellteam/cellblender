@@ -318,7 +318,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
             
             if "high_probability_threshold" in warn_dict: self.high_probability_threshold = float(warn_dict['high_probability_threshold'])
             if "lifetime_too_short" in warn_dict: self.lifetime_too_short = warn_dict['lifetime_too_short']
-            if "lifetime_threshold" in warn_dict: self.lifetime_threshold = float(warn_dict['lifetime_threshold'])
+            if "lifetime_threshold" in warn_dict: self.lifetime_threshold = int(warn_dict['lifetime_threshold'])
             if "missed_reactions" in warn_dict: self.missed_reactions = warn_dict['missed_reactions']
             if "missed_reaction_threshold" in warn_dict: self.missed_reaction_threshold = float(warn_dict['missed_reaction_threshold'])
             if "negative_diffusion_constant" in warn_dict: self.negative_diffusion_constant = warn_dict['negative_diffusion_constant']
