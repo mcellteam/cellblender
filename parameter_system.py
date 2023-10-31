@@ -58,10 +58,12 @@ import bpy
 from bpy.props import *
 from math import *
 from random import uniform, gauss
-import parser
+# import parser
+import ast
+from collections.abc import Iterable
 import re
 import token
-import symbol
+#import symbol
 import sys
 import pickle
 import time
@@ -1763,7 +1765,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             self.active_name  = self['gp_dict'][par_id]['name']
             self.active_elist = str( self['gp_dict'][par_id]['elist'] )
             self.active_expr  = self['gp_dict'][par_id]['expr']
-            print ( "============= Updating parameter index for " + str(self.active_name) )
+            dbprint ( "============= Updating parameter index for " + str(self.active_name) )
 
             if 'sweep_enabled' in self['gp_dict'][par_id]:
               if self.active_sweep_enabled != (self['gp_dict'][par_id]['sweep_enabled'] != 0):  # Convert to a boolean??
@@ -1816,8 +1818,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         self.general_parameter_list[old_name].name = new_name
                     dbprint ("Propagate changes from " + old_name + " to " + new_name )
 
-                    who_depends_on_me =  [ k for k in self['gp_dict'][pid]['who_depends_on_me']  ]
-                    what_depends_on_me = [ k for k in self['gp_dict'][pid]['what_depends_on_me'] ]
+                    who_depends_on_me =  [ k for k in self['gp_dict'][pid]['who_depends_on_me'].keys()  ]
+                    what_depends_on_me = [ k for k in self['gp_dict'][pid]['what_depends_on_me'].keys() ]
                     ppl = self.panel_parameter_list
                     
                     dbprint ( "who_depends_on_me = " + str(who_depends_on_me) )
@@ -2028,7 +2030,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             else:
                 expr = ""
 
-                old_who_i_depend_on = set([ w for w in par['who_i_depend_on'] ])
+                old_who_i_depend_on = set([ w for w in par['who_i_depend_on'].keys() ])
                 new_who_i_depend_on = set()
 
                 par['who_i_depend_on'] = {}
@@ -2217,7 +2219,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                     dbprint ( "   Checking for " + gl[n]['name'] + " in the defined set", thresh=5 )
                     if not (n in defined_set):
                         dbprint ( "     " + gl[n]['name'] + " is not defined yet, check if it can be", thresh=5 )
-                        dep_set = set(gl[n]['who_i_depend_on'])
+                        dep_set = set(gl[n]['who_i_depend_on'].keys())
                         if dep_set.issubset(defined_set):
                             dbprint ( "       " + gl[n]['name'] + " is now defined since all its dependencies are defined.", thresh=5 )
                             ol.append ( n );
@@ -2303,7 +2305,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         total_sweep_runs = 1
         print ( "Ready to count sweep runs... " )
         if 'gp_dict' in self:
-            for par_name in self['gp_dict']:
+            for par_name in self['gp_dict'].keys():
                 par = self['gp_dict'][par_name]
                 print ( "Checking par " + str(par) )
                 if ('sweep_expr' in par) and ('sweep_enabled' in par):
@@ -2452,7 +2454,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         errors = set()
         if 'gp_dict' in self:
             gpd = self['gp_dict']
-            for p in gpd:
+            for p in gpd.keys():
                 par = gpd[p]
                 if ('status' in par) and (len(par['status']) > 0):
                     if 'loop' in par['status']:
@@ -2506,7 +2508,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 # A None indicates a missing parameter and is the highest priority error
                 pstatus.add ( 'undef' )
             if 'status' in self['gp_dict'][par_id]:
-                pstatus = pstatus.union(self['gp_dict'][par_id]['status'])
+                pstatus = pstatus.union(self['gp_dict'][par_id]['status'].items())
             if len(pstatus) > 0:
                 # Add label lines for errors:
                 if 'undef' in pstatus:
@@ -2670,9 +2672,17 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def UNDEFINED_NAME(self):
         return ( "   (0*1111111*0)   " )   # This is a string that evaluates to zero, but is easy to spot in expressions
 
+
     @profile('Expression_Handler.get_expression_keywords')
     def get_expression_keywords(self):
         return ( { '^': '**', 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': '0', 'RAND_GAUSSIAN': '0', 'PI': 'pi', 'SEED': '1' } )
+
+
+    @profile('Expression_Handler.get_func_keywords')
+    def get_func_keywords(self):
+        return ( { 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min' } )
+
+
 
     @profile('Expression_Handler.get_mdl_keywords')
     def get_mdl_keywords(self):
@@ -3021,6 +3031,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         expr = expr + token
         return expr
 
+    '''
+    # Version that uses the deprecated "parser" module
     @profile('Expression_Handler.parse_param_expr')
     def parse_param_expr ( self, param_expr ):
         """ Converts a string expression into a list expression with:
@@ -3067,6 +3079,115 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         dbprint ( "Parsed:   " + str(parameterized_expr) )
         # This is where the preservation of white space might take place
         return parameterized_expr
+    '''
+
+
+    # Version that uses "ast" module
+    @profile('Expression_Handler.parse_param_expr')
+    def parse_param_expr ( self, param_expr ):
+        """ Converts a string expression into a list expression with:
+                 variable id's as integers,
+                 None preceding undefined names
+                 all others as strings
+            Returns either a list (if successful) or None if there is an error
+            Examples:
+              Expression: "A * (B + C)" becomes something like: [ 3, "*", "(", 22, "+", 5, ")", "" ]
+                 where 3, 22, and 5 are the ID numbers for parameters A, B, and C respectively
+              Expression: "A * (B + C)" when B is undefined becomes: [ 3, "*", "(", None, "B", "+", 5, ")", "" ]
+              Note that the parsing may produce empty strings in the list which should not cause any problem.
+        """
+
+        def flatten(l):
+            for el in l:
+                if isinstance(el, Iterable) and not isinstance(el, (str, bytes)):
+                    yield from flatten(el)
+                else:
+                    yield el
+
+        def format_node ( node ):
+            if isinstance(node, ast.AST):
+                fields = [ format_node(b) for a, b in ast.iter_fields(node) ]
+                if node.__class__.__name__ == 'Module':
+                    return [f for f in fields]
+                elif node.__class__.__name__ == 'Expr':
+                    return [f for f in fields]
+                elif node.__class__.__name__ == 'Call':
+                    el = []
+                    el += [f for f in fields]
+                    el += [')']
+                    return el
+                elif node.__class__.__name__ == 'BinOp':
+                    el = []
+                    el += ['(']
+                    el += [f for f in fields]
+                    el += [')']
+                    return el
+                elif node.__class__.__name__ == 'UnaryOp':
+                    el = []
+                    el += ['(']
+                    el += [f for f in fields]
+                    el += [')']
+                    return el
+                elif node.__class__.__name__ == 'Constant':
+                    return str(fields[0])
+                elif node.__class__.__name__ == 'USub':
+                    return '-'
+                elif node.__class__.__name__ == 'Sub':
+                    return '-'
+                elif node.__class__.__name__ == 'UAdd':
+                    return '+'
+                elif node.__class__.__name__ == 'Add':
+                    return '+'
+                elif node.__class__.__name__ == 'Mult':
+                    return '*'
+                elif node.__class__.__name__ == 'Div':
+                    return '/'
+                elif node.__class__.__name__ == 'Pow':
+                    return '**'
+                elif node.__class__.__name__ == 'BitXor':
+                    return '**'
+                elif node.__class__.__name__ == 'Name':
+                    name = fields[0].strip("'")
+                    if name in self.get_func_keywords():
+                      el = [name]
+                      el += ['(']
+                      return el
+                    elif name in self.get_expression_keywords():
+                      return name
+                    elif name in self.general_parameter_list:
+                      # return the integer ID of the par after stripping off the leading "g"
+                      return int(self.general_parameter_list[name]['par_id'][1:])
+                    else:
+                      return [None, name]
+            elif isinstance(node, list):
+                lines = []
+                lines.extend(( format_node(x) for x in node ))
+                return lines
+            return repr(node)
+
+        dbprint ( "parse_param_expr called with param_expr = " + str(param_expr) )
+        dbprint ( "Parsing using general_parameter_list: " + str(self.general_parameter_list) )
+
+        param_expr = param_expr.strip()
+        if len(param_expr) == 0:
+            return []
+
+        tree = None
+        parameterized_expr = None
+        try:
+          tree = ast.parse(param_expr)
+        except:
+          print ( "==> Parsing Exception: " + str ( sys.exc_info() ) )
+
+        if tree != None:
+          if not isinstance(tree, ast.AST):
+              raise TypeError('==> Parsing expected AST, got %r' % tree.__class__.__name__)
+          ft =  format_node(tree)
+          parameterized_expr = list(flatten(ft))
+
+        return parameterized_expr
+
+
 
     @profile('Expression_Handler.count_stub')
     def count_stub ( self ):

@@ -724,7 +724,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
                     if len(mregs.keys()) > 0:
                         # if reg_name is alpha followed by alphanumeric
                         #   then we've got an old format region
-                        reg_name = mregs.keys()[0]
+                        reg_name = list(mregs.keys())[0]
                         reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
                         m = re.match(reg_filter, reg_name)
                         if m is not None:
