@@ -3,12 +3,17 @@ INSTALL_DIR = ~/.config/blender/2.76/scripts/addons/io_mesh_import_mcell_mdl/
 
 SHELL = /bin/sh
 OBJS = mdlparse.bison.o mdlmesh_parser.o vector.o mdlmesh_parser_wrap.o
+FLEX_FLAGS =
+
+ifndef _MSC_VER
+	FLEX_FLAGS += -DYY_NO_UNISTD_H
+endif
 
 _mdlmesh_parser.so: makefile setup.py mdlobj.py mdlparse.bison.c mdlmesh_parser.c vector.c mdlmesh_parser_wrap.c 
 	python setup.py build_ext
 
 mdllex.flex.c: mdllex.l
-	flex -Crema mdllex.l
+	flex -Crema $(FLEX_FLAGS) mdllex.l
 
 mdlparse.bison.c: mdllex.flex.c mdlparse.y mdlmesh_parser.h
 	bison -v -d mdlparse.y
