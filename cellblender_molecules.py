@@ -437,9 +437,17 @@ def glyph_visibility_callback(self, context):
     show_name = "mol_" + self.name
     show_shape_name = show_name + "_shape"
     objs = context.scene.collection.children[0].objects
+
+    objs[show_name].hide_set(not self.glyph_visibility)
     objs[show_name].hide_viewport = not self.glyph_visibility
+    objs[show_name].hide_render = not self.glyph_visibility
+
+    objs[show_shape_name].hide_set(True)
     objs[show_shape_name].hide_viewport = not self.glyph_visibility
+    objs[show_shape_name].hide_render = not self.glyph_visibility
+
     return
+
 
 def glyph_show_only_callback(self, context):
     # print ( "Glyph show only callback for molecule " + self.name )
@@ -450,18 +458,27 @@ def glyph_show_only_callback(self, context):
     ml = ms.molecule_list
     show_only_name = "mol_" + self.name
     show_only_shape_name = show_only_name + "_shape"
-    show_only_items = [show_only_name, show_only_shape_name]
+    show_only_items = [show_only_name]
+    #show_only_items = [show_only_name, show_only_shape_name]
     # print ( "Only showing " + str(show_only_items) )
     
     # Note the check before set to keep from infinite recursion in properties!!
     for o in context.scene.collection.children[0].objects:
         if o.name.startswith("mol_"):
             if o.name in show_only_items:
-                if o.hide_viewport != False:
+                if not o.visible_get():
+                    o.hide_render = False
                     o.hide_viewport = False
+                    o.hide_set(False)
+                #if o.hide_viewport != False:
+                #    o.hide_viewport = False
             else:
-                if o.hide_viewport != True:
+                if o.visible_get():
+                    o.hide_render = True
                     o.hide_viewport = True
+                    o.hide_set(True)
+                #if o.hide_viewport != True:
+                #    o.hide_viewport = True
     for o in ml:
         if o.name == self.name:
             if o.glyph_visibility != True:
@@ -474,10 +491,12 @@ def glyph_show_only_callback(self, context):
         ms.active_mol_index = ms.molecule_list.find ( self.name )
     return
 
+
 def shape_change_callback(self, context):
     # print ( "Shape change callback for molecule " + self.name )
     self.create_mol_data () # ( context )
     return
+
 
 class MCELL_OT_mol_shade_flat(bpy.types.Operator):
     bl_idname = "mcell.mol_shade_flat"
@@ -1043,7 +1062,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             mols_obj.lock_scale[2] = True
             mols_obj.select_set(False)
             mols_obj.hide_select = True
+            mols_obj.hide_render = True
             mols_obj.hide_viewport = True
+            mols_obj.hide_set(True)
 
         # Build the new shape vertices and faces
         # print ( "Creating a new glyph for " + self.name )
@@ -2143,7 +2164,13 @@ class MCell_OT_molecule_show_all(bpy.types.Operator):
                 o.glyph_show_only = False
         for o in context.scene.collection.children[0].objects:
             if o.name.startswith("mol_"):
+                o.hide_set(False)
                 o.hide_viewport = False
+                o.hide_render = False
+                if o.name.endswith("_shape"):
+                  o.hide_set(True)
+                  o.hide_viewport = False
+                  o.hide_render = False
         return {'FINISHED'}
 
 
@@ -2163,7 +2190,13 @@ class MCell_OT_molecule_hide_all(bpy.types.Operator):
                 o.glyph_show_only = False
         for o in context.scene.collection.children[0].objects:
             if o.name.startswith("mol_"):
+                o.hide_set(True)
                 o.hide_viewport = True
+                o.hide_render = True
+                if o.name.endswith("_shape"):
+                  o.hide_set(True)
+                  o.hide_viewport = False
+                  o.hide_render = False
         return {'FINISHED'}
 
 

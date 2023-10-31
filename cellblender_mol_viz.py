@@ -509,7 +509,7 @@ def mol_viz_clear(mcell_prop, force_clear=False):
         mol_name = mol_item.name
         mol_obj = scn_objs.get(mol_name)
         if mol_obj:
-            hide = mol_obj.hide_viewport
+            hide = not mol_obj.visible_get()
 
             mol_pos_mesh = mol_obj.data
             mol_pos_mesh_name = mol_pos_mesh.name
@@ -534,7 +534,9 @@ def mol_viz_clear(mcell_prop, force_clear=False):
             mols_obj = objs.get("molecules")
             mol_obj.parent = mols_obj
 
+            mol_obj.hide_set(hide)
             mol_obj.hide_viewport = hide
+            mol_obj.hide_render = hide
 
     # Reset mol_viz_list to empty
     for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
@@ -1003,6 +1005,8 @@ def mol_viz_file_read(mcell, filepath):
             mols_obj.name = "molecules"                 # Name this empty object "molecules"
             mols_obj.hide_select = True
             mols_obj.hide_viewport = True
+            mols_obj.hide_render = True
+            mols_obj.hide_set(True)
 
         if mol_dict:
             meshes = bpy.data.meshes
@@ -1057,6 +1061,9 @@ def mol_viz_file_read(mcell, filepath):
                     mol_shape_obj.name = mol_shape_obj_name
                     mol_shape_obj.track_axis = "POS_Z"
                     mol_shape_obj.hide_select = True
+                    mol_shape_obj.hide_viewport = False
+                    mol_shape_obj.hide_render = False
+                    mol_shape_obj.hide_set(True)
                     mol_shape_mesh = mol_shape_obj.data
                     mol_shape_mesh.name = mol_shape_mesh_name
                 else:
@@ -1115,7 +1122,7 @@ def mol_viz_file_read(mcell, filepath):
                 # Save the molecule's visibility state, so it can be restored later
                 mol_obj = objs.get(mol_name)
                 if mol_obj:
-                    hide = mol_obj.hide_viewport
+                    hide = not mol_obj.visible_get()
                     scn_objs.unlink(mol_obj)
                     objs.remove(mol_obj)
                 else:
@@ -1138,6 +1145,8 @@ def mol_viz_file_read(mcell, filepath):
 
                 # Restore the visibility state
                 mol_obj.hide_viewport = hide
+                mol_obj.hide_render = hide
+                mol_obj.hide_set(hide)
 
                 """
                 if mol_obj:

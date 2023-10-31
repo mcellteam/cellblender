@@ -56,7 +56,8 @@ def get_object_status(context):
     objstat = {}
     for o in objs:
         ostat = {}
-        ostat['vis'] = o.visible_get()
+        ostat['hide_viewport'] = o.hide_viewport
+        ostat['hide_set'] = o.hide_get()
         ostat['sel'] = ( o.select_get() == True )
         ostat['act'] = ( o == context.active_object )
 #        ostat['layers'] = o.layers[:]
@@ -70,8 +71,8 @@ def restore_object_status(context, objstat):
         if oname in bpy.data.objects:
             ostat = objstat[oname]
             o = bpy.data.objects[oname]
-            o.hide_viewport = ( ostat['vis'] == False )
-            o.hide_set( ostat['vis'] == False )
+            o.hide_viewport = ostat['hide_viewport']
+            o.hide_set(ostat['hide_set'])
             o.select_set( ostat['sel'] == True )
 #            o.layers = ostat['layers'][:]
             if ostat['act']:
@@ -321,8 +322,8 @@ class MCELL_OT_toggle_visibility_filtered(bpy.types.Operator):
         m = re.match(filter,obj.name)
         if m != None:
           if m.end() == len(obj.name):
-            obj.hide_viewport = not obj.hide_viewport
-            obj.hide_set(not obj.hide_viewport)
+            obj.hide_viewport = not obj.hide_get()
+            obj.hide_set(not obj.hide_get())
 
     return {'FINISHED'}
 
@@ -382,6 +383,7 @@ class MCELL_OT_toggle_visibility(bpy.types.Operator):
         else:
           obj.hide_set(False)
           obj.hide_viewport = False
+
         return{'FINISHED'}
 
 
@@ -399,6 +401,7 @@ class MCell_OT_object_show_all(bpy.types.Operator):
                     o.hide_viewport = False
                     o.hide_set(False)
         return {'FINISHED'}
+
 
 class MCell_OT_object_hide_all(bpy.types.Operator):
     bl_idname = "mcell.object_hide_all"
@@ -599,10 +602,10 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             col = layout.column()
             if model_obj.visible_get():
               col.prop(item, "toggle_visibility", text="", icon='HIDE_OFF')
-              # col.operator("mcell.toggle_visibility", text="", icon='HIDE_OFF')
+              #col.operator("mcell.toggle_visibility", text="", icon='HIDE_OFF')
             else:
               col.prop(item, "toggle_visibility", text="", icon='HIDE_ON')
-              # col.operator("mcell.toggle_visibility", text="", icon='HIDE_ON')
+              #col.operator("mcell.toggle_visibility", text="", icon='HIDE_ON')
 
             '''
             if model_obj.hide_viewport:
@@ -629,16 +632,16 @@ def object_show_only_callback(self, context):
                 if o.name == self.name:
                     # Unhide, Select, and Make Active
                     if not o.visible_get():
-                        o.hide_viewport = False
                         o.hide_set(False)
+                        o.hide_viewport = False
                     if not o.select_get():
                         o.select_set(True)
                     context.view_layer.objects.active = o
                 else:
                     # Hide and DeSelect
                     if o.visible_get():
-                        o.hide_viewport = True
                         o.hide_set(True)
+                        o.hide_viewport = True
                     if o.select_get():
                         o.select_set(False)
 
@@ -660,9 +663,10 @@ def toggle_visibility_callback(self, context):
       obj.hide_set(False)
       obj.hide_viewport = False
 
-    if self.name in mcell.model_objects.object_list:
-      # Select this item in the list as well
-      mcell.model_objects.active_obj_index = mcell.model_objects.object_list.find ( self.name )
+    if obj.visible_get():
+      if self.name in mcell.model_objects.object_list:
+        # Select this item in the list as well
+        mcell.model_objects.active_obj_index = mcell.model_objects.object_list.find ( self.name )
     return
 
 
@@ -776,8 +780,9 @@ def active_obj_index_changed ( self, context ):
         for o in context.scene.collection.children[0].objects:
             if o.name == model_object.name:
                 # Unhide, Select, and Make Active
-                if o.hide_viewport:
+                if not o.visible_get():
                     o.hide_viewport = False
+                    o.hide_set(False)
                 if not o.select_get():
                     o.select_set(True)
                 context.view_layer.objects.active = o
@@ -1151,8 +1156,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         if len(data_object.data.materials) > 0:
             g_obj['material_names'] = []
             for mat in data_object.data.materials:
-                g_obj['material_names'].append ( mat.name )
-                # g_obj['material_name'] = data_object.data.materials[0].name
+                if type(mat) != type(None):
+                  g_obj['material_names'].append ( mat.name )
+                  # g_obj['material_name'] = data_object.data.materials[0].name
 
         # This is needed for shape key dynamic geometry rather than: mesh = data_object.data
 #        mesh = data_object.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)

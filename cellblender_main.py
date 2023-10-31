@@ -364,7 +364,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     examples_select: BoolProperty ( name="example_sel", description="Examples", default=False, subtype='NONE', update=select_callback)
     preferences_select: BoolProperty ( name="pref_sel", description="Settings & Preferences", default=False, subtype='NONE', update=select_callback)
     #settings_select: BoolProperty ( name="set_sel", description="Project Settings", default=False, subtype='NONE', update=select_callback)
-    scripting_select: BoolProperty ( name="set_mdl", description="Scripting", default=False, subtype='NONE', update=select_callback)
+    scripting_select: BoolProperty ( name="set_mdl", description="Model Scripts", default=False, subtype='NONE', update=select_callback)
     parameters_select: BoolProperty ( name="par_sel", description="Model Parameters", default=False, subtype='NONE', update=select_callback)
     reaction_select: BoolProperty ( name="react_sel", description="Reactions", default=False, subtype='NONE', update=select_callback)
     molecule_select: BoolProperty ( name="mol_sel", description="Molecules", default=False, subtype='NONE', update=select_callback)
@@ -668,7 +668,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
                     bcol = brow.column()
-                    bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Scripting" )
+                    bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Model Scripts" )
 
 
                     brow = layout.row()  ##############################################################
@@ -790,7 +790,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.scripting_select:
                     layout.box() # Use as a separator
-                    layout.label ( text="Scripting", icon='SCRIPT' )
+                    layout.label ( text="Model Scripts", icon='SCRIPT' )
                     context.scene.mcell.scripting.draw_layout ( context, layout )
 
                 if self.parameters_select:
@@ -921,7 +921,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     cellblender_examples: PointerProperty ( type=cellblender_examples.CellBlenderExamplesPropertyGroup, name="CellBlender Examples" )
     cellblender_preferences: PointerProperty ( type=cellblender_preferences.CellBlenderPreferencesPropertyGroup, name="CellBlender Preferences" )
-    scripting: PointerProperty ( type=cellblender_scripting.CellBlenderScriptingPropertyGroup, name="CellBlender Scripting" )
+    scripting: PointerProperty ( type=cellblender_scripting.CellBlenderScriptingPropertyGroup, name="CellBlender Model Scripts" )
     project_settings: PointerProperty ( type=cellblender_project.MCellProjectPropertyGroup, name="CellBlender Project Settings" )
     export_project: PointerProperty ( type=cellblender_project.MCellExportProjectPropertyGroup, name="Export Simulation" )
     run_simulation: PointerProperty ( type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation" )

@@ -546,7 +546,7 @@ class MCELL_UL_mcell4_scripting_item(bpy.types.UIList):
 
 
 class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
-    name: StringProperty(name="Scripting", update=check_scripting)
+    name: StringProperty(name="Model Scripts", update=check_scripting)
     status: StringProperty(name="Status")
     
     internal_file_name: StringProperty ( name = "Internal File Name" )
@@ -734,7 +734,7 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
 
 
 class CellBlenderMCell4ScriptingProperty(bpy.types.PropertyGroup):
-    name: StringProperty(name="Scripting", update=check_scripting)
+    name: StringProperty(name="Model Scripts", update=check_scripting)
     status: StringProperty(name="Status")
     
     internal_file_name: StringProperty ( name = "Internal File Name" )
@@ -839,13 +839,13 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     external_python_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="Python External Scripts")
 
     active_mcell4_scripting_index: IntProperty(name="Active MCell4 Scripting Index", default=0)
-    mcell4_scripting_list: CollectionProperty(type=CellBlenderMCell4ScriptingProperty, name="MCell4 Scripting List")
+    mcell4_scripting_list: CollectionProperty(type=CellBlenderMCell4ScriptingProperty, name="MCell4 Scripts List")
     internal_mcell4_scripts_list: CollectionProperty(type=CellBlenderScriptProperty, name="MCell4 Internal Scripts")
 
 
-    show_mcell4_scripting: BoolProperty(name="MCell4 Scripting", default=False)
-    show_simulation_scripting: BoolProperty(name="Export Scripting", default=False)
-    show_data_model_scripting: BoolProperty(name="Data Model Scripting", default=False)
+    show_mcell4_scripting: BoolProperty(name="MCell4 Scripts", default=False)
+    show_simulation_scripting: BoolProperty(name="Export Scripts", default=False)
+    show_data_model_scripting: BoolProperty(name="Data Model Scripts", default=False)
     show_data_model_script_make: BoolProperty(name="Make Script", default=False)
     show_data_model_script_run: BoolProperty(name="Run Script", default=False)
     show_data_model_browser: BoolProperty(name="Data Model Browser", default=False)
