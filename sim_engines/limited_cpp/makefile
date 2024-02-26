@@ -1,5 +1,3 @@
-PYTHON_INCLUDE = /usr/include/python3.4m
-
 # Linux:
 INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 
@@ -19,11 +17,11 @@ mcell_main_c.o: mcell_main_c.c JSON.h makefile
 
 
 JSON.o: JSON.c JSON.h makefile
-	gcc -o JSON.o -c JSON.c -fPIC -I$(PYTHON_INCLUDE)
+	gcc -o JSON.o -c JSON.c -fPIC
 
 
 rng.o: rng.cpp rng.h makefile
-	g++ -o rng.o -c -std=c++11 rng.cpp -fPIC -I$(PYTHON_INCLUDE)
+	g++ -o rng.o -c -std=c++11 rng.cpp -fPIC
 
 
 StorageClasses.o: StorageClasses.cpp StorageClasses.h makefile

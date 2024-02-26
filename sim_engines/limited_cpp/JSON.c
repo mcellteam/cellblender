@@ -16,6 +16,8 @@
 ///////  Some Helper Functions  ////////
 ////////////////////////////////////////
 
+int parse_element ( json_element *parent, char *name, int index, int depth );
+
 char *get_json_name ( enum json_type_enum type ) {
   if (type == JSON_VAL_UNDEF)  return ( "Undefined" );
   if (type == JSON_VAL_NULL)   return ( "Null" );
