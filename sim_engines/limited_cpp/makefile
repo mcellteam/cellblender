@@ -79,7 +79,7 @@ test_c: mcell_main_c
 	./mcell_main_c proj_path=. data_model=dm.json
 
 test_ppy: pure_python_sim.py
-	python pure_python_sim.py proj_path=. data_model=dm.txt
+	python3 pure_python_sim.py proj_path=. data_model=dm.txt
 
 # Primary Usage Test Cases - These should work with libMCell
 
@@ -90,7 +90,7 @@ test_cpp: mcell_main
 	./mcell_main proj_path=. data_model=dm.json
 
 test_py: mcell_main.py _libMCell.so
-	python mcell_main.py proj_path=. data_model=dm.txt
+	python3 mcell_main.py proj_path=. data_model=dm.txt
 
 install: mcell_main
 	cp -v mcell_main $(INSTALL_DIR)cellblender/libMCell/

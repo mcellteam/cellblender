@@ -29,7 +29,7 @@ else
 	SUBDIRS = icons io_mesh_mcell_mdl sim_engines sim_runners data_plotters developer_utilities
 endif
 
-SOURCES = $(shell python cellblender_source_info.py)
+SOURCES = $(shell python3 cellblender_source_info.py)
 
 # These are generally binary files that are built by this makefile and included in the .zip file
 IOMESHFILES = cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/io_mesh_mcell_mdl/mdlmesh_parser.py

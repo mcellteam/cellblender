@@ -10,7 +10,7 @@ ifndef _MSC_VER
 endif
 
 _mdlmesh_parser.so: makefile setup.py mdlobj.py mdllex.flex.c mdlparse.bison.c mdlmesh_parser.c mdlmesh_parser.i vector.c mdlmesh_parser_wrap.c 
-	python setup.py build_ext
+	python3 setup.py build_ext
 
 mdllex.flex.c mdllex.flex.h: mdllex.l
 	flex -Crema $(FLEX_FLAGS) mdllex.l
@@ -20,7 +20,7 @@ mdlparse.bison.c mdlparse.bison.h: mdlparse.y mdlmesh_parser.h
 
 mdlmesh_parser_wrap.c: mdlmesh_parser.i mdlmesh_parser.c mdlmesh_parser.h
 #	swig -python mdlmesh_parser.i
-	swig -python -py3 -nothreads mdlmesh_parser.i
+	swig -python -nothreads mdlmesh_parser.i
 
 clean:
 	rm -rf $(OBJS) build mdllex.flex.c mdllex.flex.h mdlparse.bison.c mdlparse.bison.h mdlparse.bison.output mdlmesh_parser_wrap.c mdlmesh_parser.py mdlmesh_parser.pyc _mdlmesh_parser.so
