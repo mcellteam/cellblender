@@ -46,7 +46,8 @@ def timeline_view_all ( context ):
                             ctx = bpy.context.copy()
                             ctx['area'] = area
                             ctx['region'] = region
-                            bpy.ops.action.view_all(ctx)
+                            with bpy.context.temp_override(**ctx):
+                              bpy.ops.action.view_all()
                             break  # It's not clear if this should break or continue ... breaking for now
 
 

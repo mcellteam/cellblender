@@ -41,9 +41,11 @@ def view_all():
         if area.type == 'VIEW_3D':
             for region in area.regions:
                 if region.type == 'WINDOW':
-                    # Lines below are not compatible with Blender 4.1
-                    override = {'area': area, 'region': region}
-                    bpy.ops.view3d.view_all(override)
+                    ctx = bpy.context.copy()
+                    ctx['area'] = area
+                    ctx['region'] = region
+                    with bpy.context.temp_override(**ctx):
+                      bpy.ops.view3d.view_all()
 
 
 def view_selected():  # Not currently called in CellBlender UI
