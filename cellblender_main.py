@@ -737,7 +737,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     brow = layout.row()  ##############################################################
 
                     bcol = brow.column()
-                    bcol.prop ( self, "surf_classes_select", icon='LIGHTPROBE_CUBEMAP', text="Surface Classes" )
+                    bcol.prop ( self, "surf_classes_select", icon='MOD_EXPLODE', text="Surface Classes" )
                     bcol = brow.column()
                     bcol.prop ( self, "surf_regions_select", icon='UV_DATA', text="Assign Surface Classes" )
 
@@ -834,7 +834,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.surf_classes_select:
                     layout.box() # Use as a separator
-                    layout.label ( text="Defined Surface Classes", icon='LIGHTPROBE_CUBEMAP' )
+                    layout.label ( text="Defined Surface Classes", icon='MOD_EXPLODE' )
                     context.scene.mcell.surface_classes.draw_layout ( context, layout )
 
                 if self.surf_regions_select:

@@ -453,7 +453,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                     row = layout.row()
                     row.prop_search(active_mod_surf_regions, "surf_class_name",
                                     mcell.surface_classes, "surf_class_list",
-                                    icon='LIGHTPROBE_CUBEMAP')
+                                    icon='MOD_EXPLODE')
                     row = layout.row()
                     row.prop_search(active_mod_surf_regions, "object_name",
                                     mcell.model_objects, "object_list",

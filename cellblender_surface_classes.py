@@ -664,7 +664,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                 row = layout.row()
                 row.prop(active_surf_class, "description")
                 row = layout.row()
-                row.label(text="%s Properties:" % active_surf_class.name, icon='LIGHTPROBE_CUBEMAP')
+                row.label(text="%s Properties:" % active_surf_class.name, icon='MOD_EXPLODE')
                 row = layout.row()
                 col = row.column()
                 # The template_list for the properties of a surface class.
