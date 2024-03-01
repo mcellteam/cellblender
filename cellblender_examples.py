@@ -27,7 +27,7 @@ def clear_texts():
         bpy.data.texts.remove(text, do_unlink=True )
 
 
-def zoom_view(delta):
+def zoom_view(delta):  # Not currently called in CellBlender UI
     for area in bpy.context.screen.areas:
         if area.type == 'VIEW_3D':
             for region in area.regions:
@@ -41,11 +41,12 @@ def view_all():
         if area.type == 'VIEW_3D':
             for region in area.regions:
                 if region.type == 'WINDOW':
+                    # Lines below are not compatible with Blender 4.1
                     override = {'area': area, 'region': region}
                     bpy.ops.view3d.view_all(override)
 
 
-def view_selected():
+def view_selected():  # Not currently called in CellBlender UI
     for area in bpy.context.screen.areas:
         if area.type == 'VIEW_3D':
             for region in area.regions:
