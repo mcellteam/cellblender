@@ -134,7 +134,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         
         
         mcell.meshalyzer.components = self.count_components(context)
-        mcell.meshalyzer.genus = mcell.meshalyzer.components - ( (mcell.meshalyzer.vertices + mcell.meshalyzer.faces - mcell.meshalyzer.edges) / 2 )
+        mcell.meshalyzer.genus = int(mcell.meshalyzer.components - ( (mcell.meshalyzer.vertices + mcell.meshalyzer.faces - mcell.meshalyzer.edges)) / 2 )
         mcell.meshalyzer.genus_string = "Genus = %d" % (mcell.meshalyzer.genus)
 
 
