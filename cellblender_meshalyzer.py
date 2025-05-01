@@ -60,84 +60,9 @@ def flatten(arr):
   return arr[:1] + flatten(arr[1:])
 
 
-class MCELL_OT_meshalyzer(bpy.types.Operator):
-    bl_idname = "mcell.meshalyzer"
-    bl_label = "Analyze Geometric Properties of Mesh"
-    bl_description = "Analyze Geometric Properties of Mesh"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def count_components(self,context):
-        bpy.ops.object.mode_set(mode='OBJECT')
-        obj = bpy.context.active_object
-        mesh = obj.data
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.reveal()
-        bpy.ops.mesh.select_mode(type='VERT')
-        bpy.ops.mesh.select_all(action='DESELECT')
-
-        # Count total vertices and number of vertices contiguous with vertex 0
-        bpy.ops.object.mode_set(mode='OBJECT')
-        mesh.vertices[0].select = True
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_linked()
-        n_v_tot = len(mesh.vertices)
-        n_v_sel = mesh.total_vert_sel
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        # Loop over disjoint components
-        n_components = 1
-        while (n_v_sel < n_v_tot):
-            n_components += 1
-            # make list of selected indices
-            vl1 = [v.index for v in mesh.vertices if v.select == True]
-            # make list of indices of remaining component(s)
-            vl2 = [v.index for v in mesh.vertices if v.select == False]
-            # Grow selection with vertices contiguous with first vertex of remainder
-            mesh.vertices[vl2[0]].select = True
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_linked()
-
-            # Count number of vertices now selected and loop again if necessary
-            n_v_sel = mesh.total_vert_sel
-            bpy.ops.object.mode_set(mode='OBJECT')
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_mode(type='FACE')
-        bpy.ops.object.mode_set(mode='OBJECT')
-        return n_components
-
-
-    def count_boundaries(self, context):
-        obj = bpy.context.active_object
-        mesh = obj.data
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.reveal()
-        bpy.ops.mesh.select_mode(type='EDGE')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.mesh.select_non_manifold(extend=False, use_wire=False,
-                                         use_boundary=True, use_multi_face=False,
-                                         use_non_contiguous=False, use_verts=False)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        edges = [ tuple(e.vertices) for e in mesh.edges ]
-        boundary_edge_indices = [ e.index for e in mesh.edges if e.select ]
-        if not boundary_edge_indices:
-            return 0, 0  # No boundary edges found
-
-        n_boundary_edges = len(boundary_edge_indices)
-        boundary_cycles = BoundaryCycles(edges, boundary_edge_indices)
-        boundary_cycles.compute_boundary_cycles()
-
-        n_cycles = len(boundary_cycles.boundary_cycles)  # Count the number of boundary cycles
-        # Return the number of boundary cycles  
-        return n_boundary_edges, n_cycles
-
-
-    def execute(self, context):
+def initialize_analysis_values():
 
         mcell = bpy.context.scene.mcell
-        objs = bpy.context.selected_objects
 
         mcell.meshalyzer.object_name = ""
         mcell.meshalyzer.vertices = 0
@@ -153,43 +78,30 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         mcell.meshalyzer.boundary_edges = 0
         mcell.meshalyzer.boundary_cycles = 0
         mcell.meshalyzer.genus = 0
-        mcell.meshalyzer.manifold = ""
         mcell.meshalyzer.disjoint_components = 1
         mcell.meshalyzer.subcomponents = 1
         mcell.meshalyzer.watertight_components = 0
-        mcell.meshalyzer.normal_status = ""
+        mcell.meshalyzer.normal_status = "Consistent Normals"
         mcell.meshalyzer.area = 0
         mcell.meshalyzer.volume = 0
         mcell.meshalyzer.sav_invalid = False
         mcell.meshalyzer.sav_ratio = 0
         mcell.meshalyzer.status = ""
 
-        if (len(objs) != 1):
-            mcell.meshalyzer.status = "Please Select One Mesh Object"
-            return {'FINISHED'}
 
-        obj = objs[0]
-
-        if (obj.type != 'MESH'):
-            mcell.meshalyzer.status = "Please Select One Mesh Object"
-            return {'FINISHED'}
-
-        mesh = obj.data
-       
-        tmp = [None] * 3 * len(mesh.polygons) 
-        try:
-          mesh.polygons.foreach_get('vertices', tmp)
-        except:
-            mcell.meshalyzer.status = "***** Mesh Not Triangulated *****"
-            return {'FINISHED'}
-
+def mesh_analyzer(obj):
+        
+        mcell = bpy.context.scene.mcell
 
         checked_orientable = False
         while not mcell.meshalyzer.non_orientable:
+
           if bpy.context.mode != 'OBJECT':
               bpy.ops.object.mode_set(mode='OBJECT')
               bpy.ops.object.mode_set(mode='EDIT')
+
           ma = MeshAnalyzer(obj.data)
+
           mcell.meshalyzer.object_name = obj.name
           mcell.meshalyzer.vertices = ma.number_vertices
           mcell.meshalyzer.edges = ma.number_edges
@@ -204,7 +116,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
           if ma.orphan_vertices or ma.orphan_edges or ma.dangling_edges:
             mcell.meshalyzer.status = "***** Mesh Not Pure: Repair Required *****"
             mcell.meshalyzer.pure = False
-            return {'FINISHED'}
+            return
 
           ma._disjoint_components()
           mcell.meshalyzer.disjoint_components = ma.number_disjoint_components
@@ -230,7 +142,6 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
               bpy.ops.mesh.normals_make_consistent(inside=False)
               bpy.ops.mesh.select_all(action='DESELECT')
               bpy.ops.object.mode_set(mode='OBJECT')
-
               checked_orientable = True
             else:
               mcell.meshalyzer.non_orientable = True
@@ -265,34 +176,18 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
 
 
 
+class MCELL_OT_meshalyzer(bpy.types.Operator):
+    bl_idname = "mcell.meshalyzer"
+    bl_label = "Analyze Geometric Properties of Mesh"
+    bl_description = "Analyze Geometric Properties of Mesh"
+    bl_options = {'REGISTER', 'UNDO'}
 
-        return {'FINISHED'}
-
-
-    def execute_orig(self, context):
+    def execute(self, context):
+        
+        initialize_analysis_values()
 
         mcell = bpy.context.scene.mcell
         objs = bpy.context.selected_objects
-
-        mcell.meshalyzer.object_name = ""
-        mcell.meshalyzer.vertices = 0
-        mcell.meshalyzer.edges = 0
-        mcell.meshalyzer.faces = 0
-        mcell.meshalyzer.orphan_vertices = 0
-        mcell.meshalyzer.nonmanifold_vertices = 0
-        mcell.meshalyzer.nonmanifold_edges = 0
-        mcell.meshalyzer.orphan_edges = 0
-        mcell.meshalyzer.boundary_edges = 0
-        mcell.meshalyzer.components = 0
-        mcell.meshalyzer.genus = 0
-        mcell.meshalyzer.manifold = ""
-        mcell.meshalyzer.watertight = ""
-        mcell.meshalyzer.boundaries = 0
-        mcell.meshalyzer.normal_status = ""
-        mcell.meshalyzer.components = 0
-        mcell.meshalyzer.area = 0
-        mcell.meshalyzer.volume = 0
-        mcell.meshalyzer.sav_ratio = 0
 
         if (len(objs) != 1):
             mcell.meshalyzer.status = "Please Select One Mesh Object"
@@ -300,83 +195,27 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
 
         obj = objs[0]
 
-        mcell.meshalyzer.object_name = obj.name
-
-        if not (obj.type == 'MESH'):
-            mcell.meshalyzer.status = "Selected Object Not a Mesh"
+        if (obj.type != 'MESH'):
+            mcell.meshalyzer.status = "Please Select One Mesh Object"
             return {'FINISHED'}
 
-        t_mat = obj.matrix_world
         mesh = obj.data
+       
+        tmp = [None] * 3 * len(mesh.polygons) 
+        try:
+          mesh.polygons.foreach_get('vertices', tmp)
+        except:
+            mcell.meshalyzer.status = "***** Mesh Not Triangulated *****"
+            return {'FINISHED'}
 
-        mcell.meshalyzer.vertices = len(mesh.vertices)
-        mcell.meshalyzer.edges = len(mesh.edges)
-        mcell.meshalyzer.faces = len(mesh.polygons)
-        
-        
-        mcell.meshalyzer.components = self.count_components(context)
-        # mcell.meshalyzer.genus = int(mcell.meshalyzer.components - ( (mcell.meshalyzer.vertices - mcell.meshalyzer.edges + mcell.meshalyzer.faces)) / 2 )
-        # mcell.meshalyzer.boundaries = 2 - 2*mcell.meshalyzer.genus - (mcell.meshalyzer.vertices - mcell.meshalyzer.edges + mcell.meshalyzer.faces)
+        _, _, scale = obj.matrix_world.decompose()
+        if not np.allclose(scale, (1.0,1.0,1.0)):
+            mcell.meshalyzer.status = "***** Warning: Object is scaled, analysis based on unscaled Mesh Data  *****"
 
-        area = 0
-        for f in mesh.polygons:
-            if not (len(f.vertices) == 3):
-                mcell.meshalyzer.status = "***** Mesh Not Triangulated *****"
-                mcell.meshalyzer.watertight = "Mesh Not Triangulated"
-                return {'FINISHED'}
+        mesh_analyzer(obj)
 
-            tv0 = mesh.vertices[f.vertices[0]].co @ t_mat
-            tv1 = mesh.vertices[f.vertices[1]].co @ t_mat
-            tv2 = mesh.vertices[f.vertices[2]].co @ t_mat
-            area = area + mathutils.geometry.area_tri(tv0, tv1, tv2)
-
-        mcell.meshalyzer.area = area
-
-        (edge_faces, edge_face_count) = make_efdict(mesh)
-
-        mcell.meshalyzer.orphan_vertices = count_orphan_vertices(edge_face_count)
-        mcell.meshalyzer.nonmanifold_vertices = count_nonmanifold_vertices(edge_face_count)
-        mcell.meshalyzer.nonmanifold_edges = count_nonmanifold_edges(edge_face_count)
-        mcell.meshalyzer.orphan_edges = mcell.meshalyzer.edges - len(edge_face_count)
-        mcell.meshalyzer.boundary_edges, mcell.meshalyzer.boundaries = self.count_boundaries(context)
-        X = (mcell.meshalyzer.vertices - mcell.meshalyzer.edges + mcell.meshalyzer.faces)
-        mcell.meshalyzer.genus = int((2*mcell.meshalyzer.components - mcell.meshalyzer.boundaries - X)/2)
-  
-
-        is_closed = check_closed(edge_face_count)
-        is_manifold = check_manifold(edge_face_count) and (mcell.meshalyzer.orphan_vertices == 0) and (mcell.meshalyzer.nonmanifold_vertices == 0) and (mcell.meshalyzer.orphan_edges == 0)
-        is_orientable = check_orientable(mesh, edge_faces, edge_face_count)
-
-
-        if is_orientable:
-            mcell.meshalyzer.normal_status = "Consistent Normals"
-        else:
-            mcell.meshalyzer.normal_status = "Inconsistent Normals"
-
-        if is_closed:
-            mcell.meshalyzer.watertight = "Watertight Mesh"
-        else:
-            mcell.meshalyzer.watertight = "Non-watertight Mesh"
-
-        if is_manifold:
-            mcell.meshalyzer.manifold = "Manifold Mesh"
-        else:
-            mcell.meshalyzer.manifold = "Non-manifold Mesh"
-
-        volume = 0
-        if is_orientable and is_closed:
-            volume = mesh_vol(mesh, t_mat)
-            if volume >= 0:
-                mcell.meshalyzer.normal_status = "Outward Facing Normals"
-            else:
-                mcell.meshalyzer.normal_status = "Inward Facing Normals"
-
-        mcell.meshalyzer.volume = volume
-        if (not volume == 0.0):
-            mcell.meshalyzer.sav_ratio = area/volume
-
-        mcell.meshalyzer.status = ""
         return {'FINISHED'}
+
 
 
 class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
@@ -385,7 +224,77 @@ class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
     bl_description = "Generate Analysis Report of Geometric Properties of Multiple Meshes"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self,context):
+    def execute(self, context):
+
+        mcell = bpy.context.scene.mcell
+        objs = bpy.context.selected_objects
+
+        if not objs:
+            mcell.meshalyzer.status = 'Please Select One or More Mesh Objects'
+            return {'FINISHED'}
+
+        bpy.ops.text.new()
+        report = bpy.data.texts['Text']
+        report.name = 'mesh_analysis.txt'
+        report.write("<<<<<<< Meshalyzer Report >>>>>>>\n")
+
+        for obj in objs:
+
+            initialize_analysis_values()
+            mcell.meshalyzer.object_name = obj.name
+
+            report.write(f'\nAnalysis of {obj.name}:\n')
+
+            if not (obj.type == 'MESH'):
+                mcell.meshalyzer.status = 'Selected Object Not a Mesh'
+                report.write('    Object is not a Mesh Object\n')
+                continue
+
+            mesh = obj.data
+            tmp = [None] * 3 * len(mesh.polygons) 
+            try:
+              mesh.polygons.foreach_get('vertices', tmp)
+            except:
+                mcell.meshalyzer.status = "***** Mesh Not Triangulated *****"
+                report.write('    Object is not a Triangulated\n')
+                continue
+
+            _, _, scale = obj.matrix_world.decompose()
+            if not np.allclose(scale, (1.0,1.0,1.0)):
+                mcell.meshalyzer.status = "***** Warning: Object is scaled, analysis based on unscaled Mesh Data  *****"
+                report.write('    Warning: Object is scaled, analysis based on unscaled Mesh Data\n')
+
+            mesh_analyzer(obj)
+            report.write(f'    Vertices: {mcell.meshalyzer.vertices}\n')
+            report.write(f'    Edges: {mcell.meshalyzer.edges}\n')
+            report.write(f'    Faces: {mcell.meshalyzer.faces}\n')
+            report.write(f'    Orphan Vertices: {mcell.meshalyzer.orphan_vertices}\n')
+            report.write(f'    Dangling Edges: {mcell.meshalyzer.dangling_edges}\n')
+            report.write(f'    Orphan Edges: {mcell.meshalyzer.orphan_edges}\n')
+
+            if not mcell.meshalyzer.pure:
+              continue
+
+            report.write(f'    {mcell.meshalyzer.normal_status}\n')
+            report.write(f'    Disjoint Components: {mcell.meshalyzer.disjoint_components}\n')
+            report.write(f'    Subcomponents: {mcell.meshalyzer.subcomponents}\n')
+            report.write(f'    Watertight Components: {mcell.meshalyzer.watertight_components}\n')
+            report.write(f'    Non-manifold Edges: {mcell.meshalyzer.nonmanifold_edges}\n')
+            report.write(f'    Non-manifold Vertices: {mcell.meshalyzer.nonmanifold_vertices}\n')
+            report.write(f'    Boundary Edges: {mcell.meshalyzer.boundary_edges}\n')
+            report.write(f'    Boundary Cycles: {mcell.meshalyzer.boundary_cycles}\n')
+            report.write(f'    Genus: {mcell.meshalyzer.genus}\n')
+            report.write(f'    Surface Area: {mcell.meshalyzer.area}\n')
+            report.write(f'    Signed Volume: {mcell.meshalyzer.volume}\n')
+            if not mcell.meshalyzer.sav_invalid:
+              report.write(f'    Median Signed SA/V Ratio: {mcell.meshalyzer.sav_ratio}\n')
+            else:
+              report.write('    Median Signed SA/V Ratio: N/A\n')
+
+        return {'FINISHED'}
+
+
+    def execute_orig(self,context):
 
         mcell = bpy.context.scene.mcell
         objs = bpy.context.selected_objects
@@ -1555,11 +1464,11 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
               row = layout.row()
               row.label(text="%s" % (mcell.meshalyzer.normal_status))
               row = layout.row()
-              row.label(text="Disjoint Components = %d" % (mcell.meshalyzer.disjoint_components))
+              row.label(text="Disjoint Components: %d" % (mcell.meshalyzer.disjoint_components))
               row = layout.row()
-              row.label(text="Subcomponents = %d" % (mcell.meshalyzer.subcomponents))
+              row.label(text="Subcomponents: %d" % (mcell.meshalyzer.subcomponents))
               row = layout.row()
-              row.label(text="Watertight Components = %d" % (mcell.meshalyzer.watertight_components))
+              row.label(text="Watertight Components: %d" % (mcell.meshalyzer.watertight_components))
               row = layout.row()
               row.label(text="Non-manifold Edges: %d" % (mcell.meshalyzer.nonmanifold_edges))
               row = layout.row()
@@ -1567,9 +1476,9 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
               row = layout.row()
               row.label(text="Boundary Edges: %d" % (mcell.meshalyzer.boundary_edges))
               row = layout.row()
-              row.label(text="Boundary Cycles = %d" % (mcell.meshalyzer.boundary_cycles))
+              row.label(text="Boundary Cycles: %d" % (mcell.meshalyzer.boundary_cycles))
               row = layout.row()
-              row.label(text="Genus = %d" % (mcell.meshalyzer.genus))
+              row.label(text="Genus: %d" % (mcell.meshalyzer.genus))
               row = layout.row()
               row.label(text="Surface Area: %.5g" % (mcell.meshalyzer.area))
               row = layout.row()
@@ -1597,11 +1506,10 @@ class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
     nonmanifold_edges: IntProperty(name="Non-manifold Edges", default=0)
     boundary_edges: IntProperty(name="Boundary Edges", default=0)
     boundary_cycles: IntProperty(name="Boundary Cycles", default=0)
-    manifold: StringProperty(name="Manifold Mesh")
     watertight_components: IntProperty(name="Watertight Components", default=0)
     non_orientable: BoolProperty(name="Orientable", default=False)
     consistent_normals: BoolProperty(name="Consistent Normals", default=False)
-    normal_status: StringProperty(name="Surface Normals")
+    normal_status: StringProperty(name="Surface Normals", default="Consistent Normals")
     disjoint_components: IntProperty(name="Disjoint Components", default=1)
     subcomponents: IntProperty(name="Subcomponents", default=1)
     genus: IntProperty(name="Genus", default=0)
