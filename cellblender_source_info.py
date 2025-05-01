@@ -7,7 +7,7 @@ cellblender_info = {
     "version": (4, 1, 0),
 
     # supported versions of Blender:
-    "supported_version_list": [(3,4,0),(4, 4, 0)],
+    "supported_version_list": [(3,4,0),(4, 4, 9)],
     
 
     #######################################################################################

@@ -8,7 +8,7 @@ type = "add-on"
 "website" = "http://www.mcell.org"
 tags = ["Modeling", "Physics"]
 blender_version_min = "3.4.0"
-blender_version_max = "4.4.0"
+blender_version_max = "4.5.0"
 license = ["SPDX:GPL-2.0-or-later"]
 platforms = ["windows-x64", "linux-x64", "macos-x64", "macos-arm64"]
 

@@ -43,8 +43,9 @@ from . import cellblender_utils
 
 class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
-    def __init__(self):
-        print ( "\n\nMCellInitializationPropertyGroup.__init__() called\n\n" )
+    #def __init__(self):
+    #    super().__init__()
+    #    print ( "\n\nMCellInitializationPropertyGroup.__init__() called\n\n" )
 
     iterations: PointerProperty ( name="iterations", type=parameter_system.Parameter_Reference )
     time_step:  PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
