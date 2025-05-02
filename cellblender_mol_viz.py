@@ -341,8 +341,9 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
     filepath: StringProperty(subtype='FILE_PATH', default="")
     directory: StringProperty(subtype='DIR_PATH')
 
-    def __init__(self):
-        self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
+    #def __init__(self):
+    #    super().__init__()
+    #    self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
 
     def execute(self, context):
         global global_mol_file_list
@@ -380,6 +381,9 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
     def invoke(self, context, event):
         # Called when the file selection panel is requested
         # (when the "Set Molecule Viz Directory" button is pushed)
+
+        self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
+
         print("MCELL_OT_select_viz_data.invoke() called")
         bpy.context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
