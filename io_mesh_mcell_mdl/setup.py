@@ -4,7 +4,7 @@
 setup.py file for mdlmesh_parser
 """
 
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 # the last argument -L. is for Winddows, distutils forces usage of -lmsvcr140 althought it not neded and cannot be disabled, 
 # a dummy empty library is present
