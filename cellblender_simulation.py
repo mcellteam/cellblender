@@ -2361,7 +2361,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     simulation_engine_and_run_enum = [
          ('SWEEP_QUEUE', "MCell Local", ""),
          ('SWEEP_SGE', "MCell SGE", ""),
-         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
+         #('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          #('COMMAND', "MCell via Command Line", ""),
          #('SWEEP', "MCell via Sweep Runner", ""),
          ('DYNAMIC', "Engine/Runner (Experimental)", "") ]

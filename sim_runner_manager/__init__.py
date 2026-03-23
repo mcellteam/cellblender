@@ -54,6 +54,8 @@ def get_modules():
     print ( "Searching for installed plugins in " + parent_path )
 
     for f in os.listdir(parent_path):
+        if f == 'queue_local':
+            continue  
         if (f != "__pycache__"):
             plugin = os.path.join ( parent_path, f )
             if os.path.isdir(plugin):
