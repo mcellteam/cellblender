@@ -1,14 +1,14 @@
 schema_version = "1.0.0"
 id = "cellblender"
-version = "4.1.0"
+version = "4.2.0"
 name = "CellBlender"
 tagline = "CellBlender Modeling System for MCell"
 maintainer = "Tom Bartol, Burak Kaynak"
 type = "add-on"
 "website" = "http://www.mcell.org"
 tags = ["Modeling", "Physics"]
-blender_version_min = "3.4.0"
-blender_version_max = "4.5.0"
+blender_version_min = "5.1.0"
+blender_version_max = "6.0.0"
 license = ["SPDX:GPL-2.0-or-later"]
 platforms = ["windows-x64", "linux-x64", "macos-x64", "macos-arm64"]
 

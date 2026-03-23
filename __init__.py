@@ -21,22 +21,6 @@ import os
 import atexit
 import importlib
 
-'''
-bl_info = {
-    "name": "CellBlender",
-    "author": "Tom Bartol, Dipak Barua, Jacob Czech, Markus Dittrich, "
-        "James Faeder, Bob Kuczewski, Devin Sullivan, Jose Juan Tapia",
-    "version": (2, 0, 0),
-    "blender": (2, 93, 0),
-#    "api": 55057,
-    "location": "View3D -> UI -> CellBlender",
-    "description": "CellBlender Modeling System for MCell",
-    "warning": "",
-    "wiki_url": "http://www.mcell.org",
-    "tracker_url": "https://github.com/mcellteam/cellblender/issues",
-    "category": "Cell Modeling",
-}
-'''
 
 #__package__ = __name__
 print(">>>>> ", __package__, " >>>>>>>>")

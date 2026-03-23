@@ -25,7 +25,8 @@ This file contains the classes for CellBlender's Simulations.
 
 # blender imports
 import bpy
-import bgl
+# import bgl  # Note: bgl module is deprecated,  replaced by gpu module with different API
+# import gpu  # Note: gpu module is not needed for simple text overlay of 3D viewport
 import blf
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
                       FloatProperty, FloatVectorProperty, IntProperty, \
@@ -85,8 +86,8 @@ handler_list = []           # Holds returns from bpy.types.SpaceView3D.draw_hand
 screen_display_lines = {}   # Dictionary of lines keyed by integer Process ID (PID)
 scroll_offset = 0           # Current Scroll offset
 scroll_page_size = 10       # Lines per scroll
-clear_flag = False          # Drawing when this is set will clear the background
 showing_text = False        # Flag to indicate whether text is currently being shown
+
 
 
 def draw_callback_px(context):
@@ -95,19 +96,16 @@ def draw_callback_px(context):
     # Note that the "context" passed in here is a regular dictionary and not the Blender context
     global screen_display_lines
     global scroll_offset
-    global clear_flag
     local_display_lines = {}
 
     task_dict = cellblender.simulation_queue.task_dict
 
     pid = None
-    if 'mcell' in bpy.context.scene:
-      mcell = bpy.context.scene.mcell
-      if 'run_simulation' in mcell:
-        rs = mcell.run_simulation
-        if len(rs.processes_list) > 0:
-          pid_str = rs.processes_list[rs.active_process_index].name
-          pid = pid_str.split(',')[0].split()[1]
+    mcell = bpy.context.scene.mcell
+    rs = mcell.run_simulation
+    if len(rs.processes_list) > 0:
+      pid_str = rs.processes_list[rs.active_process_index].name
+      pid = pid_str.split(',')[0].split()[1]
 
     if pid != None:
         ipid = int(pid)
@@ -117,80 +115,74 @@ def draw_callback_px(context):
         screen_display_lines[str(pid)] = local_display_lines[ipid]
         # screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
 
-    bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
-
-    if clear_flag:
-      bgl.glClearColor ( 0.0, 0.0, 0.0, 1.0 )
-      bgl.glClear ( bgl.GL_COLOR_BUFFER_BIT )
-
     font_id = 0  # XXX, need to find out how best to get this.
+    font_size = 36
+    blf.size(font_id, font_size) # fontid, size
+    blf.color(font_id, 1.0, 1.0, 1.0, 0.5)
+    line_spacing = 1.15*font_size
+    margin = 4*font_size
 
-    y_pos = 15 * (scroll_offset + 1)
+    y_pos = line_spacing * (scroll_offset + 1)
     if pid and (pid in screen_display_lines):
-      for l in screen_display_lines[pid]:
-          blf.position(font_id, 15, y_pos, 0)
-          y_pos += 15
-          blf.size(font_id, 14, 72) # fontid, size, DPI
-          bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-          blf.draw(font_id, l)
+      for line in screen_display_lines[pid]:
+          blf.position(font_id, margin, y_pos, 0)
+          y_pos += line_spacing
+          blf.draw(font_id, line)
     else:
       keys = screen_display_lines.keys()
       for k in keys:
-          for l in screen_display_lines[k]:
-              blf.position(font_id, 15, y_pos, 0)
-              y_pos += 15
-              blf.size(font_id, 14, 72) # fontid, size, DPI
-              bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-              blf.draw(font_id, l)
-
-    # 100% alpha, 2 pixel width line
-    bgl.glEnable(bgl.GL_BLEND)
-
-    bgl.glPopAttrib()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+          for line in screen_display_lines[k]:
+              blf.position(font_id, margin, y_pos, 0)
+              y_pos += line_spacing
+              blf.draw(font_id, line)
 
 
-def get_3d_areas():
-  global handler_list
-  areas = []
-  if len(bpy.data.window_managers) > 0:
-    if len(bpy.data.window_managers[0].windows) > 0:
-      if len(bpy.data.window_managers[0].windows[0].screen.areas) > 0:
-        if len(handler_list) <= 0:
-          for area in bpy.data.window_managers[0].windows[0].screen.areas:
-            # print ( "Found an area of type " + str(area.type) )
-            if area.type == 'VIEW_3D':
-              areas.append ( area )
-  return ( areas )
+def redraw_3d_regions():
+    for area in bpy.context.window.screen.areas:
+        if area.type == 'VIEW_3D':
+            for region in area.regions:
+                if region.type == 'WINDOW':
+                    region.tag_redraw()
 
 
 def enable_text_overlay():
-  global handler_list
-  global showing_text
-  areas = get_3d_areas()
-  for area in areas:
-    temp_context = bpy.context.copy()
-    temp_context['area'] = area
-    args = (temp_context,)
-    handler_list.append ( bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL') )
-  bpy.context.area.tag_redraw()
-  showing_text = True
-  print ( "Enable completed" )
+    global showing_text
+
+    """Register the draw handler"""
+    # Unregister first to avoid duplicates
+    disable_text_overlay()
+    
+    # Add the draw handler to the 3D viewport, in pixel coordinates (POST_PIXEL)
+    # and tie it to the 'WINDOW' space
+    handler = bpy.app.driver_namespace.get('cellblender_overlay_text')
+    if handler is None:
+        handler = bpy.types.SpaceView3D.draw_handler_add(
+            draw_callback_px, (bpy.context,), 'WINDOW', 'POST_PIXEL'
+        )
+        bpy.app.driver_namespace['cellblender_overlay_text'] = handler
+    redraw_3d_regions()
+    showing_text = True
+    print("Text overlay enabled")
+
 
 def disable_text_overlay():
-  global handler_list
-  global showing_text
-  while len(handler_list) > 0:
-    print ( "Removing draw_handler " + str(handler_list[-1]) )
-    bpy.types.SpaceView3D.draw_handler_remove(handler_list[-1], 'WINDOW')
-    handler_list.pop()
-  bpy.context.area.tag_redraw()
-  showing_text = False
-  print ( "Disable completed" )
+    global showing_text
+
+    """Unregister the draw handler"""
+    handler = bpy.app.driver_namespace.get('cellblender_overlay_text')
+    if handler is not None:
+        try:
+            bpy.types.SpaceView3D.draw_handler_remove(
+                handler, 'WINDOW'
+            )
+            bpy.app.driver_namespace.pop('cellblender_overlay_text')
+
+        except ValueError:
+            # Handler was already removed or invalid
+            pass
+        redraw_3d_regions()
+        showing_text = False
+        print("Text overlay disabled")
 
 
 def page_up():
@@ -202,7 +194,9 @@ def page_up():
   else:
     scroll_offset += -scroll_page_size
   # Force a redraw of the OpenGL code
-  bpy.context.area.tag_redraw()
+  #bpy.context.area.tag_redraw()
+  redraw_3d_regions()
+
 
 def page_dn():
   global scroll_offset
@@ -213,8 +207,8 @@ def page_dn():
   else:
     scroll_offset += scroll_page_size
   # Force a redraw of the OpenGL code
-  bpy.context.area.tag_redraw()
-
+  #bpy.context.area.tag_redraw()
+  redraw_3d_regions()
 
 
 class MCELL_OT_show_text_overlay (bpy.types.Operator):
@@ -272,7 +266,8 @@ class MCELL_OT_page_overlay_hm (bpy.types.Operator):
         global scroll_offset
         scroll_offset = 0
         # Force a redraw of the OpenGL code
-        bpy.context.area.tag_redraw()
+        #bpy.context.area.tag_redraw()
+        redraw_3d_regions()
         return {'FINISHED'}
 
 

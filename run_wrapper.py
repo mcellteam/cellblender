@@ -113,7 +113,6 @@ if __name__ == '__main__':
         cmd = raw_input()
         args = raw_input()
 
-      sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
       sys.stdout.write('Running run_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
 
       cmd_list = []
@@ -136,11 +135,10 @@ if __name__ == '__main__':
         # Just add the strings split by spaces as before
         cmd_list.extend(args.split())
 
-      sys.stdout.write ( "\nNormal cmd_list: " + str(cmd_list) )
+      sys.stdout.write ( "\nNormal cmd_list: " + str(cmd_list) + "\n" )
       cmd_list = convert_for_windows ( cmd_list )
-      sys.stdout.write ( "\nWindows cmd_list: " + str(cmd_list) )
+      sys.stdout.write ( "\nWindows cmd_list: " + str(cmd_list) + "\n" )
 
-      sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
 
       proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
@@ -169,12 +167,11 @@ if __name__ == '__main__':
         cmd = raw_input()
         args = raw_input()
 
-      sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
       sys.stdout.write('Running run_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
 
       cmd_list = []
       if (cmd.strip()[0] == '"') and (cmd.strip()[-1] == '"'):
-        sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd )
+        sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd + "\n" )
         # Using quoted command syntax, so remove quotes before adding
         cmd_list.extend ( parse_quoted_args_posix(cmd.strip()) )
       else:
@@ -192,9 +189,8 @@ if __name__ == '__main__':
         # Just add the strings split by spaces as before
         cmd_list.extend(args.split())
 
-      sys.stdout.write ( "\nFinal cmd_list: " + str(cmd_list) )
+      sys.stdout.write ( "\nFinal cmd_list: " + str(cmd_list) + "\n" )
 
-      sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
 
       proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
@@ -304,12 +300,11 @@ if __name__ == '__main__':
     cmd = raw_input()
     args = raw_input()
 
-  sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
   sys.stdout.write('Running run_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
 
   cmd_list = []
   if (cmd.strip()[0] == '"') and (cmd.strip()[-1] == '"'):
-    sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd )
+    sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd + "\n" )
     # Using quoted command syntax, so remove quotes before adding
     cmd_list.extend ( parse_quoted_args_windows(cmd.strip()) )
   else:
@@ -327,11 +322,10 @@ if __name__ == '__main__':
     # Just add the strings split by spaces as before
     cmd_list.extend(args.split())
 
-  sys.stdout.write ( "\nNormal cmd_list: " + str(cmd_list) )
+  sys.stdout.write ( "\nNormal cmd_list: " + str(cmd_list) + "\n" )
   cmd_list = convert_for_windows ( cmd_list )
-  sys.stdout.write ( "\nWindows cmd_list: " + str(cmd_list) )
+  sys.stdout.write ( "\nWindows cmd_list: " + str(cmd_list) + "\n" )
 
-  sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
 
   proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
