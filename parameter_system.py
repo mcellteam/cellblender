@@ -3147,7 +3147,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 elif node.__class__.__name__ == 'Pow':
                     return '**'
                 elif node.__class__.__name__ == 'BitXor':
-                    return '**'
+                    return '^'
                 elif node.__class__.__name__ == 'Name':
                     name = fields[0].strip("'")
                     if name in self.get_func_keywords():
