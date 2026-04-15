@@ -487,30 +487,40 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
         return(id)
 
 
+    def _get_selected_face_indices(self, obj):
+        """Return the set of selected face indices, safe to call during draw."""
+        mesh = obj.data
+        if obj.mode == 'EDIT':
+            import bmesh
+            bm = bmesh.from_edit_mesh(mesh)
+            return set(f.index for f in bm.faces if f.select)
+        return set(f.index for f in mesh.polygons if f.select)
+
+
     def face_get_regions(self,context):
         """ Return the list of region IDs associated with one selected face """
         reg_list = ""
-        mesh = bpy.context.active_object.data
+        active_obj = bpy.context.active_object
+        mesh = active_obj.data
         if (mesh.total_face_sel == 1):
-          bpy.ops.object.mode_set(mode='OBJECT')
-          face_index = [f.index for f in mesh.polygons if f.select][0]
-          bpy.ops.object.mode_set(mode='EDIT')
-          for reg in self.region_list: 
-            if reg.face_in_region(context,face_index):
-              reg_list = reg_list + " " + reg.name
-        
+          selface_set = self._get_selected_face_indices(active_obj)
+          if selface_set:
+            face_index = next(iter(selface_set))
+            for reg in self.region_list:
+              if reg.face_in_region(context,face_index):
+                reg_list = reg_list + " " + reg.name
+
         return(reg_list)
 
 
     def faces_get_regions(self,context):
         """ Return list of region names associated with the selected faces """
         reg_info = []
-        mesh = bpy.context.active_object.data
+        active_obj = bpy.context.active_object
+        mesh = active_obj.data
         if (mesh.total_face_sel > 0):
-          bpy.ops.object.mode_set(mode='OBJECT')
-          selface_set = set([f.index for f in mesh.polygons if f.select])
-          bpy.ops.object.mode_set(mode='EDIT')
-          for reg in self.region_list: 
+          selface_set = self._get_selected_face_indices(active_obj)
+          for reg in self.region_list:
             reg_faces = reg.get_region_faces(mesh)
             if not selface_set.isdisjoint(reg_faces):
               reg_info.append(reg.name)
@@ -689,7 +699,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
                         row.prop(self, "get_region_info", icon='TRIA_DOWN',
                                  text="Region Info for Selected Faces",
                                   emboss=False)
-                        reg_info = self.faces_get_regions(context)
+                        reg_info = self.faces_get_regions(bpy.context)
                         for reg_name in reg_info:
                             row = box.row()
                             row.label(text=reg_name)

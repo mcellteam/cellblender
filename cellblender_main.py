@@ -91,8 +91,6 @@ from .io_mesh_mcell_mdl import export_mcell_mdl
 def mcell_valid_update(context):
     """ Check whether the mcell executable in the .blend file is valid """
     print ( "load post handler: cellblender_main.mcell_valid_update() called" )
-    if not context:
-        context = bpy.context
     mcell = bpy.context.scene.mcell
     binary_path = mcell.cellblender_preferences.mcell_binary
     mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
@@ -103,11 +101,9 @@ def mcell_valid_update(context):
 def init_properties(context):
     """ Initialize MCell properties if not already initialized """
     print ( "load post handler: cellblender_main.init_properties() called" )
-    if not context:
-        context = bpy.context
     mcell = bpy.context.scene.mcell
     if not mcell.initialized:
-        mcell.init_properties(context)
+        mcell.init_properties(bpy.context)
         mcell.initialized = True
 
 
@@ -169,7 +165,7 @@ class PP_OT_init_mcell(bpy.types.Operator):
     def execute(self, context):
         print ( "Initializing CellBlender" )
         mcell = bpy.context.scene.mcell
-        mcell.init_properties(context)
+        mcell.init_properties(bpy.context)
         mcell.rxn_output.init_properties(mcell.parameter_system)
         print ( "CellBlender has been initialized" )
         return {'FINISHED'}
@@ -203,7 +199,7 @@ class MCELL_PT_main_panel(bpy.types.Panel):
             self.layout.label(text="", icon_value=icon)
 
     def draw(self, context):
-        bpy.context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
+        bpy.context.scene.mcell.cellblender_main_panel.draw_self(bpy.context,self.layout)
 
 
 
@@ -255,10 +251,10 @@ class MCELL_OT_upgrade(bpy.types.Operator):
     def execute(self, context):
 
         print ( "Upgrade Operator called" )
-        objstat = cellblender_objects.get_object_status(context)
-        data_model.upgrade_properties_from_data_model ( context )
+        objstat = cellblender_objects.get_object_status(bpy.context)
+        data_model.upgrade_properties_from_data_model(bpy.context)
         bpy.ops.cbm.refresh_operator()
-        cellblender_objects.restore_object_status(context, objstat)
+        cellblender_objects.restore_object_status(bpy.context, objstat)
         return {'FINISHED'}
 
 
@@ -277,7 +273,7 @@ class MCELL_OT_export_dm(bpy.types.Operator):
             # There is a data model present
             dm = data_model.unpickle_data_model(mcell['data_model'])
             # Build a full data model to get the geometry
-            full_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            full_dm = mcell.build_data_model_from_properties ( bpy.context, geometry=True )
             # Add the geometry data to the original data model before exporting
             if 'geometrical_objects' in full_dm:
               dm['geometrical_objects'] = full_dm['geometrical_objects']
@@ -302,7 +298,7 @@ class MCELL_OT_export_dm_json(bpy.types.Operator):
             # There is a data model present
             dm = data_model.unpickle_data_model(mcell['data_model'])
             # Build a full data model to get the geometry
-            full_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            full_dm = mcell.build_data_model_from_properties ( bpy.context, geometry=True )
             # Add the geometry data to the original data model before exporting
             if 'geometrical_objects' in full_dm:
               dm['geometrical_objects'] = full_dm['geometrical_objects']
@@ -322,7 +318,7 @@ class MCELL_OT_delete(bpy.types.Operator):
     def execute(self, context):
         print ( "Deleting CellBlender Collection Properties" )
         mcell = bpy.context.scene.mcell
-        mcell.remove_properties(context)
+        mcell.remove_properties(bpy.context)
         print ( "Finished Deleting CellBlender Collection Properties" )
         return {'FINISHED'}
 
@@ -340,10 +336,10 @@ class CBM_OT_refresh_operator(bpy.types.Operator):
         mcell = bpy.context.scene.mcell
         if cellblender.current_data_model == None:
             # Build the entire data model
-            cellblender.current_data_model = { 'mcell': mcell.build_data_model_from_properties ( context ) }
+            cellblender.current_data_model = { 'mcell': mcell.build_data_model_from_properties ( bpy.context ) }
         else:
             # Only refresh the parameters
-            cellblender.current_data_model['mcell']['parameter_system'] = mcell.parameter_system.build_data_model_from_properties(context)
+            cellblender.current_data_model['mcell']['parameter_system'] = mcell.parameter_system.build_data_model_from_properties(bpy.context)
 
         bpy.ops.mcell.update_data_layout()
         mcell.model_objects.update_scene ( bpy.context.scene, force=True )
@@ -353,7 +349,7 @@ class CBM_OT_refresh_operator(bpy.types.Operator):
 
 
 def select_callback ( self, context ):
-    self.select_callback(context)
+    self.select_callback(bpy.context)
 
 
 class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
@@ -779,26 +775,26 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 if self.preferences_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Project Settings", icon='SETTINGS' )
-                    bpy.context.scene.mcell.project_settings.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.project_settings.draw_layout ( bpy.context, layout )
 
                     layout.box() # Use as a separator
                     layout.label ( text="Preferences", icon='PREFERENCES' )
-                    bpy.context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.cellblender_preferences.draw_layout ( bpy.context, layout )
 
                 if self.scripting_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Model Scripts", icon='SCRIPT' )
-                    bpy.context.scene.mcell.scripting.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.scripting.draw_layout ( bpy.context, layout )
 
                 if self.parameters_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Model Parameters", icon='SEQ_SEQUENCER' )
-                    bpy.context.scene.mcell.parameter_system.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.parameter_system.draw_layout ( bpy.context, layout )
 
                 if self.molecule_select:
                     layout.box() # Use as a separator
                     layout.label(text="Defined Molecules", icon='FORCE_LENNARDJONES')
-                    bpy.context.scene.mcell.molecules.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.molecules.draw_layout ( bpy.context, layout )
 
                 if self.reaction_select:
                     layout.box() # Use as a separator
@@ -809,67 +805,67 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         react_img_sel = bpy.data.images.get('reaction_s')
                         reaction_s = layout.icon(react_img_sel)
                         layout.label ( text="Defined Reactions", icon_value=reaction_s )
-                    bpy.context.scene.mcell.reactions.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.reactions.draw_layout ( bpy.context, layout )
 
                 if self.placement_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Molecule Release/Placement", icon='GROUP_VERTEX' )
-                    bpy.context.scene.mcell.release_sites.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.release_sites.draw_layout ( bpy.context, layout )
 
                 if self.rel_patterns_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Release Patterns", icon='TIME' )
-                    bpy.context.scene.mcell.release_patterns.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.release_patterns.draw_layout ( bpy.context, layout )
 
                 if self.objects_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-                    bpy.context.scene.mcell.model_objects.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.model_objects.draw_layout ( bpy.context, layout )
                     # layout.box() # Use as a separator
                     if bpy.context.object != None:
-                        bpy.context.object.mcell.regions.draw_layout(context, layout)
+                        bpy.context.object.mcell.regions.draw_layout(bpy.context, layout)
 
                 if self.surf_classes_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Defined Surface Classes", icon='MOD_EXPLODE' )
-                    bpy.context.scene.mcell.surface_classes.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.surface_classes.draw_layout ( bpy.context, layout )
 
                 if self.surf_regions_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Assigned Surface Classes", icon='UV_DATA' )
-                    bpy.context.scene.mcell.mod_surf_regions.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.mod_surf_regions.draw_layout ( bpy.context, layout )
 
                 if self.partitions_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Partitions", icon='MESH_GRID' )
-                    bpy.context.scene.mcell.partitions.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.partitions.draw_layout ( bpy.context, layout )
 
                 if self.pbc_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Periodic Boundary Conditions", icon='GRID' )
-                    bpy.context.scene.mcell.pbc.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.pbc.draw_layout ( bpy.context, layout )
 
                 if self.graph_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Reaction Data Output", icon='GRAPH' )
-                    bpy.context.scene.mcell.rxn_output.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.rxn_output.draw_layout ( bpy.context, layout )
 
                 if self.viz_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Visualization", icon='SEQUENCE' )
-                    bpy.context.scene.mcell.viz_output.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.viz_output.draw_layout ( bpy.context, layout )
                     layout.box() # Use as a separator
-                    bpy.context.scene.mcell.mol_viz.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.mol_viz.draw_layout ( bpy.context, layout )
 
                 if self.init_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Run Simulation", icon='ARMATURE_DATA' )
-                    bpy.context.scene.mcell.initialization.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.initialization.draw_layout ( bpy.context, layout )
 
                 if self.examples_select:
                     layout.box() # Use as a separator
                     layout.label ( text="Examples", icon='MOD_BUILD' )
-                    bpy.context.scene.mcell.cellblender_examples.draw_layout ( context, layout )
+                    bpy.context.scene.mcell.cellblender_examples.draw_layout ( bpy.context, layout )
 
         # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
 
@@ -974,27 +970,27 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all MCell Properties..." )
-        #self.molecule_glyphs.remove_properties(context)
-        self.object_selector.remove_properties(context)
-        self.meshalyzer.remove_properties(context)
-        self.rxn_output.remove_properties(context)
-        self.viz_output.remove_properties(context)
-        self.model_objects.remove_properties(context)
-        self.release_sites.remove_properties(context)
-        self.release_patterns.remove_properties(context)
-        self.mod_surf_regions.remove_properties(context)
-        self.surface_classes.remove_properties(context)
-        self.reactions.remove_properties(context)
-        self.molecules.remove_properties(context)
-        self.partitions.remove_properties(context)
-        self.initialization.remove_properties(context)
-        self.mol_viz.remove_properties(context)
-        self.run_simulation.remove_properties(context)
-        self.export_project.remove_properties(context)
-        self.project_settings.remove_properties(context)
-        self.cellblender_preferences.remove_properties(context)
-        self.cellblender_main_panel.remove_properties(context)
-        self.parameter_system.remove_properties(context)
+        #self.molecule_glyphs.remove_properties(bpy.context)
+        self.object_selector.remove_properties(bpy.context)
+        self.meshalyzer.remove_properties(bpy.context)
+        self.rxn_output.remove_properties(bpy.context)
+        self.viz_output.remove_properties(bpy.context)
+        self.model_objects.remove_properties(bpy.context)
+        self.release_sites.remove_properties(bpy.context)
+        self.release_patterns.remove_properties(bpy.context)
+        self.mod_surf_regions.remove_properties(bpy.context)
+        self.surface_classes.remove_properties(bpy.context)
+        self.reactions.remove_properties(bpy.context)
+        self.molecules.remove_properties(bpy.context)
+        self.partitions.remove_properties(bpy.context)
+        self.initialization.remove_properties(bpy.context)
+        self.mol_viz.remove_properties(bpy.context)
+        self.run_simulation.remove_properties(bpy.context)
+        self.export_project.remove_properties(bpy.context)
+        self.project_settings.remove_properties(bpy.context)
+        self.cellblender_preferences.remove_properties(bpy.context)
+        self.cellblender_main_panel.remove_properties(bpy.context)
+        self.parameter_system.remove_properties(bpy.context)
         print ( "Done removing all MCell Properties." )
 
 
@@ -1019,26 +1015,26 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm['api_version'] = self['api_version']
         else:
             dm['api_version'] = 0
-        dm['parameter_system'] = self.parameter_system.build_data_model_from_properties(context)
-        dm['initialization'] = self.initialization.build_data_model_from_properties(context)
-        dm['initialization']['partitions'] = self.partitions.build_data_model_from_properties(context)
-        dm['define_molecules'] = self.molecules.build_data_model_from_properties(context)
-        dm['define_reactions'] = self.reactions.build_data_model_from_properties(context)
-        dm['release_sites'] = self.release_sites.build_data_model_from_properties(context)
-        dm['define_release_patterns'] = self.release_patterns.build_data_model_from_properties(context)
-        dm['define_surface_classes'] = self.surface_classes.build_data_model_from_properties(context)
-        dm['modify_surface_regions'] = self.mod_surf_regions.build_data_model_from_properties(context)
-        dm['periodic_boundary_conditions'] = self.pbc.build_data_model_from_properties(context)
-        dm['model_objects'] = self.model_objects.build_data_model_from_properties(context)
-        dm['viz_output'] = self.viz_output.build_data_model_from_properties(context)
-        dm['simulation_control'] = self.run_simulation.build_data_model_from_properties(context)
-        dm['mol_viz'] = self.mol_viz.build_data_model_from_properties(context)
-        dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
-        dm['scripting'] = self.scripting.build_data_model_from_properties(context,scripts)
+        dm['parameter_system'] = self.parameter_system.build_data_model_from_properties(bpy.context)
+        dm['initialization'] = self.initialization.build_data_model_from_properties(bpy.context)
+        dm['initialization']['partitions'] = self.partitions.build_data_model_from_properties(bpy.context)
+        dm['define_molecules'] = self.molecules.build_data_model_from_properties(bpy.context)
+        dm['define_reactions'] = self.reactions.build_data_model_from_properties(bpy.context)
+        dm['release_sites'] = self.release_sites.build_data_model_from_properties(bpy.context)
+        dm['define_release_patterns'] = self.release_patterns.build_data_model_from_properties(bpy.context)
+        dm['define_surface_classes'] = self.surface_classes.build_data_model_from_properties(bpy.context)
+        dm['modify_surface_regions'] = self.mod_surf_regions.build_data_model_from_properties(bpy.context)
+        dm['periodic_boundary_conditions'] = self.pbc.build_data_model_from_properties(bpy.context)
+        dm['model_objects'] = self.model_objects.build_data_model_from_properties(bpy.context)
+        dm['viz_output'] = self.viz_output.build_data_model_from_properties(bpy.context)
+        dm['simulation_control'] = self.run_simulation.build_data_model_from_properties(bpy.context)
+        dm['mol_viz'] = self.mol_viz.build_data_model_from_properties(bpy.context)
+        dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(bpy.context)
+        dm['scripting'] = self.scripting.build_data_model_from_properties(bpy.context,scripts)
         if geometry:
             print ( "Adding Geometry to Data Model" )
-            dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context,dyn_geo=dyn_geo)
-            dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
+            dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(bpy.context,dyn_geo=dyn_geo)
+            dm['materials'] = self.model_objects.build_data_model_materials_from_materials(bpy.context)
         return dm
 
 
@@ -1174,13 +1170,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
 
         # Remove the existing MCell Property Tree
-        self.remove_properties(context)
+        self.remove_properties(bpy.context)
 
         # Now convert the updated Data Model into CellBlender Properties
         print ( "Overwriting properites based on data in the data model dictionary" )
 
         # Start by calling "init_properties" which creates a full new CellBlender property tree
-        self.init_properties( context )
+        self.init_properties( bpy.context )
 
         # Set the bionetgen_mode based on model_language
         if 'model_language' in dm:
@@ -1202,7 +1198,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         if "parameter_system" in dm:
             print ( "Overwriting the parameter_system properties" )
-            self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
+            self.parameter_system.build_properties_from_data_model ( bpy.context, dm["parameter_system"] )
 
 
         ### __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -1214,98 +1210,98 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         # Move below model objects?
         #if "modify_surface_regions" in dm:
         #    print ( "Overwriting the modify_surface_regions properties" )
-        #    self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
+        #    self.mod_surf_regions.build_properties_from_data_model ( bpy.context, dm["modify_surface_regions"] )
         if geometry:
             print ( "Deleting all mesh objects" )
-            self.model_objects.delete_all_mesh_objects(context)
+            self.model_objects.delete_all_mesh_objects(bpy.context)
             if "materials" in dm:
                 print ( "Overwriting the materials properties" )
                 print ( "Building Materials from Data Model Materials" )
-                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
+                self.model_objects.build_materials_from_data_model_materials ( bpy.context, dm['materials'] )
             if "geometrical_objects" in dm:
                 print ( "Overwriting the geometrical_objects properties" )
                 print ( "Building Mesh Geometry from Data Model Geometry" )
-                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
+                self.model_objects.build_mesh_from_data_model_geometry ( bpy.context, dm["geometrical_objects"] )
             print ( "Not fully implemented yet!!!!" )
 
         if "scripting" in dm:
             print ( "Overwriting the scripting properties" )
-            self.scripting.build_properties_from_data_model ( context, dm["scripting"], scripts )
+            self.scripting.build_properties_from_data_model ( bpy.context, dm["scripting"], scripts )
 
         if "initialization" in dm:
             print ( "Overwriting the initialization properties" )
-            self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
+            self.initialization.build_properties_from_data_model ( bpy.context, dm["initialization"] )
             if "partitions" in dm["initialization"]:
                 print ( "Overwriting the partitions properties" )
-                self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
+                self.partitions.build_properties_from_data_model ( bpy.context, dm["initialization"]["partitions"] )
         if "define_molecules" in dm:
             print ( "Overwriting the define_molecules properties" )
-            self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
+            self.molecules.build_properties_from_data_model ( bpy.context, dm["define_molecules"] )
         if "release_sites" in dm:
             print ( "Overwriting the release_sites properties" )
-            self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
+            self.release_sites.build_properties_from_data_model ( bpy.context, dm["release_sites"] )
         if "define_release_patterns" in dm:
             print ( "Overwriting the define_release_patterns properties" )
-            self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
+            self.release_patterns.build_properties_from_data_model ( bpy.context, dm["define_release_patterns"] )
         if "define_surface_classes" in dm:
             print ( "Overwriting the define_surface_classes properties" )
-            self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
+            self.surface_classes.build_properties_from_data_model ( bpy.context, dm["define_surface_classes"] )
         if "define_reactions" in dm:
             print ( "Overwriting the define_reactions properties" )
-            self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
+            self.reactions.build_properties_from_data_model ( bpy.context, dm["define_reactions"] )
 
         # Building geometry was here ... moved above to keep it from deleting molecule objects and meshes
         if "model_objects" in dm:
             print ( "Overwriting the model_objects properties" )
-            self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
+            self.model_objects.build_properties_from_data_model ( bpy.context, dm["model_objects"] )
         if "modify_surface_regions" in dm:
             print ( "Overwriting the modify_surface_regions properties" )
-            self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
+            self.mod_surf_regions.build_properties_from_data_model ( bpy.context, dm["modify_surface_regions"] )
         if "periodic_boundary_conditions" in dm:
             print ( "Overwriting the periodic_boundary_conditions properties" )
-            self.pbc.build_properties_from_data_model ( context, dm["periodic_boundary_conditions"] )
+            self.pbc.build_properties_from_data_model ( bpy.context, dm["periodic_boundary_conditions"] )
         if "viz_output" in dm:
             print ( "Overwriting the viz_output properties" )
-            self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
+            self.viz_output.build_properties_from_data_model ( bpy.context, dm["viz_output"] )
         if "mol_viz" in dm:
             print ( "Overwriting the mol_viz properties" )
-            self.mol_viz.build_properties_from_data_model ( context, dm["mol_viz"] )
+            self.mol_viz.build_properties_from_data_model ( bpy.context, dm["mol_viz"] )
 
         # This had been commented out because it's not clear how it should work yet...
         if "simulation_control" in dm:
             print ( "Overwriting the simulation_control properties" )
-            self.run_simulation.build_properties_from_data_model ( context, dm["simulation_control"] )
+            self.run_simulation.build_properties_from_data_model ( bpy.context, dm["simulation_control"] )
 
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
-            self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
+            self.rxn_output.build_properties_from_data_model ( bpy.context, dm["reaction_data_output"] )
 
         # Now call the various "check" routines to clean up any unresolved references
         print ( "Checking the initialization and partitions properties" )
-        self.initialization.check_properties_after_building ( context )
-        self.partitions.check_properties_after_building ( context )
+        self.initialization.check_properties_after_building ( bpy.context )
+        self.partitions.check_properties_after_building ( bpy.context )
         print ( "Checking the define_molecules properties" )
-        self.molecules.check_properties_after_building ( context )
+        self.molecules.check_properties_after_building ( bpy.context )
         print ( "Checking the define_reactions properties" )
-        self.reactions.check_properties_after_building ( context )
+        self.reactions.check_properties_after_building ( bpy.context )
         print ( "Checking the release_sites properties" )
-        self.release_sites.check_properties_after_building ( context )
+        self.release_sites.check_properties_after_building ( bpy.context )
         print ( "Checking the define_release_patterns properties" )
-        self.release_patterns.check_properties_after_building ( context )
+        self.release_patterns.check_properties_after_building ( bpy.context )
         print ( "Checking the define_surface_classes properties" )
-        self.surface_classes.check_properties_after_building ( context )
+        self.surface_classes.check_properties_after_building ( bpy.context )
         print ( "Checking the modify_surface_regions properties" )
-        self.mod_surf_regions.check_properties_after_building ( context )
+        self.mod_surf_regions.check_properties_after_building ( bpy.context )
         print ( "Checking all mesh objects" )
-        self.model_objects.check_properties_after_building ( context )
+        self.model_objects.check_properties_after_building ( bpy.context )
         print ( "Checking the viz_output properties" )
-        self.viz_output.check_properties_after_building ( context )
+        self.viz_output.check_properties_after_building ( bpy.context )
         print ( "Checking the mol_viz properties" )
-        self.mol_viz.check_properties_after_building ( context )
+        self.mol_viz.check_properties_after_building ( bpy.context )
         print ( "Checking the reaction_data_output properties" )
-        self.rxn_output.check_properties_after_building ( context )
+        self.rxn_output.check_properties_after_building ( bpy.context )
         print ( "Checking/Updating the model_objects properties" )
-        cellblender_objects.model_objects_update(context)
+        cellblender_objects.model_objects_update(bpy.context)
 
         print ( "Done building properties from the data model." )
 
