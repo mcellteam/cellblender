@@ -246,6 +246,16 @@ try:
 except:
   pass
 
+# The `bpy` PyPI package imports successfully outside of Blender (with no
+# CellBlender add-on registered), so a bare `import bpy` no longer implies we
+# are running inside CellBlender with a live scene. When this module is run as
+# the standalone command-line converter (the test harness / CLI), force the
+# non-Blender data-model path so we don't reach into an unregistered
+# `context.scene.mcell`. CellBlender itself imports this module rather than
+# executing it, so its in-Blender code path is unaffected.
+if __name__ == "__main__":
+  has_blender = False
+
 
 def write_obj_as_mdl ( scene_name, obj_name, points, faces, regions_dict, region_props, origin=None, file_name=None, partitions=False, instantiate=False ):
   # print ( "data_model_to_mdl.write_obj_as_mdl()" )
