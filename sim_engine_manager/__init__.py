@@ -38,15 +38,6 @@ def get_modules():
     if parent_path == '':
         parent_path = '.'
 
-    inpath = True
-    try:
-        if sys.path.index(parent_path) < 0:
-            inpath = False
-    except:
-        inpath = False
-    if not inpath:
-        sys.path.append ( parent_path )
-
 
     # print ( "System path = %s" % (sys.path) ) 
     module_name_list = []

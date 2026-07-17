@@ -47,16 +47,6 @@ def find_plotting_options():
         plot_path = '.'
     # plot_path = os.path.join ( plot_path, "data_plotters" )
 
-    inpath = True
-    try:
-        if sys.path.index(plot_path) < 0:
-            inpath = False
-    except:
-        inpath = False
-    if not inpath:
-        # print ( "Appending %s to path"%(plot_path) )
-        sys.path.append ( plot_path )
-
 
     # print ( "System path = %s" % (sys.path) ) 
     module_name_list = []
