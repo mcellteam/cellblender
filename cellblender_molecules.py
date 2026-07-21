@@ -278,7 +278,11 @@ class MCELL_OT_mol_comp_stick(bpy.types.Operator):
 
         # Delete the old object and mesh
         if shape_name in objs:
-            scn_objs.unlink ( objs[shape_name] )
+            # Only unlink from this collection if it is actually linked here.
+            # Blender (4.x/5.x) raises RuntimeError if the object is not in the
+            # collection; objs.remove() below unlinks from all collections anyway.
+            if shape_name in scn_objs:
+                scn_objs.unlink ( objs[shape_name] )
             objs.remove ( objs[shape_name] )
         if shape_name in meshes:
             meshes.remove ( meshes[shape_name] )
@@ -359,7 +363,11 @@ class MCELL_OT_mol_comp_nostick(bpy.types.Operator):
 
         # Delete the old object and mesh
         if shape_name in objs:
-            scn_objs.unlink ( objs[shape_name] )
+            # Only unlink from this collection if it is actually linked here.
+            # Blender (4.x/5.x) raises RuntimeError if the object is not in the
+            # collection; objs.remove() below unlinks from all collections anyway.
+            if shape_name in scn_objs:
+                scn_objs.unlink ( objs[shape_name] )
             objs.remove ( objs[shape_name] )
         if shape_name in meshes:
             meshes.remove ( meshes[shape_name] )
@@ -410,6 +418,28 @@ def name_change_callback(self, context):
     # print ( "  old = " + self.old_name + " => new = " + self.name )
     old_mol_name = "mol_" + self.old_name
     new_mol_name = "mol_" + self.name
+
+    if old_mol_name != new_mol_name:
+        # Clear any stale display datablocks already occupying the destination
+        # name before renaming this molecule's objects onto it. Blender appends
+        # a ".001" suffix when a name is already taken, so renaming directly
+        # onto an occupied name produces a spurious duplicate object (e.g.
+        # "mol_AChR0_shape.001"). This happens when upgrading an older data
+        # model: leftover "mol_<name>*" objects from the saved .blend are not
+        # always cleared before the newly added molecule is renamed into place.
+        # Only do this when no *other* molecule in the list legitimately owns
+        # this name, so a genuine (user-created) duplicate name is left alone.
+        parent = cellblender_utils.get_parent(self)
+        name_count = [m.name for m in parent.molecule_list].count(self.name)
+        if name_count <= 1:
+            for coll, key in [ (bpy.data.objects,   new_mol_name),
+                               (bpy.data.objects,   new_mol_name + '_shape'),
+                               (bpy.data.meshes,    new_mol_name + '_shape'),
+                               (bpy.data.meshes,    new_mol_name + '_pos'),
+                               (bpy.data.materials, new_mol_name + '_mat') ]:
+                if key in coll:
+                    try: coll.remove ( coll[key] )
+                    except: pass
 
     if old_mol_name + '_mat' in bpy.data.materials:
         bpy.data.materials[old_mol_name + '_mat'].name = new_mol_name + '_mat'
@@ -1083,7 +1113,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         # Delete the old object and mesh
         if shape_name in objs:
-            scn_objs.unlink ( objs[shape_name] )
+            # Only unlink from this collection if it is actually linked here.
+            # Blender (4.x/5.x) raises RuntimeError if the object is not in the
+            # collection; objs.remove() below unlinks from all collections anyway.
+            if shape_name in scn_objs:
+                scn_objs.unlink ( objs[shape_name] )
             objs.remove ( objs[shape_name] )
         if shape_name in meshes:
             meshes.remove ( meshes[shape_name] )
